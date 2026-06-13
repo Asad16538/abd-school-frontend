@@ -536,12 +536,20 @@ function App() {
                                 <td className="p-3">
                                   <div className="flex items-center justify-center gap-2">
                                     <button onClick={() => { localStorage.setItem('redirect_student_id', st.id); setActiveTab('search_pay'); }} className="px-3 py-2 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-indigo-700 transition-all">फीस जमा करे</button>
-                                    {/* YAHAN PASTE KARO NAYA SYNC BUTTON */}
+                                   {/* SYNC TELEGRAM Button */}
           <button 
             onClick={() => generateTelegramLink(st)} 
             className="px-3 py-2 bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-blue-700 transition-all"
           >
             🔗 Sync Telegram
+          </button>
+
+          {/* Naya Yaad Dilayen Button */}
+          <button 
+            onClick={() => sendFeeReminder(st.id)} 
+            className="px-3 py-2 bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-amber-500 transition-all"
+          >
+            🔔 याद दिलाएं
           </button>
         </div>
       </td>
