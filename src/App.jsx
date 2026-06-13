@@ -46,6 +46,31 @@ function App() {
   const [role, setRole] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
 
+  // 🎯 TELEGRAM LINKING ROUTE LOGIC
+  const isLinkTelegram = window.location.pathname === '/link-telegram';
+  if (isLinkTelegram) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+        <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-sm text-center">
+          <h2 className="text-xl font-black text-gray-800 mb-4">🏫 School ERP - Telegram Link</h2>
+          <p className="text-xs text-gray-500 mb-6 font-bold uppercase">Apna registered mobile number daalein sync karne ke liye.</p>
+          <input id="parentPhone" type="number" placeholder="Enter Registered Mobile" className="w-full p-3 border border-gray-200 rounded-xl mb-4 text-sm" />
+          <button onClick={async () => {
+            const phone = document.getElementById('parentPhone').value;
+            const urlParams = new URLSearchParams(window.location.search);
+            const telegramId = urlParams.get('telegram_id') || "UNKNOWN"; 
+            try {
+               await axios.post(`${BASE_URL}/api/link-telegram`, { phone, telegram_id: telegramId });
+               alert("✅ Linked Successfully! Ab aapko updates milenge.");
+            } catch (err) {
+               alert("❌ Link fail ho gaya, number check karein.");
+            }
+          }} className="w-full py-3 bg-indigo-600 text-white font-bold rounded-xl">Link Account</button>
+        </div>
+      </div>
+    );
+  }
+
   // 🎯 DYNAMIC COMMERCIAL STATE: Koi bhi location hardcoded nahi hai bhai!
   const [schoolData, setSchoolData] = useState({
     school_name: 'Smart School ERP',
@@ -129,6 +154,15 @@ function App() {
       alert("Error submitting fee");
     }
   };
+
+  const generateTelegramLink = (student) => {
+  const link = `https://abd-school-c78bjfayl-ab-school-project.vercel.app/link-telegram?phone=${student.parent_mobile}`;
+  const message = `Namaste, please apni Telegram ID link karne ke liye is link par click karein: ${link}`;
+  
+  // WhatsApp par link bhejne ka logic
+  const whatsappUrl = `https://wa.me/${student.parent_mobile}?text=${encodeURIComponent(message)}`;
+  window.open(whatsappUrl, '_blank');
+};
 
   const triggerWhatsAppReminder = async (studentId) => {
     try {
@@ -363,11 +397,15 @@ function App() {
               </div>
               
               <nav className="flex-grow p-4 space-y-1.5">
-                {/* 1st Position: Overview Panel */}
-                <button onClick={() => setActiveTab('overview')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'overview' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <LayoutDashboard className={`w-4 h-4 ${activeTab === 'overview' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>Overview Panel</span>
-                </button>
+  {/* 1st Position: Overview Panel */}
+  <button 
+    onClick={() => setActiveTab('overview')} 
+    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'overview' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
+  >
+    <LayoutDashboard className={`w-4 h-4 ${activeTab === 'overview' ? 'text-amber-300' : 'text-slate-400'}`} />
+    <span>Overview Panel</span>
+  </button>
+ 
 
                 {/* 2nd Position: Student Register */}
                 <button onClick={() => setActiveTab('registration')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'registration' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
@@ -498,12 +536,18 @@ function App() {
                                 <td className="p-3">
                                   <div className="flex items-center justify-center gap-2">
                                     <button onClick={() => { localStorage.setItem('redirect_student_id', st.id); setActiveTab('search_pay'); }} className="px-3 py-2 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-indigo-700 transition-all">फीस जमा करे</button>
-                                    <button onClick={() => triggerWhatsAppReminder(st.id)} className="px-3 py-2 bg-emerald-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm flex items-center gap-1 cursor-pointer">📲 याद दिलाएं</button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
+                                    {/* YAHAN PASTE KARO NAYA SYNC BUTTON */}
+          <button 
+            onClick={() => generateTelegramLink(st)} 
+            className="px-3 py-2 bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-blue-700 transition-all"
+          >
+            🔗 Sync Telegram
+          </button>
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
                         </table>
                       </div>
                     </div>
