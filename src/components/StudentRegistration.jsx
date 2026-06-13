@@ -96,7 +96,7 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
         dataPayload.append('student_photo', studentPhoto);
       }
 
-      const response = await fetch('https://abd-school-backend-production.up.railway.app/api/students/register-manual', {
+      const response = await fetch('https://abd-school-backend.onrender.com/api/students/register-manual', {
         method: 'POST',
         body: dataPayload // FormData bhej rahe hain multipart request ke sath
       });
@@ -145,7 +145,7 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
           return;
         }
 
-        const response = await fetch('https://abd-school-backend-production.up.railway.app/api/students/bulk-import', {
+        const response = await fetch('https://abd-school-backend.onrender.com/api/students/bulk-import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ students: jsonData })

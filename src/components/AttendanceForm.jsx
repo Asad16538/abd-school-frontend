@@ -105,7 +105,7 @@ const AttendanceForm = () => {
     };
     
     try {
-      const response = await fetch('https://abd-school-backend-production.up.railway.app/api/attendance/mark', {
+      const response = await fetch('https://abd-school-backend.onrender.com/api/attendance/mark', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(attendanceData)
@@ -143,7 +143,7 @@ const AttendanceForm = () => {
         `✅ Status: PRESENT\n\n` +
         `_Powered by A.B.Digital Work_`;
       
-      await fetch('https://abd-school-backend-production.up.railway.app/send-message', {
+      await fetch('https://abd-school-backend.onrender.com/send-message', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mobile: data.teacher_mobile, message: message })
