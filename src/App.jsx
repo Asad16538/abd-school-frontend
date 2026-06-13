@@ -155,21 +155,27 @@ function App() {
     }
   };
 
+  // 1. Telegram Sync Function
   const generateTelegramLink = (student) => {
-  const link = `https://abd-school-c78bjfayl-ab-school-project.vercel.app/link-telegram?phone=${student.parent_mobile}`;
-  const message = `Namaste, please apni Telegram ID link karne ke liye is link par click karein: ${link}`;
-  
-  // WhatsApp par link bhejne ka logic
-  const whatsappUrl = `https://wa.me/${student.parent_mobile}?text=${encodeURIComponent(message)}`;
-  window.open(whatsappUrl, '_blank');
-};
+    // Apne Vercel frontend ka URL yahan sahi rakhein
+    const link = `https://abd-school-frontend.vercel.app/link-telegram?phone=${student.parent_mobile}`;
+    const message = `Namaste, please apni Telegram ID link karne ke liye is link par click karein: ${link}`;
+    
+    const whatsappUrl = `https://wa.me/${student.parent_mobile}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+  };
 
-  const triggerWhatsAppReminder = async (studentId) => {
+  // 2. Fees Reminder Function (Yaad Dilaye)
+  const sendFeeReminder = async (studentId) => {
+    const confirmAction = window.confirm("Kya aap sach mein student ko fee reminder bhejna chahte hain?");
+    if (!confirmAction) return;
+
     try {
-      const res = await axios.post('https://abd-school-backend.onrender.com/api/fee-reminder', { student_id: studentId });
+      const res = await axios.post(`${BASE_URL}/api/fee-reminder`, { student_id: studentId });
       alert(res.data.message);
     } catch (err) {
-      alert("Failed to send WhatsApp reminder");
+      console.error("Error:", err);
+      alert("Failed to send reminder. Check Backend!");
     }
   };
 
@@ -397,14 +403,14 @@ function App() {
               </div>
               
               <nav className="flex-grow p-4 space-y-1.5">
-  {/* 1st Position: Overview Panel */}
-  <button 
-    onClick={() => setActiveTab('overview')} 
-    className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'overview' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
-  >
-    <LayoutDashboard className={`w-4 h-4 ${activeTab === 'overview' ? 'text-amber-300' : 'text-slate-400'}`} />
-    <span>Overview Panel</span>
-  </button>
+              {/* 1st Position: Overview Panel */}
+              <button 
+                onClick={() => setActiveTab('overview')} 
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'overview' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
+              >
+              <LayoutDashboard className={`w-4 h-4 ${activeTab === 'overview' ? 'text-amber-300' : 'text-slate-400'}`} />
+              <span>Overview Panel</span>
+              </button>
  
 
                 {/* 2nd Position: Student Register */}
@@ -535,27 +541,34 @@ function App() {
                                 <td className="p-3"><span className="px-2 py-1 bg-red-50 text-red-600 font-black text-sm rounded-lg">₹{st.total_pending}</span></td>
                                 <td className="p-3">
                                   <div className="flex items-center justify-center gap-2">
-                                    <button onClick={() => { localStorage.setItem('redirect_student_id', st.id); setActiveTab('search_pay'); }} className="px-3 py-2 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-indigo-700 transition-all">फीस जमा करे</button>
-                                   {/* SYNC TELEGRAM Button */}
-          <button 
-            onClick={() => generateTelegramLink(st)} 
-            className="px-3 py-2 bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-blue-700 transition-all"
-          >
-            🔗 Sync Telegram
-          </button>
+                            {/* Fee Jama Kare */}
+                            <button 
+                              onClick={() => { localStorage.setItem('redirect_student_id', st.id); setActiveTab('search_pay'); }} 
+                              className="px-3 py-2 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-indigo-700 transition-all"
+                            >
+                              फीस जमा करे
+                            </button>
 
-          {/* Naya Yaad Dilayen Button */}
-          <button 
-            onClick={() => sendFeeReminder(st.id)} 
-            className="px-3 py-2 bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-amber-500 transition-all"
-          >
-            🔔 याद दिलाएं
-          </button>
-        </div>
-      </td>
-    </tr>
-  ))}
-</tbody>
+                            {/* Sync Telegram */}
+                            <button 
+                              onClick={() => generateTelegramLink(st)} 
+                              className="px-3 py-2 bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-blue-700 transition-all"
+                            >
+                              🔗 Sync Telegram
+                            </button>
+
+                            {/* Yaad Dilaye - YAHAN SE FUNCTION CALL HO RAHA HAI */}
+                            <button 
+                              onClick={() => sendFeeReminder(st.id)} 
+                              className="px-3 py-2 bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-amber-500 transition-all"
+                            >
+                              🔔 याद दिलाएं
+                            </button>
+                            </div>
+                                </td>
+                                </tr>
+                              ))}
+                        </tbody>
                         </table>
                       </div>
                     </div>
