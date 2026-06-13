@@ -166,18 +166,18 @@ function App() {
   };
 
   // 2. Fees Reminder Function (Yaad Dilaye)
-  const sendFeeReminder = async (studentId) => {
-    const confirmAction = window.confirm("Kya aap sach mein student ko fee reminder bhejna chahte hain?");
-    if (!confirmAction) return;
+const sendFeeReminder = async (studentId) => {
+  const confirmAction = window.confirm("Kya aap sach mein student ko fee reminder bhejna chahte hain?");
+  if (!confirmAction) return;
 
-    try {
-      const res = await axios.post(`${BASE_URL}/api/fee-reminder`, { student_id: studentId });
-      alert(res.data.message);
-    } catch (err) {
-      console.error("Error:", err);
-      alert("Failed to send reminder. Check Backend!");
-    }
-  };
+  try {
+    const res = await axios.post(`${BASE_URL}/api/fee-reminder`, { student_id: studentId });
+    alert(res.data.message);
+  } catch (err) {
+    console.error("Error:", err);
+    alert("Failed to send reminder. Check Backend!");
+  }
+};
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -557,7 +557,7 @@ function App() {
                               🔗 Sync Telegram
                             </button>
 
-                            {/* Yaad Dilaye - YAHAN SE FUNCTION CALL HO RAHA HAI */}
+                            {/* Yaad Dilaye */}
                             <button 
                               onClick={() => sendFeeReminder(st.id)} 
                               className="px-3 py-2 bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-amber-500 transition-all"
