@@ -472,13 +472,18 @@ const StaffPayrollAttendance = () => {
       )}
 
       {/* HORIZONTAL TAB BAR MENU PANEL */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px' }}>
           <button onClick={() => setActiveTab('directory')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'directory' ? '#4f46e5' : '#fff', color: activeTab === 'directory' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Users size={16}/> Staff Profiles</button>
           <button onClick={() => { setActiveTab('reports'); setReportMode('today'); }} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'reports' ? '#4f46e5' : '#fff', color: activeTab === 'reports' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Calendar size={16}/> Master Reports Engine</button>
+    
+          {/* 🎯 ADVANCE TAB BUTTON */}
+          <button onClick={() => setActiveTab('advance')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'advance' ? '#e65100' : '#fff', color: activeTab === 'advance' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><DollarSign size={16}/> Advance Salary</button>
+    
           <button onClick={() => setActiveTab('rules')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'rules' ? '#4f46e5' : '#fff', color: activeTab === 'rules' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Settings size={16}/> Attendance Rules</button>
           <button onClick={() => setActiveTab('qr_wall')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'qr_wall' ? '#4f46e5' : '#fff', color: activeTab === 'qr_wall' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><QrCode size={16}/> Wall QR Terminal</button>
         </div>
+      </div>
         
         {activeTab === 'reports' && reportMode !== 'management' && (
           <button onClick={downloadExcelReport} style={{ ...tabBtnStyle, backgroundColor: '#16a34a', color: 'white' }}>
@@ -555,6 +560,22 @@ const StaffPayrollAttendance = () => {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'advance' && (
+        <div style={cardStyle}>
+          <h3 style={cardTitleStyle}><DollarSign size={18} color="#e65100"/> Advance Salary Management</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {staffList.map((s) => (
+              <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                <span>{s.name}</span>
+                <button onClick={() => handleOpenAdvanceModal(s)} style={{ padding: '6px 12px', backgroundColor: '#e65100', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+                  Issue Advance
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
