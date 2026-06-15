@@ -444,8 +444,8 @@ const StaffPayrollAttendance = () => {
   const thTdStyle = { padding: '12px 10px', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' };
 
   // Master Wall QR Encryption String Generator
-  const myComputerIp = "10.246.64.178";
-  const wallQrDataString = `http://${myComputerIp}:5173/staff-attendance-terminal`; 
+  const myComputerIp = window.location.hostname;
+  const wallQrDataString = `https://${myComputerIp}/staff-attendance-terminal`; 
   const generatedWallQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(wallQrDataString)}`;
 
   if (loading) {
@@ -472,89 +472,36 @@ const StaffPayrollAttendance = () => {
       )}
 
       {/* HORIZONTAL TAB BAR MENU PANEL */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px' }}>
           <button onClick={() => setActiveTab('directory')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'directory' ? '#4f46e5' : '#fff', color: activeTab === 'directory' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Users size={16}/> Staff Profiles</button>
-          <button onClick={() => { setActiveTab('reports'); setReportMode('today'); }} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'reports' ? '#4f46e5' : '#fff', color: activeTab === 'reports' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Calendar size={16}/> Master Reports Engine</button>
+          <button onClick={() => { setActiveTab('reports'); setReportMode('today'); }} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'reports' ? '#4f46e5' : '#fff', color: activeTab === 'reports' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Calendar size={16}/> Master Reports</button>
+          <button onClick={() => setActiveTab('advance')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'advance' ? '#e65100' : '#fff', color: activeTab === 'advance' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><DollarSign size={16}/> Advance Salary</button>
           <button onClick={() => setActiveTab('rules')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'rules' ? '#4f46e5' : '#fff', color: activeTab === 'rules' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Settings size={16}/> Attendance Rules</button>
           <button onClick={() => setActiveTab('qr_wall')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'qr_wall' ? '#4f46e5' : '#fff', color: activeTab === 'qr_wall' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><QrCode size={16}/> Wall QR Terminal</button>
         </div>
-        
-        {activeTab === 'reports' && reportMode !== 'management' && (
-          <button onClick={downloadExcelReport} style={{ ...tabBtnStyle, backgroundColor: '#16a34a', color: 'white' }}>
-            <Download size={16}/> 📥 Export Attendance Excel
-          </button>
-        )}
-        {activeTab === 'reports' && reportMode === 'management' && (
-          <button onClick={downloadManagementPayrollExcel} style={{ ...tabBtnStyle, backgroundColor: '#1e293b', color: 'white' }}>
-            <Download size={16}/> 📥 Download Master Payroll Sheet
-          </button>
-        )}
       </div>
 
-      {/* TAB CONTENT: DIRECTORY COMPONENT */}
+      {/* DIRECTORY TAB */}
       {activeTab === 'directory' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-          <div style={cardStyle}>
-            <h3 style={cardTitleStyle}><UserPlus size={18} color="#4f46e5"/> Register New Staff Matrix</h3>
-            <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label style={labelStyle}>Staff / Teacher Full Name</label>
-                <input type="text" placeholder="e.g. Rajesh Sharma" value={staffName || ''} onChange={(e) => setStaffName(e.target.value)} style={inpStyle} required />
-              </div>
-              <div>
-                <label style={labelStyle}>Designation Post</label>
-                <input type="text" placeholder="e.g. Senior Math Teacher" value={designation || ''} onChange={(e) => setDesignation(e.target.value)} style={inpStyle} required />
-              </div>
-              <div>
-                <label style={labelStyle}>📱 WhatsApp Mobile Connection</label>
-                <input type="text" placeholder="e.g. 98932XXXXX" value={mobile || ''} onChange={(e) => setMobile(e.target.value)} style={{ ...inpStyle, color: '#16a34a' }} required />
-              </div>
-              <div>
-                <label style={labelStyle}>Basic Monthly Salary Structure (₹)</label>
-                <input type="number" placeholder="e.g. 25000" value={baseSalary || ''} onChange={(e) => setBaseSalary(e.target.value)} style={inpStyle} required />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
-                <input type="checkbox" id="pf_check" checked={pfEnabled === 1} onChange={(e) => setPfEnabled(e.target.checked ? 1 : 0)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
-                <label htmlFor="pf_check" style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b', cursor: 'pointer' }}>Enable Standard EPF Deduction (12%)</label>
-              </div>
-              <button type="submit" style={submitBtnStyle}>Save Structural Variables ⚡</button>
-            </form>
-          </div>
+            {/* ...yahan apna Directory wala code rehne do... */}
+        </div>
+      )}
 
-          <div style={cardStyle}>
-            <h3 style={cardTitleStyle}><Users size={18} color="#4f46e5"/> Registered Staff Registry ({(staffList || []).length})</h3>
-            <div style={{ maxHeight: '450px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {(!staffList || staffList.length === 0) ? (
-                <p style={{ color: '#94a3b8', fontSize: '13px', textAlign: 'center', marginTop: '20px' }}>No accounts found.</p>
-              ) : (
-                staffList.map((s) => (
-                  <div key={s?.id || Math.random()} style={{ padding: '14px', border: '1px solid #e2e8f0', borderRadius: '10px', backgroundColor: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
-                    <div style={{ flex: 1, marginRight: '10px' }}>
-                      <strong style={{ color: '#0f172a', fontSize: '14px' }}>Mr. {s?.name || 'Unknown'}</strong>
-                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{s?.designation || 'N/A'} | Mob: {s?.mobile || 'N/A'}</div>
-                      
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
-                        <input type="checkbox" id={`cl_toggle_${s?.id}`} checked={!!clEncashment[s?.id]} onChange={() => handleToggleClRule(s?.id)} style={{ width: '13px', height: '13px', cursor: 'pointer' }} />
-                        <label htmlFor={`cl_toggle_${s?.id}`} style={{ fontSize: '11px', color: '#334155', fontWeight: 'bold', cursor: 'pointer' }}>CL Encashment Bonus</label>
-                      </div>
-
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '6px' }}>
-                        <span style={{ fontSize: '10px', padding: '2px 6px', backgroundColor: '#eef2ff', color: '#4f46e5', borderRadius: '4px', fontWeight: 'bold' }}>₹{s?.base_salary || 0}/mo</span>
-                        {s?.pf_enabled === 1 && <span style={{ fontSize: '10px', padding: '2px 6px', backgroundColor: '#f0fdf4', color: '#16a34a', borderRadius: '4px', fontWeight: 'bold' }}>PF Bound</span>}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '95px' }}>
-                      <button onClick={() => handleOpenAdvanceModal(s)} style={{ ...rowActionBtnStyle, backgroundColor: '#fff3e0', color: '#e65100', borderColor: '#ffe0b2' }}><DollarSign size={11}/> + Advance</button>
-                      <button onClick={() => fetchIndividualPaySlip(s?.id)} style={{ ...rowActionBtnStyle, backgroundColor: '#4f46e5', color: '#fff', borderColor: '#4f46e5' }}><FileText size={11}/> Pay Slip</button>
-                      {/* 🎯 DELETE ACTION: Isse dynamic handle click bind ho jayega */}
-                      <button onClick={() => handleDeleteStaff(s.id, s.name)} style={{ ...rowActionBtnStyle, backgroundColor: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5', marginTop: '2px' }}>❌ Delete Staff</button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+      {/* ADVANCE SALARY TAB */}
+      {activeTab === 'advance' && (
+        <div style={cardStyle}>
+          <h3 style={cardTitleStyle}><DollarSign size={18} color="#e65100"/> Advance Salary Management</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {staffList.map((s) => (
+              <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                <span>{s.name}</span>
+                <button onClick={() => handleOpenAdvanceModal(s)} style={{ padding: '6px 12px', backgroundColor: '#e65100', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+                  Issue Advance
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
