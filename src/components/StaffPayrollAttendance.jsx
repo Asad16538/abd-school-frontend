@@ -483,7 +483,6 @@ const StaffPayrollAttendance = () => {
           <button onClick={() => setActiveTab('rules')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'rules' ? '#4f46e5' : '#fff', color: activeTab === 'rules' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Settings size={16}/> Attendance Rules</button>
           <button onClick={() => setActiveTab('qr_wall')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'qr_wall' ? '#4f46e5' : '#fff', color: activeTab === 'qr_wall' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><QrCode size={16}/> Wall QR Terminal</button>
         </div>
-      </div>
         
         {activeTab === 'reports' && reportMode !== 'management' && (
           <button onClick={downloadExcelReport} style={{ ...tabBtnStyle, backgroundColor: '#16a34a', color: 'white' }}>
