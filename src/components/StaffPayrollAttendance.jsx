@@ -256,14 +256,22 @@ const StaffPayrollAttendance = () => {
   };
 
   const handleFetchAdvanceHistory = async (staffId) => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/payroll/advance-history/${staffId}`);
-      const data = await res.json();
-      if (Array.isArray(data)) setAdvanceHistory(data);
-    } catch (err) {
+  try {
+    const res = await fetch(`${BASE_URL}/api/payroll/advance-history/${staffId}`);
+    const data = await res.json();
+    console.log("Advance history response:", data); // Debug ke liye
+    if (Array.isArray(data)) {
+      setAdvanceHistory(data);
+    } else if (data && Array.isArray(data.history)) {
+      setAdvanceHistory(data.history);
+    } else {
       setAdvanceHistory([]);
     }
-  };
+  } catch (err) {
+    console.error("Fetch advance history error:", err);
+    setAdvanceHistory([]);
+  }
+};
 
   const handleOpenAdvanceModal = (staff) => {
     if (!staff) return;
@@ -272,30 +280,57 @@ const StaffPayrollAttendance = () => {
   };
 
   const handleSubmitAdvancePayment = async (e) => {
-    e.preventDefault();
-    if (!advanceAmount || parseFloat(advanceAmount) <= 0 || !advanceModalStaff) return;
+  e.preventDefault();
+  if (!advanceAmount || parseFloat(advanceAmount) <= 0 || !advanceModalStaff) return;
 
-    const payload = {
-      staff_id: advanceModalStaff.id,
-      amount: parseFloat(advanceAmount),
-      purpose: advanceReason || 'Personal Advance',
-      date: new Date().toISOString().split('T')[0]
-    };
+  const payload = {
+    staff_id: advanceModalStaff.id,
+    amount: parseFloat(advanceAmount),
+    purpose: advanceReason || 'Personal Advance',
+    date: new Date().toISOString().split('T')[0]
+  };
 
+  try {
+    const res = await fetch(`${BASE_URL}/api/payroll/add-advance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await res.json();
+    console.log("Advance submit response:", result);
+    
+    if (res.ok) {
+      alert("✅ Advance Payment logged successfully!");
+      setAdvanceAmount('');
+      setAdvanceReason('');
+      await handleFetchAdvanceHistory(advanceModalStaff.id);
+    } else {
+      alert("Failed: " + (result.error || "Unknown error"));
+    }
+  } catch (err) {
+    console.error("Submit advance error:", err);
+    alert("Error saving advance. Check backend logs.");
+  }
+};
+
+  const downloadAdvanceHistory = async (staffId, staffName) => {
     try {
-      const res = await fetch(`${BASE_URL}/api/payroll/add-advance`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        alert("💸 Advance Payment logged successfully!");
-        setAdvanceAmount(''); setAdvanceReason('');
-        handleFetchAdvanceHistory(advanceModalStaff.id);
-      }
-    } catch (err) {
-      setAdvanceHistory([...advanceHistory, { date: payload.date, amount: payload.amount, purpose: payload.purpose }]);
-      setAdvanceAmount(''); setAdvanceReason('');
+      const response = await fetch(`${BASE_URL}/api/payroll/download-advance-history/${staffId}`);
+      if (!response.ok) throw new Error('Download failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Advance_History_${staffName}_${staffId}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download history');
     }
   };
 
@@ -752,6 +787,30 @@ const StaffPayrollAttendance = () => {
                   </div>
                 ))
               )}
+            </div>
+
+                        {/* Download CSV Button */}
+            <div style={{ marginTop: '12px', marginBottom: '12px' }}>
+              <button 
+                onClick={() => downloadAdvanceHistory(advanceModalStaff.id, advanceModalStaff.name)}
+                style={{ 
+                  width: '100%', 
+                  padding: '8px', 
+                  backgroundColor: '#16a34a', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '8px', 
+                  fontWeight: 'bold', 
+                  fontSize: '12px', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Download size={14}/> 📥 Download History as CSV
+              </button>
             </div>
 
             <div style={{ textAlign: 'right', marginTop: '16px' }}>
