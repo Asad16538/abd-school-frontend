@@ -68,8 +68,8 @@ const StaffPayrollAttendance = () => {
   // 🎯 REAL-TIME TAB SYNC: Jab bhi tab badlega, automatic taaza background coordinates reload honge
   useEffect(() => {
     if (activeTab === 'rules' || activeTab === 'directory') {
-      fetchRules();
-      fetchStaff();
+      fetchRules();  // 🔴 Har tab switch par fetch ho raha hai
+      fetchStaff();  // 🔴 Har tab switch par fetch ho raha hai
     }
   }, [activeTab]);
 
@@ -439,7 +439,7 @@ const StaffPayrollAttendance = () => {
     }));
     const worksheet = XLSX.utils.json_to_sheet(excelRows);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_with_sheet = XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
     XLSX.writeFile(workbook, `Attendance_Report_${reportMode === 'today' ? 'Daily' : selectedMonth}.xlsx`);
   };
 
@@ -464,7 +464,7 @@ const StaffPayrollAttendance = () => {
     }));
     const worksheet = XLSX.utils.json_to_sheet(excelRows);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_with_sheet = XLSX.utils.book_append_sheet(workbook, worksheet, "Payroll Ledger");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Payroll Ledger");
     XLSX.writeFile(workbook, `Master_Management_Payroll_${selectedMonth}.xlsx`);
   };
 
