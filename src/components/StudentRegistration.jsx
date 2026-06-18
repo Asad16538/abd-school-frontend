@@ -11,13 +11,11 @@ const StudentRegistration = () => {
     bank_name: '', account_no: '', ifsc_code: ''
   });
 
-  const [studentPhoto, setStudentPhoto] = useState(null); // Single photo upload state
-  const [photoPreview, setPhotoPreview] = useState(null); // Live preview state
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  // Excel Hover Instructions updated for batch photo logic
+  // Excel Instructions
   const excelInstructions = `
-📋 EXCEL COLUMN FORMAT & PHOTO BULK IMPORT RULE:
+📋 EXCEL COLUMN FORMAT:
 1. Admission No (दाखिला संख्या - Unique)
 2. Roll No (रोल नंबर)
 3. Student Name (छात्र का नाम)
@@ -40,70 +38,53 @@ const StudentRegistration = () => {
 20. Account No (बैंक खाता संख्या)
 21. IFSC Code (आईएफएससी कोड)
 
-💡 PHOTO BULK UPLOAD NOTE:
-Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se save karein (e.g., REC-101.jpg) aur use backend/static/student_photos/ folder me ek sath copy kar dein. Software unhe automatic link kar lega!
+💡 PHOTO UPLOAD NOTE:
+Photos ab ID/Admit Card/Marksheet generate karte waqt upload ki jayengi.
+Student registration ke time photo upload nahi karna hai.
   `;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle Manual Photo Selection & Base64 preview generation
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setStudentPhoto(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Manual Form Submit Engine (Supports Multipart FormData for safe photo uploading)
+  // Manual Form Submit Engine (Without Photo)
   const handleManualSubmit = async (e) => {
     e.preventDefault();
     try {
-      const dataPayload = new FormData();
-      
-      // Basic student matrix attributes parameters
-      dataPayload.append('admission_no', formData.admission_no);
-      dataPayload.append('roll_no', formData.roll_no);
-      dataPayload.append('name', formData.name);
-      dataPayload.append('class', formData.student_class);
-      dataPayload.append('section', formData.section);
-      dataPayload.append('stream', (formData.student_class === '11' || formData.student_class === '12') ? (formData.stream || 'Science') : '');
-      dataPayload.append('dob', formData.dob);
-      dataPayload.append('gender', formData.gender);
-      dataPayload.append('category', formData.category);
-      dataPayload.append('aadhaar_no', formData.aadhaar_no);
-      dataPayload.append('samagra_id', formData.samagra_id);
-      dataPayload.append('father_name', formData.father_name);
-      dataPayload.append('mother_name', formData.mother_name);
-      dataPayload.append('whatsapp_no', formData.whatsapp_no);
-      dataPayload.append('address', formData.address);
-      dataPayload.append('fee_cycle', formData.fee_cycle);
-      dataPayload.append('cycle_fee_amount', parseFloat(formData.cycle_fee_amount || 0));
-      dataPayload.append('school_fee_total', parseFloat(formData.school_fee_total || 0));
-      dataPayload.append('transport_fee_total', parseFloat(formData.transport_fee_total || 0));
-      dataPayload.append('bank_name', formData.bank_name);
-      dataPayload.append('account_no', formData.account_no);
-      dataPayload.append('ifsc_code', formData.ifsc_code);
-
-      // Binary Photo file allocation binding
-      if (studentPhoto) {
-        dataPayload.append('student_photo', studentPhoto);
-      }
+      const payload = {
+        admission_no: formData.admission_no,
+        roll_no: formData.roll_no,
+        name: formData.name,
+        class: formData.student_class,
+        section: formData.section,
+        stream: (formData.student_class === '11' || formData.student_class === '12') ? (formData.stream || 'Science') : '',
+        dob: formData.dob,
+        gender: formData.gender,
+        category: formData.category,
+        aadhaar_no: formData.aadhaar_no,
+        samagra_id: formData.samagra_id,
+        father_name: formData.father_name,
+        mother_name: formData.mother_name,
+        parent_mobile: formData.whatsapp_no,
+        address: formData.address,
+        fee_cycle: formData.fee_cycle,
+        cycle_fee_amount: parseFloat(formData.cycle_fee_amount || 0),
+        school_fee_total: parseFloat(formData.school_fee_total || 0),
+        transport_fee_total: parseFloat(formData.transport_fee_total || 0),
+        bank_name: formData.bank_name,
+        account_no: formData.account_no,
+        ifsc_code: formData.ifsc_code
+      };
 
       const response = await fetch('https://abd-school-backend.onrender.com/api/students/register-manual', {
         method: 'POST',
-        body: dataPayload // FormData bhej rahe hain multipart request ke sath
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
       const data = await response.json();
       
       if (response.ok) {
-        setMessage({ type: 'success', text: '🎉 Student Profile with Photo Successfully Registered!' });
+        setMessage({ type: 'success', text: '🎉 Student Profile Successfully Registered!' });
         
         setFormData({
           admission_no: '', roll_no: '', name: '', student_class: '', section: 'A', stream: '',
@@ -112,8 +93,6 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
           fee_cycle: 'Monthly', cycle_fee_amount: '', school_fee_total: '', transport_fee_total: '',
           bank_name: '', account_no: '', ifsc_code: ''
         });
-        setStudentPhoto(null);
-        setPhotoPreview(null);
 
         setTimeout(() => {
           window.location.reload(); 
@@ -221,7 +200,7 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Roll No</label>
-            <input type="text" name="roll_no" value={formData.roll_no} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="roll_no" autoComplete="off" value={formData.roll_no} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Class (कक्षा) *</label>
@@ -252,7 +231,6 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
             </select>
           </div>
 
-          {/* DYNAMIC STREAM DROP-DOWN */}
           {(formData.student_class === '11' || formData.student_class === '12') && (
             <div className="stream-field-animation">
               <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '700', color: '#4f46e5' }}>Stream (संकाय) *</label>
@@ -265,29 +243,13 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
           )}
         </div>
 
-        {/* Section 2: Personal Profile with Photo Upload Matrix */}
-        <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>2. Student Profile & Passport Photo (व्यक्तिगत विवरण)</h3>
+        {/* Section 2: Personal Profile (Without Photo) */}
+        <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>2. Student Profile (व्यक्तिगत विवरण)</h3>
         
-        {/* PHOTO UPLOADER LAYER BOX */}
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', backgroundColor: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px dashed #cbd5e1', marginBottom: '20px', flexWrap: 'wrap' }}>
-          <div style={{ width: '85px', height: '100px', backgroundColor: '#e2e8f0', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifycontent: 'Center', border: '1px solid #cbd5e1' }}>
-            {photoPreview ? (
-              <img src={photoPreview} alt="Live Student Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            ) : (
-              <span style={{ fontSize: '10px', color: '#64748b', fontWeight: 'bold', textalign: 'center', padding: '5px' }}>No Photo Selected</span>
-            )}
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '4px', fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>📸 Upload Student Photo (पासपोर्ट साइज फोटो)</label>
-            <input type="file" accept="image/jpeg, image/png, image/jpg" onChange={handlePhotoChange} style={{ fontSize: '13px', color: '#475569' }} />
-            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#94a3b8', fontWeight: '500' }}>JPEG or JPG formats recommended.</p>
-          </div>
-        </div>
-
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div style={{ gridColumn: 'span 2' }}>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Student Full Name *</label>
-            <input type="text" name="name" required value={formData.name} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="name" autoComplete="off" required value={formData.name} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Date of Birth *</label>
@@ -317,11 +279,11 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Aadhaar Number</label>
-            <input type="text" name="aadhaar_no" placeholder="12 Digits Aadhaar" value={formData.aadhaar_no} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="aadhaar_no" autoComplete="off" placeholder="12 Digits Aadhaar" value={formData.aadhaar_no} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Samagra ID (MP Special)</label>
-            <input type="text" name="samagra_id" placeholder="9 Digits ID" value={formData.samagra_id} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="samagra_id" autoComplete="off" placeholder="9 Digits ID" value={formData.samagra_id} onChange={handleChange} style={inputStyle} />
           </div>
         </div>
 
@@ -330,19 +292,19 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Father's Name</label>
-            <input type="text" name="father_name" value={formData.father_name} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="father_name" autoComplete="off" value={formData.father_name} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Mother's Name</label>
-            <input type="text" name="mother_name" value={formData.mother_name} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="mother_name" autoComplete="off" value={formData.mother_name} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500', color: '#16a34a' }}>📱 WhatsApp Number *</label>
-            <input type="text" name="whatsapp_no" required placeholder="For Auto Alerts" value={formData.whatsapp_no} onChange={handleChange} style={{ ...inputStyle, borderColor: '#22c55e' }} />
+            <input type="text" name="whatsapp_no" autoComplete="off" required placeholder="For Auto Alerts" value={formData.whatsapp_no} onChange={handleChange} style={{ ...inputStyle, borderColor: '#22c55e' }} />
           </div>
           <div style={{ gridColumn: 'span 2' }}>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Permanent Address</label>
-            <input type="text" name="address" value={formData.address} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="address" autoComplete="off" value={formData.address} onChange={handleChange} style={inputStyle} />
           </div>
         </div>
 
@@ -359,27 +321,27 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Cycle Fee Amount *</label>
-            <input type="number" name="cycle_fee_amount" required placeholder="e.g. 1500" value={formData.cycle_fee_amount || ''} onChange={handleChange} style={inputStyle} />
+            <input type="number" name="cycle_fee_amount" autoComplete="off" required placeholder="e.g. 1500" value={formData.cycle_fee_amount || ''} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Total Applicable Fee *</label>
-            <input type="number" name="school_fee_total" required placeholder="Custom total e.g. 18000" value={formData.school_fee_total} onChange={handleChange} style={inputStyle} />
+            <input type="number" name="school_fee_total" autoComplete="off" required placeholder="Custom total e.g. 18000" value={formData.school_fee_total} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Transport / Van Fee</label>
-            <input type="number" name="transport_fee_total" placeholder="e.g. 5000" value={formData.transport_fee_total} onChange={handleChange} style={inputStyle} />
+            <input type="number" name="transport_fee_total" autoComplete="off" placeholder="e.g. 5000" value={formData.transport_fee_total} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Bank Name</label>
-            <input type="text" name="bank_name" value={formData.bank_name} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="bank_name" autoComplete="off" value={formData.bank_name} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Account Number</label>
-            <input type="text" name="account_no" value={formData.account_no} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="account_no" autoComplete="off" value={formData.account_no} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>IFSC Code</label>
-            <input type="text" name="ifsc_code" value={formData.ifsc_code} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="ifsc_code" autoComplete="off" value={formData.ifsc_code} onChange={handleChange} style={inputStyle} />
           </div>
         </div>
         
