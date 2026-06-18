@@ -52,26 +52,85 @@ const StaffPayrollAttendance = () => {
   };
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setLoading(true);
-        await Promise.all([fetchStaff(), fetchRules()]);
-      } catch (e) {
-        console.error("Initial load engine fail safe handler active:", e);
-      } finally {
-        setLoading(false);
+  let isMounted = true;
+  
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      
+      // ⏱️ 5 second timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout')), 5000)
+      );
+      
+      // 🚀 Parallel fetch with timeout
+      const fetchPromise = Promise.all([
+        fetch(`${BASE_URL}/api/staff`).catch(() => null),
+        fetch(`${BASE_URL}/api/attendance-rules`).catch(() => null)
+      ]);
+      
+      const results = await Promise.race([fetchPromise, timeoutPromise]);
+      
+      if (isMounted) {
+        // Staff data
+        if (results && results[0] && results[0].ok) {
+          const data = await results[0].json();
+          if (Array.isArray(data)) setStaffList(data);
+        } else {
+          setStaffList([]); // ✅ Empty list, loading hat jayegi
+        }
+        
+        // Rules data
+        if (results && results[1] && results[1].ok) {
+          const data = await results[1].json();
+          if (data && !data.error) {
+            setRules({
+              latitude: 24.7432,
+              longitude: 78.8561,
+              radius: 50,
+              start_time: data.start_time ?? '08:00',
+              buffer: data.buffer ?? 15,
+              end_time: data.end_time ?? '14:00'
+            });
+          }
+        }
       }
-    };
-    loadInitialData();
-  }, []);
+    } catch (e) {
+      console.error("Initial load error:", e);
+      if (isMounted) {
+        setStaffList([]); // ✅ Error par bhi loading hat jayegi
+      }
+    } finally {
+      if (isMounted) {
+        setLoading(false); // ✅ HAMESHA LOADING HATAO
+      }
+    }
+  };
+  
+  loadInitialData();
+  
+  return () => {
+    isMounted = false;
+  };
+}, []);
 
-  // 🎯 REAL-TIME TAB SYNC: Jab bhi tab badlega, automatic taaza background coordinates reload honge
+    // 🎯 REAL-TIME TAB SYNC: Jab bhi tab badlega, automatic taaza background coordinates reload honge
   useEffect(() => {
-    if (activeTab === 'rules' || activeTab === 'directory') {
-      fetchRules();  // 🔴 Har tab switch par fetch ho raha hai
-      fetchStaff();  // 🔴 Har tab switch par fetch ho raha hai
+    // ✅ Sirf tab change par fetch karo, agar data already hai to mat karo
+    if (activeTab === 'rules' && rules.latitude === 24.7432) {
+      fetchRules();
+    }
+    if (activeTab === 'directory' && staffList.length === 0) {
+      fetchStaff();
     }
   }, [activeTab]);
+
+  // ✅ CL ENCASHMENT TOGGLE PAR MANAGEMENT SHEET AUTO-REFRESH
+  useEffect(() => {
+    if (activeTab === 'reports' && reportMode === 'management') {
+      fetchManagementPayrollSheet();
+    }
+  }, [clEncashment, selectedMonth]);
 
   // Fetch Reports dynamically jab report mode ya month select badle
   useEffect(() => {
