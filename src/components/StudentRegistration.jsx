@@ -210,14 +210,14 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
       )}
 
       {/* Manual Registration Form */}
-      <form onSubmit={handleManualSubmit} style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+      <form onSubmit={handleManualSubmit} autoComplete="off" style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         
         {/* Section 1: Academic Info */}
         <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>1. Academic Details (स्कूल की जानकारी)</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Admission No *</label>
-            <input type="text" name="admission_no" required value={formData.admission_no} onChange={handleChange} style={inputStyle} />
+            <input type="text" name="admission_no" autoComplete="off" required value={formData.admission_no} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Roll No</label>
@@ -270,7 +270,7 @@ Excel import karne ke baad bacchon ki photos ko unke Admission No ke naam se sav
         
         {/* PHOTO UPLOADER LAYER BOX */}
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center', backgroundColor: '#f8fafc', padding: '15px', borderRadius: '12px', border: '1px dashed #cbd5e1', marginBottom: '20px', flexWrap: 'wrap' }}>
-          <div style={{ width: '85px', height: '100px', backgroundColor: '#e2e8f0', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifycontent: 'center', border: '1px solid #cbd5e1' }}>
+          <div style={{ width: '85px', height: '100px', backgroundColor: '#e2e8f0', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifycontent: 'Center', border: '1px solid #cbd5e1' }}>
             {photoPreview ? (
               <img src={photoPreview} alt="Live Student Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
