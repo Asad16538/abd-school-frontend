@@ -157,42 +157,68 @@ const StaffPayrollAttendance = () => {
   };
 
   const fetchRules = async () => {
-    try {
-      // 1. Pehle main school settings table se saved live coordinates uthao
-      const settingsRes = await fetch(`${BASE_URL}/api/settings`);
-      let currentLat = 24.7432;
-      let currentLng = 78.8561;
-      let currentRadius = 50;
-
-      if (settingsRes.ok) {
-        const sData = await settingsRes.json();
-        currentLat = parseFloat(sData.school_latitude || sData.latitude) || 24.7432;
-        currentLng = parseFloat(sData.school_longitude || sData.longitude) || 78.8561;
-        currentRadius = parseInt(sData.school_location_radius || sData.allowed_radius_meters) || 50;
-      }
-
-      // 2. Phir baaki ke shift parameters attendance rules table se merge karo
-      const res = await fetch(`${BASE_URL}/api/attendance-rules`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && !data.error) {
-          setRules({
-            latitude: currentLat,
-            longitude: currentLng,
-            radius: currentRadius,
-            start_time: data.start_time ?? '08:00',
-            buffer: data.buffer ?? 15,
-            end_time: data.end_time ?? '14:00'
-          });
-          return;
-        }
-      }
-
-      setRules(prev => ({ ...prev, latitude: currentLat, longitude: currentLng, radius: currentRadius }));
-    } catch (err) {
-      console.error("Rules matrix fetch error", err);
+  try {
+    // 1. Pehle attendance rules fetch karo (PRIORITY)
+    const rulesRes = await fetch(`${BASE_URL}/api/attendance-rules`);
+    let rulesData = null;
+    
+    if (rulesRes.ok) {
+      rulesData = await rulesRes.json();
     }
-  };
+
+    // 2. Default values (fallback)
+    let currentLat = 24.750358920875314; // ✅ Aapki exact location
+    let currentLng = 78.8348749760745;   // ✅ Aapki exact location
+    let currentRadius = 50;
+
+    // 3. Agar rules available hain, to UNKO priority do
+    if (rulesData && !rulesData.error) {
+      currentLat = parseFloat(rulesData.latitude) || currentLat;
+      currentLng = parseFloat(rulesData.longitude) || currentLng;
+      currentRadius = parseInt(rulesData.radius) || currentRadius;
+      
+      setRules({
+        latitude: currentLat,
+        longitude: currentLng,
+        radius: currentRadius,
+        start_time: rulesData.start_time ?? '08:00',
+        buffer: rulesData.buffer ?? 15,
+        end_time: rulesData.end_time ?? '14:00'
+      });
+      return;
+    }
+
+    // 4. Agar rules nahi hain, to settings se lo
+    const settingsRes = await fetch(`${BASE_URL}/api/settings`);
+    if (settingsRes.ok) {
+      const sData = await settingsRes.json();
+      currentLat = parseFloat(sData.school_latitude) || currentLat;
+      currentLng = parseFloat(sData.school_longitude) || currentLng;
+      currentRadius = parseInt(sData.school_location_radius) || currentRadius;
+    }
+
+    setRules({
+      latitude: currentLat,
+      longitude: currentLng,
+      radius: currentRadius,
+      start_time: '08:00',
+      buffer: 15,
+      end_time: '14:00'
+    });
+
+  } catch (err) {
+    console.error("Rules matrix fetch error", err);
+    // Fallback to your exact location
+    setRules({
+      latitude: 24.750358920875314,
+      longitude: 78.8348749760745,
+      radius: 50,
+      start_time: '08:00',
+      buffer: 15,
+      end_time: '14:00'
+    });
+  }
+};
 
   const fetchAttendanceReports = async () => {
     try {
