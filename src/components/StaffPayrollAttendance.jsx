@@ -58,10 +58,10 @@ const StaffPayrollAttendance = () => {
     try {
       setLoading(true);
       
-      // ⏱️ 5 second timeout
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
-      );
+      // ⏱️ 5 second timeout -> 3 second karo
+const timeoutPromise = new Promise((_, reject) => 
+  setTimeout(() => reject(new Error('Timeout')), 3000) // ✅ 5 se 3 kiya
+);
       
       // 🚀 Parallel fetch with timeout
       const fetchPromise = Promise.all([
@@ -114,16 +114,17 @@ const StaffPayrollAttendance = () => {
   };
 }, []);
 
-    // 🎯 REAL-TIME TAB SYNC: Jab bhi tab badlega, automatic taaza background coordinates reload honge
-  useEffect(() => {
-    // ✅ Sirf tab change par fetch karo, agar data already hai to mat karo
-    if (activeTab === 'rules' && rules.latitude === 24.7432) {
-      fetchRules();
-    }
-    if (activeTab === 'directory' && staffList.length === 0) {
-      fetchStaff();
-    }
-  }, [activeTab]);
+   // ✅ TAB SYNC - Sirf pehli baar fetch karo, har baar nahi
+useEffect(() => {
+  // Rules tab - Sirf tab change par fetch karo, agar data default hai to
+  if (activeTab === 'rules' && rules.latitude === 24.7432) {
+    fetchRules();
+  }
+  // Directory tab - Sirf tab change par fetch karo, agar list empty hai to
+  if (activeTab === 'directory' && staffList.length === 0) {
+    fetchStaff();
+  }
+}, [activeTab]);
 
   // ✅ CL ENCASHMENT TOGGLE PAR MANAGEMENT SHEET AUTO-REFRESH
   useEffect(() => {
@@ -166,16 +167,16 @@ const StaffPayrollAttendance = () => {
       rulesData = await rulesRes.json();
     }
 
-    // 2. Default values (fallback)
-    let currentLat = 24.750358920875314; // ✅ Aapki exact location
-    let currentLng = 78.8348749760745;   // ✅ Aapki exact location
+    // 2. Default values (Aapki exact location)
+    let currentLat = 24.750358920875314;
+    let currentLng = 78.8348749760745;
     let currentRadius = 50;
 
     // 3. Agar rules available hain, to UNKO priority do
-    if (rulesData && !rulesData.error) {
-      currentLat = parseFloat(rulesData.latitude) || currentLat;
-      currentLng = parseFloat(rulesData.longitude) || currentLng;
-      currentRadius = parseInt(rulesData.radius) || currentRadius;
+    if (rulesData && !rulesData.error && rulesData.latitude) {
+      currentLat = parseFloat(rulesData.latitude);
+      currentLng = parseFloat(rulesData.longitude);
+      currentRadius = parseInt(rulesData.radius) || 50;
       
       setRules({
         latitude: currentLat,
@@ -185,10 +186,10 @@ const StaffPayrollAttendance = () => {
         buffer: rulesData.buffer ?? 15,
         end_time: rulesData.end_time ?? '14:00'
       });
-      return;
+      return; // ✅ Rules mil gaye, yahi return karo
     }
 
-    // 4. Agar rules nahi hain, to settings se lo
+    // 4. Agar rules nahi hain, to settings se lo (FALLBACK)
     const settingsRes = await fetch(`${BASE_URL}/api/settings`);
     if (settingsRes.ok) {
       const sData = await settingsRes.json();
@@ -207,7 +208,7 @@ const StaffPayrollAttendance = () => {
     });
 
   } catch (err) {
-    console.error("Rules matrix fetch error", err);
+    console.error("Rules fetch error:", err);
     // Fallback to your exact location
     setRules({
       latitude: 24.750358920875314,
