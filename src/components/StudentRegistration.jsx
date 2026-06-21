@@ -47,63 +47,72 @@ Student registration ke time photo upload nahi karna hai.
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Manual Form Submit Engine (Without Photo)
-  const handleManualSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const payload = {
-        admission_no: formData.admission_no,
-        roll_no: formData.roll_no,
-        name: formData.name,
-        class: formData.student_class,
-        section: formData.section,
-        stream: (formData.student_class === '11' || formData.student_class === '12') ? (formData.stream || 'Science') : '',
-        dob: formData.dob,
-        gender: formData.gender,
-        category: formData.category,
-        aadhaar_no: formData.aadhaar_no,
-        samagra_id: formData.samagra_id,
-        father_name: formData.father_name,
-        mother_name: formData.mother_name,
-        parent_mobile: formData.whatsapp_no,
-        address: formData.address,
-        fee_cycle: formData.fee_cycle,
-        cycle_fee_amount: parseFloat(formData.cycle_fee_amount || 0),
-        school_fee_total: parseFloat(formData.school_fee_total || 0),
-        transport_fee_total: parseFloat(formData.transport_fee_total || 0),
-        bank_name: formData.bank_name,
-        account_no: formData.account_no,
-        ifsc_code: formData.ifsc_code
-      };
+  /// Manual Form Submit Engine (WITH PHOTO)
+const handleManualSubmit = async (e) => {
+  e.preventDefault();
+  
+  // 🎯 FormData use karo (photo file bhejne ke liye)
+  const formData = new FormData();
+  formData.append('admission_no', formDataState.admission_no);
+  formData.append('roll_no', formDataState.roll_no);
+  formData.append('name', formDataState.name);
+  formData.append('class', formDataState.student_class);
+  formData.append('section', formDataState.section);
+  formData.append('stream', (formDataState.student_class === '11' || formDataState.student_class === '12') ? (formDataState.stream || 'Science') : '');
+  formData.append('dob', formDataState.dob);
+  formData.append('gender', formDataState.gender);
+  formData.append('category', formDataState.category);
+  formData.append('aadhaar_no', formDataState.aadhaar_no);
+  formData.append('samagra_id', formDataState.samagra_id);
+  formData.append('father_name', formDataState.father_name);
+  formData.append('mother_name', formDataState.mother_name);
+  formData.append('whatsapp_no', formDataState.whatsapp_no);
+  formData.append('address', formDataState.address);
+  formData.append('fee_cycle', formDataState.fee_cycle);
+  formData.append('cycle_fee_amount', formDataState.cycle_fee_amount || '0');
+  formData.append('school_fee_total', formDataState.school_fee_total || '0');
+  formData.append('transport_fee_total', formDataState.transport_fee_total || '0');
+  formData.append('bank_name', formDataState.bank_name);
+  formData.append('account_no', formDataState.account_no);
+  formData.append('ifsc_code', formDataState.ifsc_code);
+  
+  // ✅ PHOTO APPEND KARO
+  const photoInput = document.querySelector('input[name="student_photo"]');
+  if (photoInput && photoInput.files && photoInput.files[0]) {
+    formData.append('student_photo', photoInput.files[0]);
+  }
 
-      const response = await fetch('https://abd-school-backend.onrender.com/api/students/register-manual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      const data = await response.json();
+  try {
+    const response = await fetch('https://abd-school-backend.onrender.com/api/students/register-manual', {
+      method: 'POST',
+      body: formData  // ✅ Content-Type HEADER MAT DALO - Browser auto set karega
+    });
+    const data = await response.json();
+    
+    if (response.ok) {
+      setMessage({ type: 'success', text: '🎉 Student Profile Successfully Registered!' });
       
-      if (response.ok) {
-        setMessage({ type: 'success', text: '🎉 Student Profile Successfully Registered!' });
-        
-        setFormData({
-          admission_no: '', roll_no: '', name: '', student_class: '', section: 'A', stream: '',
-          dob: '', gender: 'Male', category: 'General', aadhaar_no: '', samagra_id: '',
-          father_name: '', mother_name: '', whatsapp_no: '', address: '',
-          fee_cycle: 'Monthly', cycle_fee_amount: '', school_fee_total: '', transport_fee_total: '',
-          bank_name: '', account_no: '', ifsc_code: ''
-        });
+      setFormData({
+        admission_no: '', roll_no: '', name: '', student_class: '', section: 'A', stream: '',
+        dob: '', gender: 'Male', category: 'General', aadhaar_no: '', samagra_id: '',
+        father_name: '', mother_name: '', whatsapp_no: '', address: '',
+        fee_cycle: 'Monthly', cycle_fee_amount: '', school_fee_total: '', transport_fee_total: '',
+        bank_name: '', account_no: '', ifsc_code: ''
+      });
 
-        setTimeout(() => {
-          window.location.reload(); 
-        }, 1500); 
-      } else {
-        setMessage({ type: 'error', text: data.error || 'Server mein dikkat hai' });
-      }
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Backend se connection fail!' });
+      // ✅ Photo input reset karo
+      if (photoInput) photoInput.value = '';
+
+      setTimeout(() => {
+        window.location.reload(); 
+      }, 1500); 
+    } else {
+      setMessage({ type: 'error', text: data.error || 'Server mein dikkat hai' });
     }
-  };
+  } catch (err) {
+    setMessage({ type: 'error', text: 'Backend se connection fail!' });
+  }
+};
 
   // Excel File Import Handler
   const handleExcelImport = (e) => {
@@ -319,6 +328,47 @@ Student registration ke time photo upload nahi karna hai.
               <option value="Annual">Annual (वार्षिक फीस)</option>
             </select>
           </div>
+
+                  {/* Section 5: Student Photo Upload */}
+        <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>
+          📸 Student Photo Upload
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
+              Upload Photo (JPG/PNG)
+            </label>
+            <input 
+              type="file" 
+              accept="image/*"
+              name="student_photo"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    console.log("📸 Photo selected:", file.name);
+                    // Photo preview ke liye state mein store karo (optional)
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                boxSizing: 'border-box',
+                fontSize: '14px',
+                backgroundColor: '#f8fafc'
+              }}
+            />
+            <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+              ⚠️ Photo <strong>Roll No</strong> ke naam se save hogi (e.g., 10.jpg)
+            </p>
+          </div>
+        </div>
+
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Cycle Fee Amount *</label>
             <input type="number" name="cycle_fee_amount" autoComplete="off" required placeholder="e.g. 1500" value={formData.cycle_fee_amount || ''} onChange={handleChange} style={inputStyle} />
