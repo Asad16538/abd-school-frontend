@@ -47,45 +47,45 @@ Student registration ke time photo upload nahi karna hai.
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  /// Manual Form Submit Engine (WITH PHOTO)
+  // Manual Form Submit Engine (WITH PHOTO)
 const handleManualSubmit = async (e) => {
   e.preventDefault();
   
   // 🎯 FormData use karo (photo file bhejne ke liye)
-  const formData = new FormData();
-  formData.append('admission_no', formDataState.admission_no);
-  formData.append('roll_no', formDataState.roll_no);
-  formData.append('name', formDataState.name);
-  formData.append('class', formDataState.student_class);
-  formData.append('section', formDataState.section);
-  formData.append('stream', (formDataState.student_class === '11' || formDataState.student_class === '12') ? (formDataState.stream || 'Science') : '');
-  formData.append('dob', formDataState.dob);
-  formData.append('gender', formDataState.gender);
-  formData.append('category', formDataState.category);
-  formData.append('aadhaar_no', formDataState.aadhaar_no);
-  formData.append('samagra_id', formDataState.samagra_id);
-  formData.append('father_name', formDataState.father_name);
-  formData.append('mother_name', formDataState.mother_name);
-  formData.append('whatsapp_no', formDataState.whatsapp_no);
-  formData.append('address', formDataState.address);
-  formData.append('fee_cycle', formDataState.fee_cycle);
-  formData.append('cycle_fee_amount', formDataState.cycle_fee_amount || '0');
-  formData.append('school_fee_total', formDataState.school_fee_total || '0');
-  formData.append('transport_fee_total', formDataState.transport_fee_total || '0');
-  formData.append('bank_name', formDataState.bank_name);
-  formData.append('account_no', formDataState.account_no);
-  formData.append('ifsc_code', formDataState.ifsc_code);
+  const formDataToSend = new FormData();
+  formDataToSend.append('admission_no', formData.admission_no);
+  formDataToSend.append('roll_no', formData.roll_no);
+  formDataToSend.append('name', formData.name);
+  formDataToSend.append('class', formData.student_class);
+  formDataToSend.append('section', formData.section);
+  formDataToSend.append('stream', (formData.student_class === '11' || formData.student_class === '12') ? (formData.stream || 'Science') : '');
+  formDataToSend.append('dob', formData.dob);
+  formDataToSend.append('gender', formData.gender);
+  formDataToSend.append('category', formData.category);
+  formDataToSend.append('aadhaar_no', formData.aadhaar_no);
+  formDataToSend.append('samagra_id', formData.samagra_id);
+  formDataToSend.append('father_name', formData.father_name);
+  formDataToSend.append('mother_name', formData.mother_name);
+  formDataToSend.append('whatsapp_no', formData.whatsapp_no);
+  formDataToSend.append('address', formData.address);
+  formDataToSend.append('fee_cycle', formData.fee_cycle);
+  formDataToSend.append('cycle_fee_amount', formData.cycle_fee_amount || '0');
+  formDataToSend.append('school_fee_total', formData.school_fee_total || '0');
+  formDataToSend.append('transport_fee_total', formData.transport_fee_total || '0');
+  formDataToSend.append('bank_name', formData.bank_name);
+  formDataToSend.append('account_no', formData.account_no);
+  formDataToSend.append('ifsc_code', formData.ifsc_code);
   
   // ✅ PHOTO APPEND KARO
   const photoInput = document.querySelector('input[name="student_photo"]');
   if (photoInput && photoInput.files && photoInput.files[0]) {
-    formData.append('student_photo', photoInput.files[0]);
+    formDataToSend.append('student_photo', photoInput.files[0]);
   }
 
   try {
     const response = await fetch('https://abd-school-backend.onrender.com/api/students/register-manual', {
       method: 'POST',
-      body: formData  // ✅ Content-Type HEADER MAT DALO - Browser auto set karega
+      body: formDataToSend  // ✅ Content-Type HEADER MAT DALO - Browser auto set karega
     });
     const data = await response.json();
     
