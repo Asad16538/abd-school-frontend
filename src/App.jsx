@@ -518,9 +518,9 @@ const sendFeeReminder = async (studentId) => {
                       <Users className="w-8 h-8 opacity-20" />
                     </div>
                   
-                      <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between col-span-2">
+                      <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
                         <div><p className="text-[11px] font-black uppercase text-teal-100">कुल आमदनी (Net Profit)</p><h3 className="text-2xl font-black mt-1">₹{stats.total_income}</h3></div>
-                        <TrendingUp className="w-10 h-10 opacity-20" />
+                        <TrendingUp className="w-8 h-8 opacity-20" />
                       </div>
                     </div>
 
