@@ -252,6 +252,46 @@ const handleManualSubmit = async (e) => {
           )}
         </div>
 
+                {/* Section 5: Student Photo Upload */}
+        <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>
+          📸 Student Photo Upload
+        </h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
+              Upload Photo (JPG/PNG)
+            </label>
+            <input 
+              type="file" 
+              accept="image/*"
+              name="student_photo"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onloadend = () => {
+                    console.log("📸 Photo selected:", file.name);
+                    // Photo preview ke liye state mein store karo (optional)
+                  };
+                  reader.readAsDataURL(file);
+                }
+              }}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '6px',
+                border: '1px solid #cbd5e1',
+                boxSizing: 'border-box',
+                fontSize: '14px',
+                backgroundColor: '#f8fafc'
+              }}
+            />
+            <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+              ⚠️ Photo <strong>Roll No</strong> ke naam se save hogi (e.g., 10.jpg)
+            </p>
+          </div>
+        </div>
+
         {/* Section 2: Personal Profile (Without Photo) */}
         <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>2. Student Profile (व्यक्तिगत विवरण)</h3>
         
@@ -329,45 +369,7 @@ const handleManualSubmit = async (e) => {
             </select>
           </div>
 
-                  {/* Section 5: Student Photo Upload */}
-        <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>
-          📸 Student Photo Upload
-        </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
-              Upload Photo (JPG/PNG)
-            </label>
-            <input 
-              type="file" 
-              accept="image/*"
-              name="student_photo"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    console.log("📸 Photo selected:", file.name);
-                    // Photo preview ke liye state mein store karo (optional)
-                  };
-                  reader.readAsDataURL(file);
-                }
-              }}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                boxSizing: 'border-box',
-                fontSize: '14px',
-                backgroundColor: '#f8fafc'
-              }}
-            />
-            <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
-              ⚠️ Photo <strong>Roll No</strong> ke naam se save hogi (e.g., 10.jpg)
-            </p>
-          </div>
-        </div>
+                  
 
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Cycle Fee Amount *</label>
