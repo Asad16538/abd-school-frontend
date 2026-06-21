@@ -47,6 +47,37 @@ Student registration ke time photo upload nahi karna hai.
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+    // 📦 ZIP UPLOAD HANDLER
+  const handleZipUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setMessage({ type: '', text: '⏳ Uploading and processing...' });
+
+    const formData = new FormData();
+    formData.append('zip_file', file);
+
+    try {
+      const response = await fetch('https://abd-school-backend.onrender.com/api/students/bulk-import-with-photos', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: `🎉 ${data.message}` });
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Import fail!' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Server connection fail!' });
+    }
+    
+    // Reset input
+    e.target.value = '';
+  };
+
   // Manual Form Submit Engine (WITH PHOTO)
 const handleManualSubmit = async (e) => {
   e.preventDefault();
@@ -185,6 +216,29 @@ const handleManualSubmit = async (e) => {
           </div>
         </div>
       </div>
+
+      {/* Bulk Import with Photos */}
+    <div style={{ marginTop: '12px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+      <label style={{
+        backgroundColor: '#8b5cf6',
+        color: 'white',
+        padding: '10px 20px',
+        borderRadius: '8px',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '8px'
+      }}>
+        📦 Excel + Photos ZIP Upload
+        <input
+          type="file"
+          accept=".zip"
+          onChange={handleZipUpload}
+          style={{ display: 'none' }}
+        />
+      </label>
+    </div>
 
       {message.text && (
         <div style={{
