@@ -17,6 +17,9 @@ import IDCardStudio from './components/IDCardStudio'; // 👈 NAYA COMPONENT IMP
 import ClassAttendance from './components/ClassAttendance';
 import StaffSecureTerminal from './components/StaffSecureTerminal';
 import StaffAttendanceTerminal from './components/StaffAttendanceTerminal';
+// ✅ PARENT APP & STAFF APP IMPORTS (ROUTING KE LIYE)
+import ParentApp from './ParentApp';
+import StaffApp from './StaffApp';
 
 const BASE_URL = "https://abd-school-backend.onrender.com";
 
@@ -29,6 +32,16 @@ function App() {
   if (window.location.href.includes('staff-attendance-terminal') || window.location.pathname === '/staff-attendance-terminal') {
   return <StaffAttendanceTerminal />;
 }
+
+// ✅ YAHAN ADD KARO - PARENT APP ROUTE
+  if (window.location.pathname === '/parent' || window.location.pathname.startsWith('/parent/')) {
+    return <ParentApp />;
+  }
+
+  // ✅ YAHAN ADD KARO - STAFF APP ROUTE
+  if (window.location.pathname === '/staff' || window.location.pathname.startsWith('/staff/')) {
+    return <StaffApp />;
+  }
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
