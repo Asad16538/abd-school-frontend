@@ -1,11 +1,12 @@
 // src/StaffApp.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import QRScannerComponent from './components/QRScanner';
 import { 
   Home, Bell, User, Calendar, Clock, Users, 
   LogOut, CheckCircle, XCircle, AlertTriangle,
   CreditCard, BookOpen, Settings, ChevronRight,
-  UserPlus, FileText, TrendingUp, DollarSign
+  UserPlus, FileText, TrendingUp, DollarSign, Camera, QrCode
 } from 'lucide-react';
 
 const BASE_URL = 'https://abd-school-backend.onrender.com';
@@ -17,6 +18,9 @@ const StaffApp = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showScanner, setShowScanner] = useState(false);
+  const [advanceHistory, setAdvanceHistory] = useState([]);
+  const [assignedStudents, setAssignedStudents] = useState([]);
 
   // Check login status on load
   useEffect(() => {
@@ -37,6 +41,8 @@ const StaffApp = () => {
         setIsLoggedIn(true);
         setStaffData(res.data.staff);
         fetchNotifications(res.data.staff.id);
+        fetchAssignedStudents(res.data.staff.id);
+        fetchAdvanceHistory(res.data.staff.id);
       } else {
         localStorage.removeItem('staff_token');
       }
@@ -59,6 +65,26 @@ const StaffApp = () => {
     }
   };
 
+  const fetchAssignedStudents = async (staffId) => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/staff/assigned-students/${staffId}`);
+      if (res.data.success) {
+        setAssignedStudents(res.data.students || []);
+      }
+    } catch (err) {
+      console.log("Assigned students error");
+    }
+  };
+
+  const fetchAdvanceHistory = async (staffId) => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/payroll/advance-history/${staffId}`);
+      setAdvanceHistory(res.data || []);
+    } catch (err) {
+      console.log("Advance history error");
+    }
+  };
+
   const markNotificationRead = async (id) => {
     try {
       await axios.post(`${BASE_URL}/api/staff/notification/read/${id}`);
@@ -78,6 +104,106 @@ const StaffApp = () => {
     setNotifications([]);
   };
 
+  const handleQRCheckin = async (qrData) => {
+    try {
+      let parsedData = qrData;
+      if (typeof qrData === 'string') {
+        try {
+          parsedData = JSON.parse(qrData);
+        } catch (e) {
+          parsedData = { qr_code: qrData };
+        }
+      }
+
+      const res = await axios.post(`${BASE_URL}/api/staff/qr-checkin`, {
+        staff_id: staffData.id,
+        qr_data: parsedData,
+        latitude: parsedData.latitude || 0,
+        longitude: parsedData.longitude || 0
+      });
+      
+      if (res.data.success) {
+        alert('✅ Attendance marked successfully via QR!');
+        fetchTodayAttendance();
+        setShowScanner(false);
+      } else {
+        alert('❌ ' + (res.data.message || 'Check-in failed'));
+      }
+    } catch (err) {
+      alert('❌ Check-in failed. Please try again.');
+      setShowScanner(false);
+    }
+  };
+
+  // Attendance functions
+  const [attendance, setAttendance] = useState([]);
+  const [todayStatus, setTodayStatus] = useState(null);
+  const [checkInTime, setCheckInTime] = useState('');
+  const [checkOutTime, setCheckOutTime] = useState('');
+
+  const fetchTodayAttendance = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/staff/attendance/today/${staffData?.id}`);
+      if (res.data.success) {
+        setTodayStatus(res.data.attendance);
+        if (res.data.attendance) {
+          setCheckInTime(res.data.attendance.check_in_time || '');
+          setCheckOutTime(res.data.attendance.check_out_time || '');
+        }
+      }
+    } catch (err) {
+      console.log("Today attendance error");
+    }
+  };
+
+  const fetchAttendanceHistory = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/staff/attendance/history/${staffData?.id}`);
+      if (res.data.success) {
+        setAttendance(res.data.attendance || []);
+      }
+    } catch (err) {
+      console.log("History error");
+    }
+  };
+
+  useEffect(() => {
+    if (staffData?.id) {
+      fetchTodayAttendance();
+      fetchAttendanceHistory();
+    }
+  }, [staffData]);
+
+  const handleCheckIn = async () => {
+    try {
+      const res = await axios.post(`${BASE_URL}/api/staff/attendance/checkin`, {
+        staff_id: staffData?.id
+      });
+      if (res.data.success) {
+        alert('✅ Check-in successful!');
+        fetchTodayAttendance();
+        fetchAttendanceHistory();
+      }
+    } catch (err) {
+      alert('❌ Check-in failed');
+    }
+  };
+
+  const handleCheckOut = async () => {
+    try {
+      const res = await axios.post(`${BASE_URL}/api/staff/attendance/checkout`, {
+        staff_id: staffData?.id
+      });
+      if (res.data.success) {
+        alert('✅ Check-out successful!');
+        fetchTodayAttendance();
+        fetchAttendanceHistory();
+      }
+    } catch (err) {
+      alert('❌ Check-out failed');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -94,6 +220,8 @@ const StaffApp = () => {
       setIsLoggedIn(true);
       setStaffData(data.staff);
       fetchNotifications(data.staff.id);
+      fetchAssignedStudents(data.staff.id);
+      fetchAdvanceHistory(data.staff.id);
     }} />;
   }
 
@@ -142,6 +270,12 @@ const StaffApp = () => {
             staffData={staffData} 
             notifications={notifications.slice(0, 3)}
             onViewAll={() => setActiveTab('notifications')}
+            onCheckIn={handleCheckIn}
+            onCheckOut={handleCheckOut}
+            todayStatus={todayStatus}
+            checkInTime={checkInTime}
+            checkOutTime={checkOutTime}
+            setShowScanner={setShowScanner}
           />
         )}
         {activeTab === 'notifications' && (
@@ -151,15 +285,38 @@ const StaffApp = () => {
           />
         )}
         {activeTab === 'attendance' && (
-          <StaffAttendance staffData={staffData} />
+          <StaffAttendance 
+            staffData={staffData}
+            attendance={attendance}
+            loading={attendance.length === 0}
+            todayStatus={todayStatus}
+            checkInTime={checkInTime}
+            checkOutTime={checkOutTime}
+            onCheckIn={handleCheckIn}
+            onCheckOut={handleCheckOut}
+            setShowScanner={setShowScanner}
+          />
         )}
         {activeTab === 'students' && (
-          <StaffStudents staffData={staffData} />
+          <StaffStudents assignedStudents={assignedStudents} />
         )}
         {activeTab === 'profile' && (
           <StaffProfile staffData={staffData} />
         )}
+        {activeTab === 'advance' && (
+          <StaffAdvance advanceHistory={advanceHistory} />
+        )}
       </div>
+
+      {/* QR Scanner Modal */}
+      {showScanner && (
+        <QRScannerComponent 
+          onScan={(data) => {
+            handleQRCheckin(data);
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-2 z-50 shadow-lg">
@@ -197,11 +354,11 @@ const StaffApp = () => {
           <span className="text-[9px] font-bold">छात्र</span>
         </button>
         <button 
-          onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center p-2 rounded-lg ${activeTab === 'profile' ? 'text-indigo-600 bg-indigo-50' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('advance')}
+          className={`flex flex-col items-center p-2 rounded-lg ${activeTab === 'advance' ? 'text-indigo-600 bg-indigo-50' : 'text-gray-500'}`}
         >
-          <User className="w-5 h-5" />
-          <span className="text-[9px] font-bold">प्रोफ़ाइल</span>
+          <DollarSign className="w-5 h-5" />
+          <span className="text-[9px] font-bold">अग्रिम</span>
         </button>
       </nav>
     </div>
@@ -236,7 +393,11 @@ const StaffLogin = ({ onLogin }) => {
         setError(res.data.message || '❌ गलत मोबाइल या पासवर्ड');
       }
     } catch (err) {
-      setError('❌ सर्वर से कनेक्ट नहीं हो पाया');
+      if (err.response) {
+        setError(err.response.data.message || '❌ सर्वर से कनेक्ट नहीं हो पाया');
+      } else {
+        setError('❌ सर्वर से कनेक्ट नहीं हो पाया');
+      }
     } finally {
       setLoading(false);
     }
@@ -323,7 +484,7 @@ const StaffLogin = ({ onLogin }) => {
 // ============================================================
 // 📊 STAFF DASHBOARD
 // ============================================================
-const StaffDashboard = ({ staffData, notifications, onViewAll }) => {
+const StaffDashboard = ({ staffData, notifications, onViewAll, onCheckIn, onCheckOut, todayStatus, checkInTime, checkOutTime, setShowScanner }) => {
   const [stats, setStats] = useState({
     total_students: 0,
     present_today: 0,
@@ -357,10 +518,54 @@ const StaffDashboard = ({ staffData, notifications, onViewAll }) => {
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
             <User className="w-8 h-8 text-indigo-600" />
           </div>
-          <div>
+          <div className="flex-1">
             <h3 className="font-bold text-lg text-gray-800">{staffData?.name || 'Staff Name'}</h3>
             <p className="text-sm text-gray-500">{staffData?.designation || 'Teacher'}</p>
             <p className="text-sm text-gray-500">📱 {staffData?.mobile || 'N/A'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Today's Attendance Quick Status */}
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">📅 Today / आज</h4>
+            {todayStatus ? (
+              <div className="mt-1">
+                <p className="text-sm font-bold text-green-600">✅ Checked In</p>
+                <p className="text-xs text-gray-500">⏱️ In: {checkInTime}</p>
+                {checkOutTime && <p className="text-xs text-gray-500">⏱️ Out: {checkOutTime}</p>}
+              </div>
+            ) : (
+              <p className="text-sm font-bold text-gray-400 mt-1">❌ Not checked in yet</p>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {!todayStatus && (
+              <>
+                <button 
+                  onClick={() => setShowScanner(true)}
+                  className="px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1"
+                >
+                  <QrCode className="w-4 h-4" /> QR
+                </button>
+                <button 
+                  onClick={onCheckIn}
+                  className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg"
+                >
+                  ✅ Check In
+                </button>
+              </>
+            )}
+            {todayStatus && !checkOutTime && (
+              <button 
+                onClick={onCheckOut}
+                className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg"
+              >
+                ❌ Check Out
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -405,22 +610,6 @@ const StaffDashboard = ({ staffData, notifications, onViewAll }) => {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-3 gap-3">
-        <button className="bg-indigo-50 p-4 rounded-xl text-center border border-indigo-100 hover:bg-indigo-100 transition">
-          <UserPlus className="w-6 h-6 text-indigo-600 mx-auto mb-1" />
-          <span className="text-[10px] font-bold text-gray-700">छात्र जोड़ें</span>
-        </button>
-        <button className="bg-blue-50 p-4 rounded-xl text-center border border-blue-100 hover:bg-blue-100 transition">
-          <Calendar className="w-6 h-6 text-blue-600 mx-auto mb-1" />
-          <span className="text-[10px] font-bold text-gray-700">उपस्थिति</span>
-        </button>
-        <button className="bg-green-50 p-4 rounded-xl text-center border border-green-100 hover:bg-green-100 transition">
-          <FileText className="w-6 h-6 text-green-600 mx-auto mb-1" />
-          <span className="text-[10px] font-bold text-gray-700">रिपोर्ट</span>
-        </button>
-      </div>
-
       {/* Recent Notifications */}
       <div className="bg-white p-4 rounded-xl border border-gray-200">
         <div className="flex items-center justify-between mb-3">
@@ -461,7 +650,7 @@ const StaffNotifications = ({ notifications, onMarkRead }) => {
         notifications.map((n) => (
           <div 
             key={n.id} 
-            className={`bg-white p-4 rounded-xl border ${n.is_read ? 'border-gray-200' : 'border-indigo-200 bg-indigo-50/30'} shadow-sm hover:shadow-md transition`}
+            className={`bg-white p-4 rounded-xl border ${n.is_read ? 'border-gray-200' : 'border-indigo-200 bg-indigo-50/30'} shadow-sm hover:shadow-md transition cursor-pointer`}
             onClick={() => !n.is_read && onMarkRead(n.id)}
           >
             <div className="flex items-start gap-3">
@@ -505,74 +694,7 @@ const StaffNotifications = ({ notifications, onMarkRead }) => {
 // ============================================================
 // 📋 STAFF ATTENDANCE
 // ============================================================
-const StaffAttendance = ({ staffData }) => {
-  const [attendance, setAttendance] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [todayStatus, setTodayStatus] = useState(null);
-  const [checkInTime, setCheckInTime] = useState('');
-  const [checkOutTime, setCheckOutTime] = useState('');
-
-  useEffect(() => {
-    fetchTodayAttendance();
-    fetchAttendanceHistory();
-  }, []);
-
-  const fetchTodayAttendance = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}/api/staff/attendance/today/${staffData?.id}`);
-      if (res.data.success) {
-        setTodayStatus(res.data.attendance);
-        if (res.data.attendance) {
-          setCheckInTime(res.data.attendance.check_in_time || '');
-          setCheckOutTime(res.data.attendance.check_out_time || '');
-        }
-      }
-    } catch (err) {
-      console.log("Today attendance error");
-    }
-  };
-
-  const fetchAttendanceHistory = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}/api/staff/attendance/history/${staffData?.id}`);
-      if (res.data.success) {
-        setAttendance(res.data.attendance || []);
-      }
-    } catch (err) {
-      console.log("History error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleCheckIn = async () => {
-    try {
-      const res = await axios.post(`${BASE_URL}/api/staff/attendance/checkin`, {
-        staff_id: staffData?.id
-      });
-      if (res.data.success) {
-        alert('✅ Check-in successful!');
-        fetchTodayAttendance();
-      }
-    } catch (err) {
-      alert('❌ Check-in failed');
-    }
-  };
-
-  const handleCheckOut = async () => {
-    try {
-      const res = await axios.post(`${BASE_URL}/api/staff/attendance/checkout`, {
-        staff_id: staffData?.id
-      });
-      if (res.data.success) {
-        alert('✅ Check-out successful!');
-        fetchTodayAttendance();
-      }
-    } catch (err) {
-      alert('❌ Check-out failed');
-    }
-  };
-
+const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInTime, checkOutTime, onCheckIn, onCheckOut, setShowScanner }) => {
   const presentCount = attendance.filter(a => a.status === 'Present').length;
   const absentCount = attendance.filter(a => a.status === 'Absent').length;
   const totalDays = attendance.length;
@@ -601,16 +723,24 @@ const StaffAttendance = ({ staffData }) => {
           </div>
           <div className="flex gap-2">
             {!todayStatus && (
-              <button 
-                onClick={handleCheckIn}
-                className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg"
-              >
-                ✅ Check In
-              </button>
+              <>
+                <button 
+                  onClick={() => setShowScanner(true)}
+                  className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1"
+                >
+                  <QrCode className="w-4 h-4" /> QR
+                </button>
+                <button 
+                  onClick={onCheckIn}
+                  className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg"
+                >
+                  ✅ Check In
+                </button>
+              </>
             )}
             {todayStatus && !checkOutTime && (
               <button 
-                onClick={handleCheckOut}
+                onClick={onCheckOut}
                 className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg"
               >
                 ❌ Check Out
@@ -664,11 +794,7 @@ const StaffAttendance = ({ staffData }) => {
                   </p>
                 </div>
               </div>
-              <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                a.status === 'Present' ? 'bg-green-100 text-green-700' :
-                a.status === 'Absent' ? 'bg-red-100 text-red-700' :
-                'bg-amber-100 text-amber-700'
-              }`}>
+              <span className={`text-xs font-bold px-3 py-1 rounded-full ${a.status === 'Present' ? 'bg-green-100 text-green-700' : a.status === 'Absent' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
                 {a.status || 'N/A'}
               </span>
             </div>
@@ -682,40 +808,19 @@ const StaffAttendance = ({ staffData }) => {
 // ============================================================
 // 👨‍🎓 STAFF STUDENTS
 // ============================================================
-const StaffStudents = ({ staffData }) => {
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-
-  const fetchStudents = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}/api/staff/students/${staffData?.id}`);
-      if (res.data.success) {
-        setStudents(res.data.students || []);
-      }
-    } catch (err) {
-      console.log("Students fetch error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
+const StaffStudents = ({ assignedStudents }) => {
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-bold text-gray-800">👨‍🎓 My Students / मेरे छात्र</h3>
       
-      {loading ? (
-        <p className="text-center text-gray-400 py-8">⏳ Loading...</p>
-      ) : students.length === 0 ? (
+      {assignedStudents.length === 0 ? (
         <div className="bg-white p-8 rounded-xl text-center border border-gray-200">
           <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-400 font-bold text-sm">कोई छात्र नहीं</p>
+          <p className="text-gray-400 font-bold text-sm">कोई छात्र नहीं / No students assigned</p>
+          <p className="text-xs text-gray-400 mt-1">Admin ne abhi tak class assign nahi ki hai</p>
         </div>
       ) : (
-        students.map((s, i) => (
+        assignedStudents.map((s, i) => (
           <div key={i} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -723,16 +828,12 @@ const StaffStudents = ({ staffData }) => {
               </div>
               <div>
                 <p className="font-bold text-sm text-gray-800">{s.name}</p>
-                <p className="text-xs text-gray-500">Class {s.class} - {s.section}</p>
+                <p className="text-xs text-gray-500">Class {s.class} - {s.section} | Roll: {s.roll_no}</p>
               </div>
             </div>
             <div className="text-right">
-              <span className={`text-xs font-bold px-2 py-1 rounded-full ${
-                s.status === 'Present' ? 'bg-green-100 text-green-700' :
-                s.status === 'Absent' ? 'bg-red-100 text-red-700' :
-                'bg-gray-100 text-gray-500'
-              }`}>
-                {s.status || 'N/A'}
+              <span className="text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                {s.status || 'Active'}
               </span>
             </div>
           </div>
@@ -768,6 +869,14 @@ const StaffProfile = ({ staffData }) => {
             <span className="text-sm font-bold text-gray-800">Smart School ERP</span>
           </div>
           <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-500">📚 Subject</span>
+            <span className="text-sm font-bold text-gray-800">{staffData?.subject || 'N/A'}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-500">👨‍🏫 Class Teacher</span>
+            <span className="text-sm font-bold text-gray-800">{staffData?.class_teacher || 'N/A'}</span>
+          </div>
+          <div className="flex items-center justify-between">
             <span className="text-sm text-gray-500">💰 Base Salary</span>
             <span className="text-sm font-bold text-gray-800">₹{staffData?.base_salary || 0}</span>
           </div>
@@ -783,9 +892,59 @@ const StaffProfile = ({ staffData }) => {
         <button className="w-full py-2.5 bg-indigo-50 text-indigo-600 font-bold text-sm rounded-xl border border-indigo-200 hover:bg-indigo-100 transition">
           🔑 Change Password
         </button>
-        <button className="w-full mt-2 py-2.5 bg-red-50 text-red-600 font-bold text-sm rounded-xl border border-red-200 hover:bg-red-100 transition">
+        <button 
+          onClick={() => {
+            localStorage.removeItem('staff_token');
+            window.location.reload();
+          }}
+          className="w-full mt-2 py-2.5 bg-red-50 text-red-600 font-bold text-sm rounded-xl border border-red-200 hover:bg-red-100 transition"
+        >
           🚪 Logout
         </button>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// 💰 STAFF ADVANCE SALARY
+// ============================================================
+const StaffAdvance = ({ advanceHistory }) => {
+  const totalAdvance = advanceHistory.reduce((sum, a) => sum + (a.amount || 0), 0);
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-sm font-bold text-gray-800">💰 Advance Salary / अग्रिम वेतन</h3>
+      
+      <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-4 rounded-xl shadow-sm">
+        <p className="text-[10px] font-black uppercase text-indigo-100">Total Advance Taken / कुल अग्रिम</p>
+        <h2 className="text-2xl font-black mt-1">₹{totalAdvance}</h2>
+      </div>
+
+      <div className="bg-white p-4 rounded-xl border border-gray-200 max-h-[400px] overflow-y-auto">
+        <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">
+          📋 History / इतिहास
+        </h4>
+        
+        {advanceHistory.length === 0 ? (
+          <p className="text-center text-gray-400 py-4">कोई अग्रिम नहीं / No advance taken</p>
+        ) : (
+          advanceHistory.map((a, i) => (
+            <div key={i} className="border-b border-gray-100 py-3 last:border-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-gray-800">₹{a.amount}</p>
+                  <p className="text-[10px] text-gray-400">{a.purpose || 'Personal Advance'}</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] bg-blue-50 text-blue-700 px-2 py-1 rounded-full font-bold">
+                    {a.date || 'N/A'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
