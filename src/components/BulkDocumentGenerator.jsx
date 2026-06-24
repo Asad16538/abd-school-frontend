@@ -5,9 +5,6 @@ import axios from 'axios';
 const BASE_URL = 'https://abd-school-backend.onrender.com';
 
 const BulkDocumentGenerator = () => {
-    // ==============================
-    // STATES
-    // ==============================
     const [classes, setClasses] = useState([
         '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th',
         '11th (Science)', '11th (Commerce)', '11th (Arts)',
@@ -27,9 +24,6 @@ const BulkDocumentGenerator = () => {
         principal_signature_url: 'https://via.placeholder.com/100x40?text=Signature'
     });
 
-    // ==============================
-    // FETCH SETTINGS
-    // ==============================
     useEffect(() => {
         const fetchSettings = async () => {
             try {
@@ -50,9 +44,6 @@ const BulkDocumentGenerator = () => {
         fetchSettings();
     }, []);
 
-    // ==============================
-    // FETCH STUDENTS
-    // ==============================
     const fetchStudents = async () => {
         if (!selectedClass) {
             alert('Please select a class first!');
@@ -70,7 +61,6 @@ const BulkDocumentGenerator = () => {
 
             if (res.data.success) {
                 setStudents(res.data.students || []);
-                // Clear old photos when new students loaded
                 setPhotos({});
             } else {
                 alert('No students found for this class!');
@@ -84,9 +74,6 @@ const BulkDocumentGenerator = () => {
         }
     };
 
-    // ==============================
-    // BULK PHOTO UPLOAD (Local Only)
-    // ==============================
     const handleBulkPhotoUpload = (e) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
@@ -95,9 +82,7 @@ const BulkDocumentGenerator = () => {
         let processed = 0;
 
         for (let file of files) {
-            // File name se roll number extract karo (e.g., "1.jpg", "2.png", "ROLL_12.jpg")
             let fileName = file.name.split('.')[0];
-            // "ROLL_12" → "12"
             let rollNo = fileName.replace(/[^0-9]/g, '');
             
             if (rollNo) {
@@ -114,21 +99,15 @@ const BulkDocumentGenerator = () => {
             alert('⚠️ No valid photos found. Make sure file names contain roll numbers (e.g., "1.jpg", "2.jpg")');
         }
 
-        // Reset input so same file can be uploaded again
         e.target.value = '';
     };
 
-    // ==============================
-    // SINGLE PHOTO UPLOAD
-    // ==============================
     const handleSinglePhotoUpload = (rollNo, file) => {
         if (!file) return;
         
-        // Clean roll number
         const cleanRoll = String(rollNo).trim();
         const photoMap = { ...photos };
         
-        // Remove old photo URL if exists
         if (photoMap[cleanRoll]) {
             URL.revokeObjectURL(photoMap[cleanRoll]);
         }
@@ -137,9 +116,6 @@ const BulkDocumentGenerator = () => {
         setPhotos(photoMap);
     };
 
-    // ==============================
-    // REMOVE PHOTO
-    // ==============================
     const handleRemovePhoto = (rollNo) => {
         const photoMap = { ...photos };
         if (photoMap[rollNo]) {
@@ -149,16 +125,12 @@ const BulkDocumentGenerator = () => {
         }
     };
 
-    // ==============================
-    // GENERATE DOCUMENTS
-    // ==============================
     const generateDocuments = () => {
         if (students.length === 0) {
             alert('Please load students first!');
             return;
         }
 
-        // Check how many students have photos
         const studentsWithPhotos = students.filter(s => photos[s.roll_no]);
         const studentsWithoutPhotos = students.filter(s => !photos[s.roll_no]);
 
@@ -172,7 +144,6 @@ const BulkDocumentGenerator = () => {
 
         setLoading(true);
 
-        // Generate documents based on type
         if (documentType === 'id-card') {
             generateIDCards();
         } else if (documentType === 'admit-card') {
@@ -184,11 +155,7 @@ const BulkDocumentGenerator = () => {
         setLoading(false);
     };
 
-    // ==============================
-    // GENERATE ID CARDS
-    // ==============================
     const generateIDCards = () => {
-        // Build HTML for all cards
         let html = `
             <html>
             <head>
@@ -272,7 +239,6 @@ const BulkDocumentGenerator = () => {
 
         html += `</body></html>`;
 
-        // Open in new window for print
         const win = window.open('', '_blank');
         win.document.write(html);
         win.document.close();
@@ -280,28 +246,16 @@ const BulkDocumentGenerator = () => {
         win.print();
     };
 
-    // ==============================
-    // GENERATE ADMIT CARDS
-    // ==============================
     const generateAdmitCards = () => {
         alert('📋 Admit Card generation will be available soon!');
-        // Similar structure as ID cards but different template
     };
 
-    // ==============================
-    // GENERATE MARKSHEETS
-    // ==============================
     const generateMarksheets = () => {
         alert('📊 Marksheet generation will be available soon!');
-        // Similar structure as ID cards but different template
     };
 
-    // ==============================
-    // RENDER
-    // ==============================
     return (
         <div className="w-full p-6 bg-gray-50 min-h-screen">
-            {/* Header */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
                 <h2 className="text-xl font-black text-gray-800">📄 Bulk Document Generator</h2>
                 <p className="text-sm text-gray-500 mt-1">
@@ -310,7 +264,6 @@ const BulkDocumentGenerator = () => {
                 </p>
             </div>
 
-            {/* Step 1: Class & Document Selection */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
                 <h3 className="text-sm font-black text-gray-700 uppercase tracking-wider mb-4">Step 1: Select Class & Document Type</h3>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -363,7 +316,6 @@ const BulkDocumentGenerator = () => {
                 </div>
             </div>
 
-            {/* Step 2: Bulk Photo Upload */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
                 <h3 className="text-sm font-black text-gray-700 uppercase tracking-wider mb-4">
                     Step 2: Bulk Photos Upload 
@@ -391,7 +343,6 @@ const BulkDocumentGenerator = () => {
                 </div>
             </div>
 
-            {/* Step 3: Student List with Photo Status */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
                 <h3 className="text-sm font-black text-gray-700 uppercase tracking-wider mb-4">
                     Step 3: Review Students & Photos 
@@ -467,7 +418,6 @@ const BulkDocumentGenerator = () => {
                 )}
             </div>
 
-            {/* Generate Button */}
             <div className="flex justify-end">
                 <button 
                     onClick={generateDocuments}

@@ -18,7 +18,6 @@ const ParentApp = () => {
   const [loading, setLoading] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
 
-  // Check login status on load
   useEffect(() => {
     const token = localStorage.getItem('parent_token');
     if (token) {
@@ -99,7 +98,6 @@ const ParentApp = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans pb-20">
-      {/* Header */}
       <header className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white p-4 sticky top-0 z-50 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -119,7 +117,6 @@ const ParentApp = () => {
         </div>
       </header>
 
-      {/* Notification Banner */}
       {unreadCount > 0 && (
         <div className="bg-amber-50 border-b border-amber-200 p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -137,7 +134,6 @@ const ParentApp = () => {
         </div>
       )}
 
-      {/* Main Content */}
       <div className="p-4">
         {activeTab === 'dashboard' && (
           <ParentDashboard 
@@ -163,7 +159,6 @@ const ParentApp = () => {
         )}
       </div>
 
-      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-2 z-50 shadow-lg">
         <button 
           onClick={() => setActiveTab('dashboard')}
@@ -467,7 +462,6 @@ const ParentDashboard = ({ parentData, notifications, onViewAll }) => {
 
   return (
     <div className="space-y-4">
-      {/* Student Profile Card */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -481,7 +475,6 @@ const ParentDashboard = ({ parentData, notifications, onViewAll }) => {
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-4 rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
@@ -503,7 +496,6 @@ const ParentDashboard = ({ parentData, notifications, onViewAll }) => {
         </div>
       </div>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-3 gap-3">
         <button className="bg-indigo-50 p-4 rounded-xl text-center border border-indigo-100 hover:bg-indigo-100 transition">
           <CreditCard className="w-6 h-6 text-indigo-600 mx-auto mb-1" />
@@ -519,7 +511,6 @@ const ParentDashboard = ({ parentData, notifications, onViewAll }) => {
         </button>
       </div>
 
-      {/* Recent Notifications */}
       <div className="bg-white p-4 rounded-xl border border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">📬 ताज़ा सूचनाएं</h4>
@@ -762,11 +753,7 @@ const ParentAttendance = ({ parentData }) => {
                   <p className="text-[10px] text-gray-400">{a.class_name} - {a.section_name}</p>
                 </div>
               </div>
-              <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                a.status === 'Present' ? 'bg-green-100 text-green-700' :
-                a.status === 'Absent' ? 'bg-red-100 text-red-700' :
-                'bg-amber-100 text-amber-700'
-              }`}>
+              <span className={`text-xs font-bold px-3 py-1 rounded-full ${a.status === 'Present' ? 'bg-green-100 text-green-700' : a.status === 'Absent' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
                 {a.status || 'N/A'}
               </span>
             </div>

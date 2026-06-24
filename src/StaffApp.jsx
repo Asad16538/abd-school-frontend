@@ -22,7 +22,6 @@ const StaffApp = () => {
   const [advanceHistory, setAdvanceHistory] = useState([]);
   const [assignedStudents, setAssignedStudents] = useState([]);
 
-  // Check login status on load
   useEffect(() => {
     const token = localStorage.getItem('staff_token');
     if (token) {
@@ -135,7 +134,6 @@ const StaffApp = () => {
     }
   };
 
-  // Attendance functions
   const [attendance, setAttendance] = useState([]);
   const [todayStatus, setTodayStatus] = useState(null);
   const [checkInTime, setCheckInTime] = useState('');
@@ -227,7 +225,6 @@ const StaffApp = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans pb-20">
-      {/* Header */}
       <header className="bg-gradient-to-r from-slate-700 to-slate-800 text-white p-4 sticky top-0 z-50 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -245,7 +242,6 @@ const StaffApp = () => {
         </div>
       </header>
 
-      {/* Notification Banner */}
       {unreadCount > 0 && (
         <div className="bg-amber-50 border-b border-amber-200 p-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -263,7 +259,6 @@ const StaffApp = () => {
         </div>
       )}
 
-      {/* Main Content */}
       <div className="p-4">
         {activeTab === 'dashboard' && (
           <StaffDashboard 
@@ -308,7 +303,6 @@ const StaffApp = () => {
         )}
       </div>
 
-      {/* QR Scanner Modal */}
       {showScanner && (
         <QRScannerComponent 
           onScan={(data) => {
@@ -318,7 +312,6 @@ const StaffApp = () => {
         />
       )}
 
-      {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-2 z-50 shadow-lg">
         <button 
           onClick={() => setActiveTab('dashboard')}
@@ -406,15 +399,12 @@ const StaffLogin = ({ onLogin }) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-700 via-slate-800 to-gray-900 flex items-center justify-center p-4">
       <div className="bg-white/95 backdrop-blur-md w-full max-w-md p-8 rounded-2xl shadow-2xl border border-white/20">
-        
         <div className="text-center mb-6">
           <div className="w-20 h-20 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center mx-auto mb-3 border-2 border-white overflow-hidden">
             <User className="w-10 h-10 text-white" />
           </div>
           <h2 className="text-2xl font-black text-gray-800">👨‍🏫 Staff App</h2>
-          <p className="text-gray-500 text-[11px] font-bold uppercase tracking-wider">
-            Teacher / Staff Login
-          </p>
+          <p className="text-gray-500 text-[11px] font-bold uppercase tracking-wider">Teacher / Staff Login</p>
         </div>
 
         {error && (
@@ -512,7 +502,6 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, onCheckIn, onChec
 
   return (
     <div className="space-y-4">
-      {/* Staff Profile Card */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -526,7 +515,6 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, onCheckIn, onChec
         </div>
       </div>
 
-      {/* Today's Attendance Quick Status */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
@@ -570,7 +558,6 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, onCheckIn, onChec
         </div>
       </div>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
@@ -610,7 +597,6 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, onCheckIn, onChec
         </div>
       </div>
 
-      {/* Recent Notifications */}
       <div className="bg-white p-4 rounded-xl border border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">📬 ताज़ा सूचनाएं</h4>
@@ -704,11 +690,8 @@ const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInT
     <div className="space-y-4">
       <h3 className="text-sm font-bold text-gray-800">📋 My Attendance / मेरी उपस्थिति</h3>
       
-      {/* Today's Status */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-        <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">
-          📅 Today / आज
-        </h4>
+        <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">📅 Today / आज</h4>
         <div className="flex items-center justify-between">
           <div>
             {todayStatus ? (
@@ -750,7 +733,6 @@ const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInT
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid grid-cols-4 gap-2">
         <div className="bg-green-50 p-3 rounded-xl text-center border border-green-200">
           <p className="text-[10px] font-bold text-green-600">✅ Present</p>
@@ -766,11 +748,8 @@ const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInT
         </div>
       </div>
 
-      {/* History */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 max-h-[300px] overflow-y-auto">
-        <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">
-          📅 History / इतिहास
-        </h4>
+        <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">📅 History / इतिहास</h4>
         
         {loading ? (
           <p className="text-center text-gray-400 py-4">⏳ Loading...</p>
@@ -922,9 +901,7 @@ const StaffAdvance = ({ advanceHistory }) => {
       </div>
 
       <div className="bg-white p-4 rounded-xl border border-gray-200 max-h-[400px] overflow-y-auto">
-        <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">
-          📋 History / इतिहास
-        </h4>
+        <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-3">📋 History / इतिहास</h4>
         
         {advanceHistory.length === 0 ? (
           <p className="text-center text-gray-400 py-4">कोई अग्रिम नहीं / No advance taken</p>
