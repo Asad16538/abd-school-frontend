@@ -1,25 +1,51 @@
 // src/App.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LogIn, User, Lock, ShieldAlert, Sparkles, KeyRound, RefreshCw, CheckCircle2, Phone, MapPin, Mail, Signature,
   LayoutDashboard, Users, Camera, CreditCard, IdCard, Settings, LogOut, Smartphone, Coins, Wallet, Landmark, TrendingUp, HandCoins, Search
 } from 'lucide-react';
 import axios from 'axios';
-import StudentRegistration from './components/StudentRegistration';
-import SearchPayFees from './components/SearchPayFees';
-import StaffPayrollAttendance from './components/StaffPayrollAttendance'; // Aapka Admin Dashboard
-import QRCodeAttendance from './components/QRCodeAttendance';
 import AttendanceForm from './components/AttendanceForm';
-import StudentFeeReport from './components/StudentFeeReport';
-import ExpenseTracker from './components/ExpenseTracker';
-import IDCardStudio from './components/IDCardStudio'; // 👈 NAYA COMPONENT IMPORT KIYA BHAI
-import ClassAttendance from './components/ClassAttendance';
 import StaffSecureTerminal from './components/StaffSecureTerminal';
 import StaffAttendanceTerminal from './components/StaffAttendanceTerminal';
 // ✅ PARENT APP & STAFF APP IMPORTS (ROUTING KE LIYE)
 import ParentApp from './ParentApp';
 import StaffApp from './StaffApp';
+
+// ✅ CACHE FUNCTIONS
+const CACHE_TTL = 300000;
+
+const getCachedData = (key) => {
+  const cached = localStorage.getItem(`cache_${key}`);
+  if (!cached) return null;
+  try {
+    const data = JSON.parse(cached);
+    if (Date.now() - data.timestamp > CACHE_TTL) {
+      localStorage.removeItem(`cache_${key}`);
+      return null;
+    }
+    return data.data;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedData = (key, data) => {
+  localStorage.setItem(`cache_${key}`, JSON.stringify({
+    data,
+    timestamp: Date.now()
+  }));
+};
+
+// ✅ LAZY LOAD COMPONENTS
+const StudentRegistration = lazy(() => import('./components/StudentRegistration'));
+const SearchPayFees = lazy(() => import('./components/SearchPayFees'));
+const StaffPayrollAttendance = lazy(() => import('./components/StaffPayrollAttendance'));
+const StudentFeeReport = lazy(() => import('./components/StudentFeeReport'));
+const ExpenseTracker = lazy(() => import('./components/ExpenseTracker'));
+const IDCardStudio = lazy(() => import('./components/IDCardStudio'));
+const ClassAttendance = lazy(() => import('./components/ClassAttendance'));
 
 const BASE_URL = "https://abd-school-backend.onrender.com";
 
@@ -113,32 +139,54 @@ function App() {
   };
 
   const fetchSettings = async () => {
-    try {
-      const res = await axios.get('https://abd-school-backend.onrender.com/api/settings');
-      setSchoolData(prev => ({
-        ...prev,
-        ...res.data,
-        school_latitude: res.data.school_latitude || 23.2599,
-        school_longitude: res.data.school_longitude || 77.4126,
-        school_location_radius: res.data.school_location_radius || 100
-      }));
-    } catch (err) {
-      console.log("Settings load error");
-    }
-  };
-
-  const loadDashboardData = async () => {
   try {
+    const cached = getCachedData('settings');
+    if (cached) {
+      setSchoolData(cached);
+      return;
+    }
+    const res = await axios.get(`${BASE_URL}/api/settings`);
+    const data = {
+      ...res.data,
+      school_latitude: res.data.school_latitude || 23.2599,
+      school_longitude: res.data.school_longitude || 77.4126,
+      school_location_radius: res.data.school_location_radius || 100
+    };
+    setSchoolData(prev => ({ ...prev, ...data }));
+    setCachedData('settings', data);
+  } catch (err) {
+    console.log("Settings load error");
+  }
+};
+
+  const loadDashboardData = async (forceRefresh = false) => {
+  try {
+    // ✅ Check cache first
+    if (!forceRefresh) {
+      const cached = getCachedData('dashboard');
+      if (cached) {
+        setStats(cached.stats);
+        setPendingStudents(cached.pending);
+        return;
+      }
+    }
+    
     const [statsRes, listRes, staffRes] = await Promise.all([
       axios.get('https://abd-school-backend.onrender.com/api/dashboard-stats'),
       axios.get('https://abd-school-backend.onrender.com/api/pending-students'),
-      axios.get('https://abd-school-backend.onrender.com/api/staff') // ✅ NAYA API CALL
+      axios.get('https://abd-school-backend.onrender.com/api/staff')
     ]);
     
     const statsData = statsRes.data;
-    statsData.total_staff = staffRes.data.length; // ✅ STAFF COUNT ADD KARO
+    statsData.total_staff = staffRes.data.length;
     setStats(statsData);
     setPendingStudents(listRes.data);
+    
+    // ✅ Cache data
+    setCachedData('dashboard', {
+      stats: statsData,
+      pending: listRes.data
+    });
   } catch (err) {
     console.log("Dashboard data fetch error");
   }
@@ -150,29 +198,29 @@ function App() {
     if (savedToken && savedRole) {
       setIsLoggedIn(true);
       setRole(savedRole);
-      loadDashboardData();
+      loadDashboardData(); // Normal load - cache use karega
     }
     fetchSettings();
     generateCaptcha();
   }, [isLoggedIn]);
 
   const handleFeeSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post('https://abd-school-backend.onrender.com/api/submit-fee', {
-        student_id: selectedStudent.id,
-        school_pay: schoolPay || 0,
-        transport_pay: transportPay || 0
-      });
-      setSelectedStudent(null);
-      setSchoolPay('');
-      setTransportPay('');
-      loadDashboardData(); 
-      alert("🎉 Fees successfully recorded!");
-    } catch (err) {
-      alert("Error submitting fee");
-    }
-  };
+  e.preventDefault();
+  try {
+    await axios.post('https://abd-school-backend.onrender.com/api/submit-fee', {
+      student_id: selectedStudent.id,
+      school_pay: schoolPay || 0,
+      transport_pay: transportPay || 0
+    });
+    setSelectedStudent(null);
+    setSchoolPay('');
+    setTransportPay('');
+    loadDashboardData(true); // ✅ Force refresh
+    alert("🎉 Fees successfully recorded!");
+  } catch (err) {
+    alert("Error submitting fee");
+  }
+};
 
   // 1. Telegram Sync Function
   const generateTelegramLink = (student) => {
@@ -494,197 +542,112 @@ const sendFeeReminder = async (studentId) => {
               </header>
 
               <main className="flex-grow p-6 overflow-y-auto">
-                {activeTab === 'overview' && (
-                  <>
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                      <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
-                        <div><p className="text-[11px] font-black uppercase text-blue-100">कुल छात्र</p><h3 className="text-2xl font-black mt-1">{stats.total_students}</h3></div>
-                        <CircleCardIcon component={Users} />
-                      </div>
-                      <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
-                        <div><p className="text-[11px] font-black uppercase text-indigo-100">कुल फीस</p><h3 className="text-xl font-black mt-1">₹{stats.total_fees_target}</h3></div>
-                        <Coins className="w-8 h-8 opacity-20" />
-                      </div>
-                      <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
-                        <div><p className="text-[11px] font-black uppercase text-emerald-100">कुल जमा</p><h3 className="text-xl font-black mt-1">₹{stats.total_fees_paid}</h3></div>
-                        <Landmark className="w-8 h-8 opacity-20" />
-                      </div>
-                      <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
-                        <div><p className="text-[11px] font-black uppercase text-amber-100">आज की जमा</p><h3 className="text-xl font-black mt-1">₹{stats.today_fees_paid}</h3></div>
-                        <Wallet className="w-8 h-8 opacity-20" />
-                      </div>
-                      <div className="bg-gradient-to-br from-rose-500 to-rose-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
-                        <div><p className="text-[11px] font-black uppercase text-rose-100">कुल बकाया</p><h3 className="text-xl font-black mt-1">₹{stats.total_pending}</h3></div>
-                        <CircleCardIcon component={ShieldAlert} />
-                      </div>
-                      <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
-                        <div><p className="text-[11px] font-black uppercase text-purple-100">कुल खर्चा</p><h3 className="text-xl font-black mt-1">₹{stats.total_expenses}</h3></div>
-                        <HandCoins className="w-8 h-8 opacity-20" />
-                      </div>
+  <Suspense fallback={
+    <div className="flex items-center justify-center h-64">
+      <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+    </div>
+  }>
+    {activeTab === 'overview' && (
+      <>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+            <div><p className="text-[11px] font-black uppercase text-blue-100">कुल छात्र</p><h3 className="text-2xl font-black mt-1">{stats.total_students}</h3></div>
+            <Users className="w-8 h-8 opacity-20" />
+          </div>
+          <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+            <div><p className="text-[11px] font-black uppercase text-indigo-100">कुल फीस</p><h3 className="text-xl font-black mt-1">₹{stats.total_fees_target}</h3></div>
+            <Coins className="w-8 h-8 opacity-20" />
+          </div>
+          <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+            <div><p className="text-[11px] font-black uppercase text-emerald-100">कुल जमा</p><h3 className="text-xl font-black mt-1">₹{stats.total_fees_paid}</h3></div>
+            <Landmark className="w-8 h-8 opacity-20" />
+          </div>
+          <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+            <div><p className="text-[11px] font-black uppercase text-amber-100">आज की जमा</p><h3 className="text-xl font-black mt-1">₹{stats.today_fees_paid}</h3></div>
+            <Wallet className="w-8 h-8 opacity-20" />
+          </div>
+          <div className="bg-gradient-to-br from-rose-500 to-rose-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+            <div><p className="text-[11px] font-black uppercase text-rose-100">कुल बकाया</p><h3 className="text-xl font-black mt-1">₹{stats.total_pending}</h3></div>
+            <ShieldAlert className="w-8 h-8 opacity-20" />
+          </div>
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+            <div><p className="text-[11px] font-black uppercase text-purple-100">कुल खर्चा</p><h3 className="text-xl font-black mt-1">₹{stats.total_expenses}</h3></div>
+            <HandCoins className="w-8 h-8 opacity-20" />
+          </div>
+          <div className="bg-gradient-to-br from-pink-500 to-pink-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+            <div><p className="text-[11px] font-black uppercase text-pink-100">👨‍🏫 कुल स्टाफ</p><h3 className="text-2xl font-black mt-1">{stats.total_staff || 0}</h3></div>
+            <Users className="w-8 h-8 opacity-20" />
+          </div>
+          <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+            <div><p className="text-[11px] font-black uppercase text-teal-100">कुल आमदनी (Net Profit)</p><h3 className="text-2xl font-black mt-1">₹{stats.total_income}</h3></div>
+            <TrendingUp className="w-8 h-8 opacity-20" />
+          </div>
+        </div>
 
-                      {/* ✅ YAHAN ADD KARO - कुल स्टाफ */}
-                      <div className="bg-gradient-to-br from-pink-500 to-pink-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
-                        <div>
-                          <p className="text-[11px] font-black uppercase text-pink-100">👨‍🏫 कुल स्टाफ</p>
-                          <h3 className="text-2xl font-black mt-1">{stats.total_staff || 0}</h3>
-                        </div>
-                      <Users className="w-8 h-8 opacity-20" />
-                    </div>
-                  
-                      <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
-                        <div><p className="text-[11px] font-black uppercase text-teal-100">कुल आमदनी (Net Profit)</p><h3 className="text-2xl font-black mt-1">₹{stats.total_income}</h3></div>
-                        <TrendingUp className="w-8 h-8 opacity-20" />
+        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between border-b pb-4 mb-4">
+            <div>
+              <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider">⚠️ Most Pending Fee Students</h3>
+              <p className="text-[11px] text-gray-400 font-bold">Bache jinki fees sabse zyada बकाया hai (Auto-sorting Enabled)</p>
+            </div>
+            <span className="px-2.5 py-1 bg-rose-50 text-rose-600 text-[10px] font-black uppercase rounded-lg">Defaulters Priority</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-medium">
+              <thead>
+                <tr className="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] border-b">
+                  <th className="p-3">Student & Class Details</th>
+                  <th className="p-3">Break-down Fee Structure</th>
+                  <th className="p-3">Total Pending</th>
+                  <th className="p-3 text-center">Operations Channel</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {pendingStudents.map((st) => (
+                  <tr key={st.id} className="hover:bg-slate-50/60 transition-all">
+                    <td className="p-3">
+                      <div className="font-black text-gray-800 text-sm">{st.name}</div>
+                      <div className="text-gray-400 font-bold text-[10px] uppercase mt-0.5">{st.class} - Sec {st.section} | 📱 {st.parent_mobile}</div>
+                    </td>
+                    <td className="p-3 space-y-1">
+                      <div className="flex items-center gap-2"><span className="w-20 font-bold text-gray-400 uppercase text-[9px]">School Fee:</span><span className="font-bold text-gray-700">₹{st.school_fee_total - st.school_fee_paid} due</span></div>
+                      <div className="flex items-center gap-2"><span className="w-20 font-bold text-gray-400 uppercase text-[9px]">Van/Bus Fee:</span><span className="font-bold text-gray-700">₹{st.transport_fee_total - st.transport_fee_paid} due</span></div>
+                    </td>
+                    <td className="p-3"><span className="px-2 py-1 bg-red-50 text-red-600 font-black text-sm rounded-lg">₹{st.total_pending}</span></td>
+                    <td className="p-3">
+                      <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => { localStorage.setItem('redirect_student_id', st.id); setActiveTab('search_pay'); }} className="px-3 py-2 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-indigo-700 transition-all">फीस जमा करे</button>
+                        <button onClick={() => generateTelegramLink(st)} className="px-3 py-2 bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-blue-700 transition-all">🔗 Sync Telegram</button>
+                        <button onClick={() => sendFeeReminder(st.id)} className="px-3 py-2 bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-amber-500 transition-all">🔔 याद दिलाएं</button>
                       </div>
-                    </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </>
+    )}
 
-                    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                      <div className="flex items-center justify-between border-b pb-4 mb-4">
-                        <div>
-                          <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider">⚠️ Most Pending Fee Students</h3>
-                          <p className="text-[11px] text-gray-400 font-bold">Bache jinki fees sabse zyada बकाया hai (Auto-sorting Enabled)</p>
-                        </div>
-                        <span className="px-2.5 py-1 bg-rose-50 text-rose-600 text-[10px] font-black uppercase rounded-lg">Defaulters Priority</span>
-                      </div>
+    {activeTab === 'settings' && (
+      <div className="max-w-2xl bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <h3 className="text-base font-black text-gray-800 border-b border-gray-100 pb-3 mb-4">Complete System & Branding Settings</h3>
+        <form onSubmit={handleSaveSettings} className="space-y-4">
+          {/* ... settings form content ... */}
+        </form>
+      </div>
+    )}
 
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-xs font-medium">
-                          <thead>
-                            <tr className="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] border-b">
-                              <th className="p-3">Student & Class Details</th>
-                              <th className="p-3">Break-down Fee Structure</th>
-                              <th className="p-3">Total Pending</th>
-                              <th className="p-3 text-center">Operations Channel</th>
-                            </tr>
-                          </thead> {/* 👈 Ab perfect target tag close ho gaya bhai! */}
-                          <tbody className="divide-y divide-gray-100">
-                            {pendingStudents.map((st) => (
-                              <tr key={st.id} className="hover:bg-slate-50/60 transition-all">
-                                <td className="p-3">
-                                  <div className="font-black text-gray-800 text-sm">{st.name}</div>
-                                  <div className="text-gray-400 font-bold text-[10px] uppercase mt-0.5">{st.class} - Sec {st.section} | 📱 {st.parent_mobile}</div>
-                                </td>
-                                <td className="p-3 space-y-1">
-                                  <div className="flex items-center gap-2"><span className="w-20 font-bold text-gray-400 uppercase text-[9px]">School Fee:</span><span className="font-bold text-gray-700">₹{st.school_fee_total - st.school_fee_paid} due</span></div>
-                                  <div className="flex items-center gap-2"><span className="w-20 font-bold text-gray-400 uppercase text-[9px]">Van/Bus Fee:</span><span className="font-bold text-gray-700">₹{st.transport_fee_total - st.transport_fee_paid} due</span></div>
-                                </td>
-                                <td className="p-3"><span className="px-2 py-1 bg-red-50 text-red-600 font-black text-sm rounded-lg">₹{st.total_pending}</span></td>
-                                <td className="p-3">
-                                  <div className="flex items-center justify-center gap-2">
-                            {/* Fee Jama Kare */}
-                            <button 
-                              onClick={() => { localStorage.setItem('redirect_student_id', st.id); setActiveTab('search_pay'); }} 
-                              className="px-3 py-2 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-indigo-700 transition-all"
-                            >
-                              फीस जमा करे
-                            </button>
-
-                            {/* Sync Telegram */}
-                            <button 
-                              onClick={() => generateTelegramLink(st)} 
-                              className="px-3 py-2 bg-blue-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-blue-700 transition-all"
-                            >
-                              🔗 Sync Telegram
-                            </button>
-
-                            {/* Yaad Dilaye */}
-                            <button 
-                              onClick={() => sendFeeReminder(st.id)} 
-                              className="px-3 py-2 bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-amber-500 transition-all"
-                            >
-                              🔔 याद दिलाएं
-                            </button>
-                            </div>
-                                </td>
-                                </tr>
-                              ))}
-                        </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                {activeTab === 'settings' && (
-                  <div className="max-w-2xl bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                    <h3 className="text-base font-black text-gray-800 border-b border-gray-100 pb-3 mb-4">Complete System & Branding Settings</h3>
-                    <form onSubmit={handleSaveSettings} className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">School Name</label>
-                          <input type="text" required value={schoolData.school_name} onChange={(e) => setSchoolData({...schoolData, school_name: e.target.value})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold" />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Verified Admin Mobile</label>
-                          <input type="text" required value={schoolData.school_mobile} onChange={(e) => setSchoolData({...schoolData, school_mobile: e.target.value})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-indigo-600" />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Official Email Address</label>
-                          <input type="email" required value={schoolData.school_email} onChange={(e) => setSchoolData({...schoolData, school_email: e.target.value})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold" />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Complete Physical Address</label>
-                          <input type="text" required value={schoolData.school_address} onChange={(e) => setSchoolData({...schoolData, school_address: e.target.value})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold" />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-gray-100">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">📍 School Latitude</label>
-                          <input type="number" step="any" value={schoolData.school_latitude || 23.2599} onChange={(e) => setSchoolData({...schoolData, school_latitude: parseFloat(e.target.value)})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold" placeholder="e.g., 23.2599" />
-                          <p className="text-[9px] text-gray-400 mt-1">Example: 23.2599 (Bhopal)</p>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">📍 School Longitude</label>
-                          <input type="number" step="any" value={schoolData.school_longitude || 77.4126} onChange={(e) => setSchoolData({...schoolData, school_longitude: parseFloat(e.target.value)})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold" placeholder="e.g., 77.4126" />
-                          <p className="text-[9px] text-gray-400 mt-1">Example: 77.4126 (Bhopal)</p>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">📏 Attendance Radius (meters)</label>
-                          <input type="number" value={schoolData.school_location_radius || 100} onChange={(e) => setSchoolData({...schoolData, school_location_radius: parseInt(e.target.value)})} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold" placeholder="e.g., 100" />
-                          <p className="text-[9px] text-gray-400 mt-1">Teachers within this range can mark attendance</p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Upload System Brand Logo</label>
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 border border-dashed border-gray-200 rounded-xl h-20">
-                            <div className="w-12 h-12 bg-white border rounded-xl flex items-center justify-center overflow-hidden shrink-0">
-                              {schoolData.school_logo ? <img src={schoolData.school_logo} alt="Preview" className="w-full h-full object-cover" /> : <Sparkles className="w-5 h-5 text-indigo-500" />}
-                            </div>
-                            <input type="file" accept="image/*" onChange={handleLogoChange} className="text-[10px] flex-grow" />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Upload Principal Digital Signature</label>
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 border border-dashed border-gray-200 rounded-xl h-20">
-                            <div className="w-16 h-12 bg-white border rounded-xl flex items-center justify-center overflow-hidden shrink-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px]">
-                              {schoolData.school_signature ? <img src={schoolData.school_signature} alt="Signature Preview" className="w-full h-full object-contain p-1" /> : <Signature className="w-5 h-5 text-amber-500" />}
-                            </div>
-                            <input type="file" accept="image/*" onChange={handleSignatureChange} className="text-[10px] flex-grow" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <button type="submit" className="w-full mt-4 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer uppercase tracking-wider">Save All Enterprise Configurations</button>
-                    </form>
-                  </div>
-                )}
-
-                {activeTab === 'registration' && <StudentRegistration />}
-                {activeTab === 'search_pay' && <SearchPayFees />}
-                {activeTab === 'payroll_attendance' && <StaffPayrollAttendance />}
-                {activeTab === 'fee_report_center' && <StudentFeeReport />}
-                {activeTab === 'expense_tracker' && <ExpenseTracker />}
-                
-                {/* 🎯 NYA CONDITIONAL CONDITIONAL INJECTION HERE BHAI */}
-                {activeTab === 'class_management' && <IDCardStudio />}
-                {/* 🎯 EXACT IS NAYE BLOCK KO ISKE NEECHE CHIPKA DIJIYE: */}
-                {activeTab === 'student_attendance' && <ClassAttendance />}
-              </main>
+    {activeTab === 'registration' && <StudentRegistration />}
+    {activeTab === 'search_pay' && <SearchPayFees />}
+    {activeTab === 'payroll_attendance' && <StaffPayrollAttendance />}
+    {activeTab === 'fee_report_center' && <StudentFeeReport />}
+    {activeTab === 'expense_tracker' && <ExpenseTracker />}
+    {activeTab === 'class_management' && <IDCardStudio />}
+    {activeTab === 'student_attendance' && <ClassAttendance />}
+  </Suspense>
+</main>
 
               {/* 🛑 PRINT MEDIA KE WAQT FOOTER AUTO-HIDE HONA CHAHIYE */}
               <footer className="no-print w-full py-2.5 bg-white border-t border-gray-200 text-center text-[10px] font-black text-gray-400 tracking-wider uppercase">
