@@ -1,9 +1,28 @@
 // src/components/QRScanner.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import QrScanner from 'react-qr-scanner';
 
 const QRScannerComponent = ({ onScan, onClose }) => {
   const [error, setError] = useState('');
+  const [permissionGranted, setPermissionGranted] = useState(false);
+
+  useEffect(() => {
+    // ✅ Camera permission request
+    const requestCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        stream.getTracks().forEach(track => track.stop());
+        setPermissionGranted(true);
+        setError('');
+      } catch (err) {
+        console.log('Camera permission error:', err);
+        setError('Camera access denied. Please allow camera permission.');
+        setPermissionGranted(false);
+      }
+    };
+
+    requestCameraPermission();
+  }, []);
 
   const handleScan = (data) => {
     if (data) {
@@ -13,7 +32,11 @@ const QRScannerComponent = ({ onScan, onClose }) => {
 
   const handleError = (err) => {
     console.log('QR Scan Error:', err);
-    setError('Camera access denied. Please allow camera permission.');
+    if (err?.message?.includes('Permission denied')) {
+      setError('Camera access denied. Please allow camera permission from browser settings.');
+    } else {
+      setError('Camera access denied. Please allow camera permission.');
+    }
   };
 
   return (
@@ -30,19 +53,46 @@ const QRScannerComponent = ({ onScan, onClose }) => {
         </div>
         
         <div className="relative">
-          <QrScanner
-            delay={300}
-            onError={handleError}
-            onScan={handleScan}
-            style={{ width: '100%' }}
-            constraints={{
-              facingMode: 'environment'
-            }}
-          />
+          {!permissionGranted && !error && (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="mt-2 text-sm text-gray-500">Requesting camera permission...</p>
+            </div>
+          )}
+          
+          {permissionGranted && (
+            <QrScanner
+              delay={300}
+              onError={handleError}
+              onScan={handleScan}
+              style={{ width: '100%' }}
+              constraints={{
+                facingMode: 'environment'
+              }}
+            />
+          )}
+          
           {error && (
-            <p className="text-red-500 text-xs mt-2 bg-red-50 p-2 rounded">
-              ⚠️ {error}
-            </p>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+              <p className="text-red-600 text-sm font-bold">⚠️ {error}</p>
+              <button 
+                onClick={() => {
+                  // Retry permission
+                  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                    .then(stream => {
+                      stream.getTracks().forEach(track => track.stop());
+                      setPermissionGranted(true);
+                      setError('');
+                    })
+                    .catch(() => {
+                      setError('Camera access denied. Please allow camera permission.');
+                    });
+                }}
+                className="mt-3 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg"
+              >
+                🔄 Retry
+              </button>
+            </div>
           )}
         </div>
         
