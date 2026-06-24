@@ -52,26 +52,86 @@ const StaffPayrollAttendance = () => {
   };
 
   useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        setLoading(true);
-        await Promise.all([fetchStaff(), fetchRules()]);
-      } catch (e) {
-        console.error("Initial load engine fail safe handler active:", e);
-      } finally {
-        setLoading(false);
+  let isMounted = true;
+  
+  const loadInitialData = async () => {
+    try {
+      setLoading(true);
+      
+      // ⏱️ 5 second timeout -> 3 second karo
+const timeoutPromise = new Promise((_, reject) => 
+  setTimeout(() => reject(new Error('Timeout')), 3000) // ✅ 5 se 3 kiya
+);
+      
+      // 🚀 Parallel fetch with timeout
+      const fetchPromise = Promise.all([
+        fetch(`${BASE_URL}/api/staff`).catch(() => null),
+        fetch(`${BASE_URL}/api/attendance-rules`).catch(() => null)
+      ]);
+      
+      const results = await Promise.race([fetchPromise, timeoutPromise]);
+      
+      if (isMounted) {
+        // Staff data
+        if (results && results[0] && results[0].ok) {
+          const data = await results[0].json();
+          if (Array.isArray(data)) setStaffList(data);
+        } else {
+          setStaffList([]); // ✅ Empty list, loading hat jayegi
+        }
+        
+        // Rules data
+        if (results && results[1] && results[1].ok) {
+          const data = await results[1].json();
+          if (data && !data.error) {
+            setRules({
+              latitude: 24.7432,
+              longitude: 78.8561,
+              radius: 50,
+              start_time: data.start_time ?? '08:00',
+              buffer: data.buffer ?? 15,
+              end_time: data.end_time ?? '14:00'
+            });
+          }
+        }
       }
-    };
-    loadInitialData();
-  }, []);
-
-  // 🎯 REAL-TIME TAB SYNC: Jab bhi tab badlega, automatic taaza background coordinates reload honge
-  useEffect(() => {
-    if (activeTab === 'rules' || activeTab === 'directory') {
-      fetchRules();
-      fetchStaff();
+    } catch (e) {
+      console.error("Initial load error:", e);
+      if (isMounted) {
+        setStaffList([]); // ✅ Error par bhi loading hat jayegi
+      }
+    } finally {
+      if (isMounted) {
+        setLoading(false); // ✅ HAMESHA LOADING HATAO
+      }
     }
-  }, [activeTab]);
+  };
+  
+  loadInitialData();
+  
+  return () => {
+    isMounted = false;
+  };
+}, []);
+
+   // ✅ TAB SYNC - Sirf pehli baar fetch karo, har baar nahi
+useEffect(() => {
+  // Rules tab - Sirf tab change par fetch karo, agar data default hai to
+  if (activeTab === 'rules' && rules.latitude === 24.7432) {
+    fetchRules();
+  }
+  // Directory tab - Sirf tab change par fetch karo, agar list empty hai to
+  if (activeTab === 'directory' && staffList.length === 0) {
+    fetchStaff();
+  }
+}, [activeTab]);
+
+  // ✅ CL ENCASHMENT TOGGLE PAR MANAGEMENT SHEET AUTO-REFRESH
+  useEffect(() => {
+    if (activeTab === 'reports' && reportMode === 'management') {
+      fetchManagementPayrollSheet();
+    }
+  }, [clEncashment, selectedMonth]);
 
   // Fetch Reports dynamically jab report mode ya month select badle
   useEffect(() => {
@@ -98,42 +158,68 @@ const StaffPayrollAttendance = () => {
   };
 
   const fetchRules = async () => {
-    try {
-      // 1. Pehle main school settings table se saved live coordinates uthao
-      const settingsRes = await fetch(`${BASE_URL}/api/settings`);
-      let currentLat = 24.7432;
-      let currentLng = 78.8561;
-      let currentRadius = 50;
-
-      if (settingsRes.ok) {
-        const sData = await settingsRes.json();
-        currentLat = parseFloat(sData.school_latitude || sData.latitude) || 24.7432;
-        currentLng = parseFloat(sData.school_longitude || sData.longitude) || 78.8561;
-        currentRadius = parseInt(sData.school_location_radius || sData.allowed_radius_meters) || 50;
-      }
-
-      // 2. Phir baaki ke shift parameters attendance rules table se merge karo
-      const res = await fetch(`${BASE_URL}/api/attendance-rules`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && !data.error) {
-          setRules({
-            latitude: currentLat,
-            longitude: currentLng,
-            radius: currentRadius,
-            start_time: data.start_time ?? '08:00',
-            buffer: data.buffer ?? 15,
-            end_time: data.end_time ?? '14:00'
-          });
-          return;
-        }
-      }
-
-      setRules(prev => ({ ...prev, latitude: currentLat, longitude: currentLng, radius: currentRadius }));
-    } catch (err) {
-      console.error("Rules matrix fetch error", err);
+  try {
+    // 1. Pehle attendance rules fetch karo (PRIORITY)
+    const rulesRes = await fetch(`${BASE_URL}/api/attendance-rules`);
+    let rulesData = null;
+    
+    if (rulesRes.ok) {
+      rulesData = await rulesRes.json();
     }
-  };
+
+    // 2. Default values (Aapki exact location)
+    let currentLat = 24.750358920875314;
+    let currentLng = 78.8348749760745;
+    let currentRadius = 50;
+
+    // 3. Agar rules available hain, to UNKO priority do
+    if (rulesData && !rulesData.error && rulesData.latitude) {
+      currentLat = parseFloat(rulesData.latitude);
+      currentLng = parseFloat(rulesData.longitude);
+      currentRadius = parseInt(rulesData.radius) || 50;
+      
+      setRules({
+        latitude: currentLat,
+        longitude: currentLng,
+        radius: currentRadius,
+        start_time: rulesData.start_time ?? '08:00',
+        buffer: rulesData.buffer ?? 15,
+        end_time: rulesData.end_time ?? '14:00'
+      });
+      return; // ✅ Rules mil gaye, yahi return karo
+    }
+
+    // 4. Agar rules nahi hain, to settings se lo (FALLBACK)
+    const settingsRes = await fetch(`${BASE_URL}/api/settings`);
+    if (settingsRes.ok) {
+      const sData = await settingsRes.json();
+      currentLat = parseFloat(sData.school_latitude) || currentLat;
+      currentLng = parseFloat(sData.school_longitude) || currentLng;
+      currentRadius = parseInt(sData.school_location_radius) || currentRadius;
+    }
+
+    setRules({
+      latitude: currentLat,
+      longitude: currentLng,
+      radius: currentRadius,
+      start_time: '08:00',
+      buffer: 15,
+      end_time: '14:00'
+    });
+
+  } catch (err) {
+    console.error("Rules fetch error:", err);
+    // Fallback to your exact location
+    setRules({
+      latitude: 24.750358920875314,
+      longitude: 78.8348749760745,
+      radius: 50,
+      start_time: '08:00',
+      buffer: 15,
+      end_time: '14:00'
+    });
+  }
+};
 
   const fetchAttendanceReports = async () => {
     try {
@@ -256,14 +342,22 @@ const StaffPayrollAttendance = () => {
   };
 
   const handleFetchAdvanceHistory = async (staffId) => {
-    try {
-      const res = await fetch(`${BASE_URL}/api/payroll/advance-history/${staffId}`);
-      const data = await res.json();
-      if (Array.isArray(data)) setAdvanceHistory(data);
-    } catch (err) {
+  try {
+    const res = await fetch(`${BASE_URL}/api/payroll/advance-history/${staffId}`);
+    const data = await res.json();
+    console.log("Advance history response:", data); // Debug ke liye
+    if (Array.isArray(data)) {
+      setAdvanceHistory(data);
+    } else if (data && Array.isArray(data.history)) {
+      setAdvanceHistory(data.history);
+    } else {
       setAdvanceHistory([]);
     }
-  };
+  } catch (err) {
+    console.error("Fetch advance history error:", err);
+    setAdvanceHistory([]);
+  }
+};
 
   const handleOpenAdvanceModal = (staff) => {
     if (!staff) return;
@@ -272,30 +366,57 @@ const StaffPayrollAttendance = () => {
   };
 
   const handleSubmitAdvancePayment = async (e) => {
-    e.preventDefault();
-    if (!advanceAmount || parseFloat(advanceAmount) <= 0 || !advanceModalStaff) return;
+  e.preventDefault();
+  if (!advanceAmount || parseFloat(advanceAmount) <= 0 || !advanceModalStaff) return;
 
-    const payload = {
-      staff_id: advanceModalStaff.id,
-      amount: parseFloat(advanceAmount),
-      purpose: advanceReason || 'Personal Advance',
-      date: new Date().toISOString().split('T')[0]
-    };
+  const payload = {
+    staff_id: advanceModalStaff.id,
+    amount: parseFloat(advanceAmount),
+    purpose: advanceReason || 'Personal Advance',
+    date: new Date().toISOString().split('T')[0]
+  };
 
+  try {
+    const res = await fetch(`${BASE_URL}/api/payroll/add-advance`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    const result = await res.json();
+    console.log("Advance submit response:", result);
+    
+    if (res.ok) {
+      alert("✅ Advance Payment logged successfully!");
+      setAdvanceAmount('');
+      setAdvanceReason('');
+      await handleFetchAdvanceHistory(advanceModalStaff.id);
+    } else {
+      alert("Failed: " + (result.error || "Unknown error"));
+    }
+  } catch (err) {
+    console.error("Submit advance error:", err);
+    alert("Error saving advance. Check backend logs.");
+  }
+};
+
+  const downloadAdvanceHistory = async (staffId, staffName) => {
     try {
-      const res = await fetch(`${BASE_URL}/api/payroll/add-advance`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        alert("💸 Advance Payment logged successfully!");
-        setAdvanceAmount(''); setAdvanceReason('');
-        handleFetchAdvanceHistory(advanceModalStaff.id);
-      }
-    } catch (err) {
-      setAdvanceHistory([...advanceHistory, { date: payload.date, amount: payload.amount, purpose: payload.purpose }]);
-      setAdvanceAmount(''); setAdvanceReason('');
+      const response = await fetch(`${BASE_URL}/api/payroll/download-advance-history/${staffId}`);
+      if (!response.ok) throw new Error('Download failed');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Advance_History_${staffName}_${staffId}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Failed to download history');
     }
   };
 
@@ -404,7 +525,7 @@ const StaffPayrollAttendance = () => {
     }));
     const worksheet = XLSX.utils.json_to_sheet(excelRows);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_with_sheet = XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
     XLSX.writeFile(workbook, `Attendance_Report_${reportMode === 'today' ? 'Daily' : selectedMonth}.xlsx`);
   };
 
@@ -429,7 +550,7 @@ const StaffPayrollAttendance = () => {
     }));
     const worksheet = XLSX.utils.json_to_sheet(excelRows);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_with_sheet = XLSX.utils.book_append_sheet(workbook, worksheet, "Payroll Ledger");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Payroll Ledger");
     XLSX.writeFile(workbook, `Master_Management_Payroll_${selectedMonth}.xlsx`);
   };
 
@@ -444,8 +565,8 @@ const StaffPayrollAttendance = () => {
   const thTdStyle = { padding: '12px 10px', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' };
 
   // Master Wall QR Encryption String Generator
-  const myComputerIp = "10.246.64.178";
-  const wallQrDataString = `http://${myComputerIp}:5173/staff-attendance-terminal`; 
+  const myComputerIp = window.location.hostname;
+  const wallQrDataString = `https://${myComputerIp}/staff-attendance-terminal`; 
   const generatedWallQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(wallQrDataString)}`;
 
   if (loading) {
@@ -472,10 +593,14 @@ const StaffPayrollAttendance = () => {
       )}
 
       {/* HORIZONTAL TAB BAR MENU PANEL */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '20px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px' }}>
           <button onClick={() => setActiveTab('directory')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'directory' ? '#4f46e5' : '#fff', color: activeTab === 'directory' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Users size={16}/> Staff Profiles</button>
           <button onClick={() => { setActiveTab('reports'); setReportMode('today'); }} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'reports' ? '#4f46e5' : '#fff', color: activeTab === 'reports' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Calendar size={16}/> Master Reports Engine</button>
+    
+          {/* 🎯 ADVANCE TAB BUTTON */}
+          <button onClick={() => setActiveTab('advance')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'advance' ? '#e65100' : '#fff', color: activeTab === 'advance' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><DollarSign size={16}/> Advance Salary</button>
+    
           <button onClick={() => setActiveTab('rules')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'rules' ? '#4f46e5' : '#fff', color: activeTab === 'rules' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Settings size={16}/> Attendance Rules</button>
           <button onClick={() => setActiveTab('qr_wall')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'qr_wall' ? '#4f46e5' : '#fff', color: activeTab === 'qr_wall' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><QrCode size={16}/> Wall QR Terminal</button>
         </div>
@@ -555,6 +680,22 @@ const StaffPayrollAttendance = () => {
                 ))
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'advance' && (
+        <div style={cardStyle}>
+          <h3 style={cardTitleStyle}><DollarSign size={18} color="#e65100"/> Advance Salary Management</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {staffList.map((s) => (
+              <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                <span>{s.name}</span>
+                <button onClick={() => handleOpenAdvanceModal(s)} style={{ padding: '6px 12px', backgroundColor: '#e65100', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}>
+                  Issue Advance
+                </button>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -732,6 +873,30 @@ const StaffPayrollAttendance = () => {
                   </div>
                 ))
               )}
+            </div>
+
+                        {/* Download CSV Button */}
+            <div style={{ marginTop: '12px', marginBottom: '12px' }}>
+              <button 
+                onClick={() => downloadAdvanceHistory(advanceModalStaff.id, advanceModalStaff.name)}
+                style={{ 
+                  width: '100%', 
+                  padding: '8px', 
+                  backgroundColor: '#16a34a', 
+                  color: 'white', 
+                  border: 'none', 
+                  borderRadius: '8px', 
+                  fontWeight: 'bold', 
+                  fontSize: '12px', 
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Download size={14}/> 📥 Download History as CSV
+              </button>
             </div>
 
             <div style={{ textAlign: 'right', marginTop: '16px' }}>

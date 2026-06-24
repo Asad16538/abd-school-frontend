@@ -17,6 +17,9 @@ import IDCardStudio from './components/IDCardStudio'; // 👈 NAYA COMPONENT IMP
 import ClassAttendance from './components/ClassAttendance';
 import StaffSecureTerminal from './components/StaffSecureTerminal';
 import StaffAttendanceTerminal from './components/StaffAttendanceTerminal';
+// ✅ PARENT APP & STAFF APP IMPORTS (ROUTING KE LIYE)
+import ParentApp from './ParentApp';
+import StaffApp from './StaffApp';
 
 const BASE_URL = "https://abd-school-backend.onrender.com";
 
@@ -29,6 +32,16 @@ function App() {
   if (window.location.href.includes('staff-attendance-terminal') || window.location.pathname === '/staff-attendance-terminal') {
   return <StaffAttendanceTerminal />;
 }
+
+// ✅ YAHAN ADD KARO - PARENT APP ROUTE
+  if (window.location.pathname === '/parent' || window.location.pathname.startsWith('/parent/')) {
+    return <ParentApp />;
+  }
+
+  // ✅ YAHAN ADD KARO - STAFF APP ROUTE
+  if (window.location.pathname === '/staff' || window.location.pathname.startsWith('/staff/')) {
+    return <StaffApp />;
+  }
   
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -115,15 +128,21 @@ function App() {
   };
 
   const loadDashboardData = async () => {
-    try {
-      const statsRes = await axios.get('https://abd-school-backend.onrender.com/api/dashboard-stats');
-      setStats(statsRes.data);
-      const listRes = await axios.get('https://abd-school-backend.onrender.com/api/pending-students');
-      setPendingStudents(listRes.data);
-    } catch (err) {
-      console.log("Dashboard data fetch error");
-    }
-  };
+  try {
+    const [statsRes, listRes, staffRes] = await Promise.all([
+      axios.get('https://abd-school-backend.onrender.com/api/dashboard-stats'),
+      axios.get('https://abd-school-backend.onrender.com/api/pending-students'),
+      axios.get('https://abd-school-backend.onrender.com/api/staff') // ✅ NAYA API CALL
+    ]);
+    
+    const statsData = statsRes.data;
+    statsData.total_staff = staffRes.data.length; // ✅ STAFF COUNT ADD KARO
+    setStats(statsData);
+    setPendingStudents(listRes.data);
+  } catch (err) {
+    console.log("Dashboard data fetch error");
+  }
+};
 
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
@@ -166,18 +185,18 @@ function App() {
   };
 
   // 2. Fees Reminder Function (Yaad Dilaye)
-  const sendFeeReminder = async (studentId) => {
-    const confirmAction = window.confirm("Kya aap sach mein student ko fee reminder bhejna chahte hain?");
-    if (!confirmAction) return;
+const sendFeeReminder = async (studentId) => {
+  const confirmAction = window.confirm("Kya aap sach mein student ko fee reminder bhejna chahte hain?");
+  if (!confirmAction) return;
 
-    try {
-      const res = await axios.post(`${BASE_URL}/api/fee-reminder`, { student_id: studentId });
-      alert(res.data.message);
-    } catch (err) {
-      console.error("Error:", err);
-      alert("Failed to send reminder. Check Backend!");
-    }
-  };
+  try {
+    const res = await axios.post(`${BASE_URL}/api/fee-reminder`, { student_id: studentId });
+    alert(res.data.message);
+  } catch (err) {
+    console.error("Error:", err);
+    alert("Failed to send reminder. Check Backend!");
+  }
+};
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -502,9 +521,19 @@ function App() {
                         <div><p className="text-[11px] font-black uppercase text-purple-100">कुल खर्चा</p><h3 className="text-xl font-black mt-1">₹{stats.total_expenses}</h3></div>
                         <HandCoins className="w-8 h-8 opacity-20" />
                       </div>
-                      <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between col-span-2">
+
+                      {/* ✅ YAHAN ADD KARO - कुल स्टाफ */}
+                      <div className="bg-gradient-to-br from-pink-500 to-pink-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
+                        <div>
+                          <p className="text-[11px] font-black uppercase text-pink-100">👨‍🏫 कुल स्टाफ</p>
+                          <h3 className="text-2xl font-black mt-1">{stats.total_staff || 0}</h3>
+                        </div>
+                      <Users className="w-8 h-8 opacity-20" />
+                    </div>
+                  
+                      <div className="bg-gradient-to-br from-teal-500 to-teal-600 text-white p-4 rounded-2xl shadow-sm flex items-center justify-between">
                         <div><p className="text-[11px] font-black uppercase text-teal-100">कुल आमदनी (Net Profit)</p><h3 className="text-2xl font-black mt-1">₹{stats.total_income}</h3></div>
-                        <TrendingUp className="w-10 h-10 opacity-20" />
+                        <TrendingUp className="w-8 h-8 opacity-20" />
                       </div>
                     </div>
 
@@ -557,7 +586,7 @@ function App() {
                               🔗 Sync Telegram
                             </button>
 
-                            {/* Yaad Dilaye - YAHAN SE FUNCTION CALL HO RAHA HAI */}
+                            {/* Yaad Dilaye */}
                             <button 
                               onClick={() => sendFeeReminder(st.id)} 
                               className="px-3 py-2 bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-amber-500 transition-all"
