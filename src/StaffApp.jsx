@@ -6,7 +6,8 @@ import {
   Home, Bell, User, Calendar, Clock, Users, 
   LogOut, CheckCircle, XCircle, AlertTriangle,
   CreditCard, BookOpen, Settings, ChevronRight,
-  UserPlus, FileText, TrendingUp, DollarSign, Camera, QrCode
+  UserPlus, FileText, TrendingUp, DollarSign, Camera, QrCode,
+  Save, Search, ShieldAlert
 } from 'lucide-react';
 
 const BASE_URL = 'https://abd-school-backend.onrender.com';
@@ -21,6 +22,15 @@ const StaffApp = () => {
   const [showScanner, setShowScanner] = useState(false);
   const [advanceHistory, setAdvanceHistory] = useState([]);
   const [assignedStudents, setAssignedStudents] = useState([]);
+  
+  // ✅ Class Attendance States
+  const [classAttendanceStudents, setClassAttendanceStudents] = useState([]);
+  const [attendanceRecords, setAttendanceRecords] = useState({});
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [attendanceMessage, setAttendanceMessage] = useState({ type: '', text: '' });
+  const [dayStatus, setDayStatus] = useState('INIT');
+  const [lockMessage, setLockMessage] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('staff_token');
@@ -42,6 +52,10 @@ const StaffApp = () => {
         fetchNotifications(res.data.staff.id);
         fetchAssignedStudents(res.data.staff.id);
         fetchAdvanceHistory(res.data.staff.id);
+        // ✅ Auto fetch class attendance
+        if (res.data.staff.assigned_class) {
+          fetchClassAttendance(res.data.staff.assigned_class, res.data.staff.assigned_section || 'A');
+        }
       } else {
         localStorage.removeItem('staff_token');
       }
@@ -84,6 +98,77 @@ const StaffApp = () => {
     }
   };
 
+  // ✅ FETCH CLASS ATTENDANCE
+  const fetchClassAttendance = async (className, sectionName) => {
+    if (!className || !sectionName) return;
+    
+    setAttendanceLoading(true);
+    setAttendanceMessage({ type: '', text: '' });
+    setClassAttendanceStudents([]);
+
+    try {
+      const response = await axios.get(`${BASE_URL}/api/attendance/students`, {
+        params: { class: className, section: sectionName, date: selectedDate }
+      });
+
+      if (response.data.status === 'LOCKED') {
+        setDayStatus('LOCKED');
+        setLockMessage(response.data.message);
+      } else {
+        setDayStatus('OPEN');
+        const fetchedStudents = response.data.students || [];
+        setClassAttendanceStudents(fetchedStudents);
+
+        const initialAttendance = {};
+        fetchedStudents.forEach(student => {
+          initialAttendance[student.id] = 'Present';
+        });
+        setAttendanceRecords(initialAttendance);
+
+        if (fetchedStudents.length === 0) {
+          setAttendanceMessage({ type: 'info', text: 'Is Class mein koi student nahi mila.' });
+        }
+      }
+    } catch (error) {
+      setAttendanceMessage({ type: 'error', text: error.response?.data?.error || 'Data lane mein dikkat!' });
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
+  // ✅ HANDLE ATTENDANCE STATUS CHANGE
+  const handleStatusChange = (studentId, newStatus) => {
+    setAttendanceRecords(prev => ({ ...prev, [studentId]: newStatus }));
+  };
+
+  // ✅ SUBMIT CLASS ATTENDANCE
+  const handleSubmitAttendance = async () => {
+    if (classAttendanceStudents.length === 0 || dayStatus === 'LOCKED') return;
+
+    setAttendanceLoading(true);
+    setAttendanceMessage({ type: '', text: '' });
+
+    const recordsArray = Object.keys(attendanceRecords).map(id => ({
+      student_id: parseInt(id),
+      status: attendanceRecords[id]
+    }));
+
+    try {
+      const response = await axios.post(`${BASE_URL}/api/attendance/submit`, {
+        class: staffData?.assigned_class || '',
+        section: staffData?.assigned_section || 'A',
+        date: selectedDate,
+        records: recordsArray
+      });
+
+      setAttendanceMessage({ type: 'success', text: response.data.message || '✅ Attendance saved!' });
+    } catch (error) {
+      setAttendanceMessage({ type: 'error', text: error.response?.data?.error || 'Attendance save nahi ho payi!' });
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
+
   const markNotificationRead = async (id) => {
     try {
       await axios.post(`${BASE_URL}/api/staff/notification/read/${id}`);
@@ -114,21 +199,41 @@ const StaffApp = () => {
         }
       }
 
-      const res = await axios.post(`${BASE_URL}/api/staff/qr-checkin`, {
+      let latitude = 0;
+      let longitude = 0;
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
+        });
+        latitude = position.coords.latitude;
+        longitude = position.coords.longitude;
+      } catch (locErr) {
+        alert('❌ Location access denied. Please enable GPS.');
+        setShowScanner(false);
+        return;
+      }
+
+      const res = await axios.post(`${BASE_URL}/api/staff/mark-attendance`, {
         staff_id: staffData.id,
-        qr_data: parsedData,
-        latitude: parsedData.latitude || 0,
-        longitude: parsedData.longitude || 0
+        latitude: latitude,
+        longitude: longitude,
+        device_token: localStorage.getItem('device_token') || navigator.userAgent
       });
       
       if (res.data.success) {
-        alert('✅ Attendance marked successfully via QR!');
+        alert(res.data.message || '✅ Attendance marked successfully!');
         fetchTodayAttendance();
         setShowScanner(false);
       } else {
-        alert('❌ ' + (res.data.message || 'Check-in failed'));
+        alert('❌ ' + (res.data.message || res.data.error || 'Check-in failed'));
+        setShowScanner(false);
       }
     } catch (err) {
+      console.error('QR Checkin error:', err);
       alert('❌ Check-in failed. Please try again.');
       setShowScanner(false);
     }
@@ -172,20 +277,12 @@ const StaffApp = () => {
     }
   }, [staffData]);
 
-  const handleCheckIn = async () => {
-    try {
-      const res = await axios.post(`${BASE_URL}/api/staff/attendance/checkin`, {
-        staff_id: staffData?.id
-      });
-      if (res.data.success) {
-        alert('✅ Check-in successful!');
-        fetchTodayAttendance();
-        fetchAttendanceHistory();
-      }
-    } catch (err) {
-      alert('❌ Check-in failed');
+  // ✅ Auto-refresh attendance when date changes
+  useEffect(() => {
+    if (staffData?.assigned_class) {
+      fetchClassAttendance(staffData.assigned_class, staffData.assigned_section || 'A');
     }
-  };
+  }, [selectedDate]);
 
   const handleCheckOut = async () => {
     try {
@@ -193,12 +290,12 @@ const StaffApp = () => {
         staff_id: staffData?.id
       });
       if (res.data.success) {
-        alert('✅ Check-out successful!');
+        alert('✅ Campus Exit successful!');
         fetchTodayAttendance();
         fetchAttendanceHistory();
       }
     } catch (err) {
-      alert('❌ Check-out failed');
+      alert('❌ Campus Exit failed');
     }
   };
 
@@ -220,6 +317,9 @@ const StaffApp = () => {
       fetchNotifications(data.staff.id);
       fetchAssignedStudents(data.staff.id);
       fetchAdvanceHistory(data.staff.id);
+      if (data.staff.assigned_class) {
+        fetchClassAttendance(data.staff.assigned_class, data.staff.assigned_section || 'A');
+      }
     }} />;
   }
 
@@ -233,7 +333,10 @@ const StaffApp = () => {
             </div>
             <div>
               <h1 className="font-bold text-sm">👨‍🏫 {staffData?.name || 'Staff'}</h1>
-              <p className="text-[10px] opacity-80">{staffData?.designation || 'Teacher'}</p>
+              <p className="text-[10px] opacity-80">
+                {staffData?.designation || 'Teacher'} 
+                {staffData?.assigned_class && ` • Class ${staffData.assigned_class}`}
+              </p>
             </div>
           </div>
           <button onClick={handleLogout} className="p-2 bg-white/20 rounded-lg">
@@ -250,10 +353,7 @@ const StaffApp = () => {
               {unreadCount} नई सूचना / New notification{unreadCount > 1 ? 's' : ''}
             </span>
           </div>
-          <button 
-            onClick={() => setActiveTab('notifications')}
-            className="text-xs text-amber-600 font-bold"
-          >
+          <button onClick={() => setActiveTab('notifications')} className="text-xs text-amber-600 font-bold">
             📖 देखें
           </button>
         </div>
@@ -265,12 +365,11 @@ const StaffApp = () => {
             staffData={staffData} 
             notifications={notifications.slice(0, 3)}
             onViewAll={() => setActiveTab('notifications')}
-            onCheckIn={handleCheckIn}
-            onCheckOut={handleCheckOut}
             todayStatus={todayStatus}
             checkInTime={checkInTime}
             checkOutTime={checkOutTime}
             setShowScanner={setShowScanner}
+            onCheckOut={handleCheckOut}
           />
         )}
         {activeTab === 'notifications' && (
@@ -287,13 +386,27 @@ const StaffApp = () => {
             todayStatus={todayStatus}
             checkInTime={checkInTime}
             checkOutTime={checkOutTime}
-            onCheckIn={handleCheckIn}
-            onCheckOut={handleCheckOut}
             setShowScanner={setShowScanner}
+            onCheckOut={handleCheckOut}
           />
         )}
         {activeTab === 'students' && (
           <StaffStudents assignedStudents={assignedStudents} />
+        )}
+        {activeTab === 'class_attendance' && (
+          <ClassAttendanceStaff 
+            staffData={staffData}
+            students={classAttendanceStudents}
+            attendanceRecords={attendanceRecords}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            dayStatus={dayStatus}
+            lockMessage={lockMessage}
+            attendanceLoading={attendanceLoading}
+            attendanceMessage={attendanceMessage}
+            onStatusChange={handleStatusChange}
+            onSubmitAttendance={handleSubmitAttendance}
+          />
         )}
         {activeTab === 'profile' && (
           <StaffProfile staffData={staffData} />
@@ -340,11 +453,11 @@ const StaffApp = () => {
           <span className="text-[9px] font-bold">उपस्थिति</span>
         </button>
         <button 
-          onClick={() => setActiveTab('students')}
-          className={`flex flex-col items-center p-2 rounded-lg ${activeTab === 'students' ? 'text-indigo-600 bg-indigo-50' : 'text-gray-500'}`}
+          onClick={() => setActiveTab('class_attendance')}
+          className={`flex flex-col items-center p-2 rounded-lg ${activeTab === 'class_attendance' ? 'text-indigo-600 bg-indigo-50' : 'text-gray-500'}`}
         >
-          <Users className="w-5 h-5" />
-          <span className="text-[9px] font-bold">छात्र</span>
+          <BookOpen className="w-5 h-5" />
+          <span className="text-[9px] font-bold">कक्षा</span>
         </button>
         <button 
           onClick={() => setActiveTab('advance')}
@@ -359,7 +472,7 @@ const StaffApp = () => {
 };
 
 // ============================================================
-// 👨‍🏫 STAFF LOGIN
+// 👨‍🏫 STAFF LOGIN (Same as before)
 // ============================================================
 const StaffLogin = ({ onLogin }) => {
   const [mobile, setMobile] = useState('');
@@ -474,15 +587,15 @@ const StaffLogin = ({ onLogin }) => {
 // ============================================================
 // 📊 STAFF DASHBOARD
 // ============================================================
-const StaffDashboard = ({ staffData, notifications, onViewAll, onCheckIn, onCheckOut, todayStatus, checkInTime, checkOutTime, setShowScanner }) => {
+const StaffDashboard = ({ staffData, notifications, onViewAll, todayStatus, checkInTime, checkOutTime, setShowScanner, onCheckOut }) => {
+  // ✅ STATES
   const [stats, setStats] = useState({
     total_students: 0,
     present_today: 0,
-    absent_today: 0,
-    pending_fees: 0
+    absent_today: 0
   });
-  const [loading, setLoading] = useState(true);
 
+  // ✅ FETCH STATS
   useEffect(() => {
     fetchStats();
   }, []);
@@ -495,13 +608,12 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, onCheckIn, onChec
       }
     } catch (err) {
       console.log("Stats fetch error");
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <div className="space-y-4">
+      {/* Staff Profile Card */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -511,59 +623,56 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, onCheckIn, onChec
             <h3 className="font-bold text-lg text-gray-800">{staffData?.name || 'Staff Name'}</h3>
             <p className="text-sm text-gray-500">{staffData?.designation || 'Teacher'}</p>
             <p className="text-sm text-gray-500">📱 {staffData?.mobile || 'N/A'}</p>
+            {staffData?.assigned_class && (
+              <p className="text-sm text-indigo-600 font-bold">🏫 Class Teacher: {staffData.assigned_class} - {staffData.assigned_section || 'A'}</p>
+            )}
           </div>
         </div>
       </div>
 
+      {/* Today's Attendance Quick Status */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
             <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">📅 Today / आज</h4>
             {todayStatus ? (
               <div className="mt-1">
-                <p className="text-sm font-bold text-green-600">✅ Checked In</p>
+                <p className="text-sm font-bold text-green-600">✅ Campus Entry Done</p>
                 <p className="text-xs text-gray-500">⏱️ In: {checkInTime}</p>
                 {checkOutTime && <p className="text-xs text-gray-500">⏱️ Out: {checkOutTime}</p>}
               </div>
             ) : (
-              <p className="text-sm font-bold text-gray-400 mt-1">❌ Not checked in yet</p>
+              <p className="text-sm font-bold text-gray-400 mt-1">❌ Campus Entry not done yet</p>
             )}
           </div>
           <div className="flex gap-2">
             {!todayStatus && (
-              <>
-                <button 
-                  onClick={() => setShowScanner(true)}
-                  className="px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1"
-                >
-                  <QrCode className="w-4 h-4" /> QR
-                </button>
-                <button 
-                  onClick={onCheckIn}
-                  className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg"
-                >
-                  ✅ Check In
-                </button>
-              </>
+              <button 
+                onClick={() => setShowScanner(true)}
+                className="px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1 shadow-md hover:bg-purple-700 transition"
+              >
+                <QrCode className="w-4 h-4" /> Scan QR
+              </button>
             )}
             {todayStatus && !checkOutTime && (
               <button 
                 onClick={onCheckOut}
-                className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg"
+                className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-orange-700 transition"
               >
-                ❌ Check Out
+                🚗 Campus Exit
               </button>
             )}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      {/* ✅ 3 STATS CARDS - Stats state se data le raha hai */}
+      <div className="grid grid-cols-3 gap-3">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-black uppercase text-blue-100">कुल छात्र</p>
-              <h3 className="text-xl font-black mt-1">{stats.total_students || 0}</h3>
+              <h3 className="text-xl font-black mt-1">{stats.total_students}</h3>
             </div>
             <Users className="w-8 h-8 opacity-20" />
           </div>
@@ -571,8 +680,8 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, onCheckIn, onChec
         <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 text-white p-4 rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase text-emerald-100">आज उपस्थित</p>
-              <h3 className="text-xl font-black mt-1">{stats.present_today || 0}</h3>
+              <p className="text-[10px] font-black uppercase text-emerald-100">✅ उपस्थित</p>
+              <h3 className="text-xl font-black mt-1">{stats.present_today}</h3>
             </div>
             <CheckCircle className="w-8 h-8 opacity-20" />
           </div>
@@ -580,23 +689,15 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, onCheckIn, onChec
         <div className="bg-gradient-to-br from-rose-500 to-rose-600 text-white p-4 rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] font-black uppercase text-rose-100">आज अनुपस्थित</p>
-              <h3 className="text-xl font-black mt-1">{stats.absent_today || 0}</h3>
+              <p className="text-[10px] font-black uppercase text-rose-100">❌ अनुपस्थित</p>
+              <h3 className="text-xl font-black mt-1">{stats.absent_today}</h3>
             </div>
             <XCircle className="w-8 h-8 opacity-20" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-amber-500 to-amber-600 text-white p-4 rounded-xl shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[10px] font-black uppercase text-amber-100">बकाया फीस</p>
-              <h3 className="text-xl font-black mt-1">₹{stats.pending_fees || 0}</h3>
-            </div>
-            <AlertTriangle className="w-8 h-8 opacity-20" />
-          </div>
-        </div>
       </div>
 
+      {/* Recent Notifications */}
       <div className="bg-white p-4 rounded-xl border border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">📬 ताज़ा सूचनाएं</h4>
@@ -678,9 +779,9 @@ const StaffNotifications = ({ notifications, onMarkRead }) => {
 };
 
 // ============================================================
-// 📋 STAFF ATTENDANCE
+// 📋 STAFF ATTENDANCE (QR + History)
 // ============================================================
-const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInTime, checkOutTime, onCheckIn, onCheckOut, setShowScanner }) => {
+const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInTime, checkOutTime, setShowScanner, onCheckOut }) => {
   const presentCount = attendance.filter(a => a.status === 'Present').length;
   const absentCount = attendance.filter(a => a.status === 'Absent').length;
   const totalDays = attendance.length;
@@ -696,37 +797,29 @@ const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInT
           <div>
             {todayStatus ? (
               <div>
-                <p className="text-sm font-bold text-green-600">✅ Checked In</p>
+                <p className="text-sm font-bold text-green-600">✅ Campus Entry Done</p>
                 <p className="text-xs text-gray-500">⏱️ In: {checkInTime}</p>
                 {checkOutTime && <p className="text-xs text-gray-500">⏱️ Out: {checkOutTime}</p>}
               </div>
             ) : (
-              <p className="text-sm font-bold text-gray-400">❌ Not checked in yet</p>
+              <p className="text-sm font-bold text-gray-400">❌ Campus Entry not done yet</p>
             )}
           </div>
           <div className="flex gap-2">
             {!todayStatus && (
-              <>
-                <button 
-                  onClick={() => setShowScanner(true)}
-                  className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1"
-                >
-                  <QrCode className="w-4 h-4" /> QR
-                </button>
-                <button 
-                  onClick={onCheckIn}
-                  className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-lg"
-                >
-                  ✅ Check In
-                </button>
-              </>
+              <button 
+                onClick={() => setShowScanner(true)}
+                className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1"
+              >
+                <QrCode className="w-4 h-4" /> Scan QR
+              </button>
             )}
             {todayStatus && !checkOutTime && (
               <button 
                 onClick={onCheckOut}
-                className="px-4 py-2 bg-red-600 text-white text-xs font-bold rounded-lg"
+                className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg"
               >
-                ❌ Check Out
+                🚗 Campus Exit
               </button>
             )}
           </div>
@@ -785,7 +878,134 @@ const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInT
 };
 
 // ============================================================
-// 👨‍🎓 STAFF STUDENTS
+// 📚 CLASS ATTENDANCE (For Staff - Assigned Class Only)
+// ============================================================
+const ClassAttendanceStaff = ({ 
+  staffData, 
+  students, 
+  attendanceRecords, 
+  selectedDate, 
+  setSelectedDate,
+  dayStatus,
+  lockMessage,
+  attendanceLoading,
+  attendanceMessage,
+  onStatusChange,
+  onSubmitAttendance
+}) => {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-gray-800">
+          📚 Class Attendance 
+          {staffData?.assigned_class && (
+            <span className="text-indigo-600"> - Class {staffData.assigned_class} {staffData.assigned_section || 'A'}</span>
+          )}
+        </h3>
+        <input 
+          type="date" 
+          value={selectedDate} 
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="p-2 border border-gray-200 rounded-lg text-xs font-bold"
+        />
+      </div>
+
+      {attendanceMessage.text && (
+        <div className={`p-3 rounded-xl text-xs font-bold text-center ${
+          attendanceMessage.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 
+          attendanceMessage.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 
+          'bg-blue-50 text-blue-700 border border-blue-200'
+        }`}>
+          {attendanceMessage.text}
+        </div>
+      )}
+
+      {dayStatus === 'LOCKED' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8 text-center shadow-sm flex flex-col items-center justify-center gap-3">
+          <ShieldAlert className="w-12 h-12 text-amber-500 animate-bounce" />
+          <h3 className="text-base font-black text-amber-900 uppercase tracking-wide">Operation Restricted</h3>
+          <p className="text-xs font-bold text-amber-700">{lockMessage}</p>
+        </div>
+      )}
+
+      {dayStatus === 'OPEN' && students.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-medium">
+              <thead>
+                <tr className="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] border-b">
+                  <th className="p-4 w-24">Roll No</th>
+                  <th className="p-4">Student Name</th>
+                  <th className="p-4 text-center w-80">Attendance</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {students.map((student) => (
+                  <tr key={student.id} className="hover:bg-slate-50/60 transition-all">
+                    <td className="p-4 font-black text-gray-500">{student.roll_no || '-'}</td>
+                    <td className="p-4 font-black text-gray-800 text-sm">{student.name}</td>
+                    <td className="p-4">
+                      <div className="flex justify-center gap-1.5">
+                        {['Present', 'Absent', 'Leave', 'Late'].map((status) => {
+                          const colorMap = {
+                            Present: 'bg-green-600 text-white shadow-md shadow-green-200',
+                            Absent: 'bg-red-600 text-white shadow-md shadow-red-200',
+                            Leave: 'bg-amber-500 text-white shadow-md shadow-amber-200',
+                            Late: 'bg-orange-500 text-white shadow-md shadow-orange-200'
+                          };
+                          const isActive = attendanceRecords[student.id] === status;
+                          return (
+                            <button
+                              key={status}
+                              onClick={() => onStatusChange(student.id, status)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wide transition-all cursor-pointer ${
+                                isActive ? colorMap[status] : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                              }`}
+                            >
+                              {status === 'Present' ? 'P' : status === 'Absent' ? 'A' : status === 'Leave' ? 'L' : 'Late'}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+            <button
+              onClick={onSubmitAttendance}
+              disabled={attendanceLoading}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-wider py-3 px-8 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            >
+              <Save className="w-4 h-4" /> {attendanceLoading ? 'Saving...' : 'Save Attendance'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {dayStatus === 'OPEN' && students.length === 0 && !attendanceLoading && (
+        <div className="bg-white p-8 rounded-xl text-center border border-gray-200">
+          <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-400 font-bold text-sm">कोई छात्र नहीं</p>
+          <p className="text-xs text-gray-400">इस कक्षा में कोई छात्र नहीं है</p>
+        </div>
+      )}
+
+      {attendanceLoading && (
+        <div className="text-center py-8">
+          <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-2 text-sm text-gray-500">Loading...</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================================
+// 👨‍🎓 STAFF STUDENTS (Assigned Students)
 // ============================================================
 const StaffStudents = ({ assignedStudents }) => {
   return (
@@ -810,11 +1030,9 @@ const StaffStudents = ({ assignedStudents }) => {
                 <p className="text-xs text-gray-500">Class {s.class} - {s.section} | Roll: {s.roll_no}</p>
               </div>
             </div>
-            <div className="text-right">
-              <span className="text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500">
-                {s.status || 'Active'}
-              </span>
-            </div>
+            <span className="text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+              Active
+            </span>
           </div>
         ))
       )}
@@ -839,6 +1057,12 @@ const StaffProfile = ({ staffData }) => {
             <h3 className="font-bold text-lg text-gray-800">{staffData?.name || 'Staff Name'}</h3>
             <p className="text-sm text-gray-500">{staffData?.designation || 'Teacher'}</p>
             <p className="text-sm text-gray-500">📱 {staffData?.mobile || 'N/A'}</p>
+            {staffData?.assigned_class && (
+              <p className="text-sm text-indigo-600 font-bold">🏫 Class Teacher: {staffData.assigned_class} - {staffData.assigned_section || 'A'}</p>
+            )}
+            {staffData?.subject && (
+              <p className="text-sm text-gray-500">📚 Subject: {staffData.subject}</p>
+            )}
           </div>
         </div>
         
@@ -848,20 +1072,8 @@ const StaffProfile = ({ staffData }) => {
             <span className="text-sm font-bold text-gray-800">Smart School ERP</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">📚 Subject</span>
-            <span className="text-sm font-bold text-gray-800">{staffData?.subject || 'N/A'}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">👨‍🏫 Class Teacher</span>
-            <span className="text-sm font-bold text-gray-800">{staffData?.class_teacher || 'N/A'}</span>
-          </div>
-          <div className="flex items-center justify-between">
             <span className="text-sm text-gray-500">💰 Base Salary</span>
             <span className="text-sm font-bold text-gray-800">₹{staffData?.base_salary || 0}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">📅 Joined</span>
-            <span className="text-sm font-bold text-gray-800">{staffData?.created_at || 'N/A'}</span>
           </div>
         </div>
       </div>
