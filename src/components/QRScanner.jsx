@@ -1,23 +1,102 @@
 // src/components/QRScanner.jsx
-import React, { useState } from 'react';
-import QrScanner from 'react-qr-scanner';
+import React, { useState, useEffect, useRef } from 'react';
+import { Html5Qrcode } from 'html5-qrcode';
 
 const QRScannerComponent = ({ onScan, onClose }) => {
   const [error, setError] = useState('');
+  const scannerRef = useRef(null);
+  const [isScanning, setIsScanning] = useState(false);
 
-  const handleScan = (data) => {
-    if (data) {
-      onScan(data.text);
+  useEffect(() => {
+    const startScanner = async () => {
+      try {
+        // ✅ Check if element exists
+        const element = document.getElementById('qr-reader');
+        if (!element) {
+          setError('Scanner element not found');
+          return;
+        }
+
+        const scanner = new Html5Qrcode('qr-reader');
+        scannerRef.current = scanner;
+
+        const config = {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0
+        };
+
+        await scanner.start(
+          { facingMode: 'environment' },
+          config,
+          (decodedText) => {
+            // ✅ QR Code scanned successfully
+            scanner.stop();
+            setIsScanning(false);
+            onScan(decodedText);
+          },
+          (errorMessage) => {
+            // Ignore errors (continuous scanning)
+            console.log('Scanning...');
+          }
+        );
+        setIsScanning(true);
+        setError('');
+      } catch (err) {
+        console.error('QR Scanner error:', err);
+        if (err.message?.includes('permission') || err.message?.includes('denied')) {
+          setError('Camera access denied. Please allow camera permission from browser settings.');
+        } else if (err.message?.includes('not found')) {
+          setError('No camera found on this device.');
+        } else {
+          setError('Camera access denied. Please allow camera permission.');
+        }
+      }
+    };
+
+    startScanner();
+
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.stop().catch(() => {});
+        scannerRef.current.clear().catch(() => {});
+      }
+    };
+  }, []);
+
+  const retryPermission = () => {
+    setError('');
+    setIsScanning(false);
+    if (scannerRef.current) {
+      scannerRef.current.stop().catch(() => {});
+      scannerRef.current.clear().catch(() => {});
     }
-  };
-
-  const handleError = (err) => {
-    console.log('QR Scan Error:', err);
-    setError('Camera access denied. Please allow camera permission.');
+    // Restart scanner
+    const startAgain = async () => {
+      try {
+        const scanner = new Html5Qrcode('qr-reader');
+        scannerRef.current = scanner;
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            scanner.stop();
+            setIsScanning(false);
+            onScan(decodedText);
+          },
+          () => {}
+        );
+        setIsScanning(true);
+        setError('');
+      } catch (err) {
+        setError('Camera access denied. Please allow camera permission.');
+      }
+    };
+    startAgain();
   };
 
   return (
-    <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl p-4 max-w-md w-full">
         <div className="flex justify-between items-center mb-4">
           <h3 className="font-bold text-gray-800">📷 Scan QR Code</h3>
@@ -29,22 +108,25 @@ const QRScannerComponent = ({ onScan, onClose }) => {
           </button>
         </div>
         
-        <div className="relative">
-          <QrScanner
-            delay={300}
-            onError={handleError}
-            onScan={handleScan}
-            style={{ width: '100%' }}
-            constraints={{
-              facingMode: 'environment'
-            }}
-          />
-          {error && (
-            <p className="text-red-500 text-xs mt-2 bg-red-50 p-2 rounded">
-              ⚠️ {error}
+        {/* ✅ QR Reader Container */}
+        <div id="qr-reader" style={{ width: '100%' }}></div>
+
+        {error && (
+          <div className="mt-3">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
+              <p className="text-red-600 text-sm font-bold">⚠️ {error}</p>
+            </div>
+            <button 
+              onClick={retryPermission}
+              className="w-full mt-2 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-700 transition"
+            >
+              🔄 Retry Camera Permission
+            </button>
+            <p className="text-xs text-gray-400 text-center mt-2">
+              💡 Browser settings mein camera permission enable karein
             </p>
-          )}
-        </div>
+          </div>
+        )}
         
         <p className="text-xs text-gray-400 text-center mt-3">
           School wall par lage QR code ko scan karein
