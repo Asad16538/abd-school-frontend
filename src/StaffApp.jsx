@@ -194,77 +194,77 @@ const StaffApp = () => {
 
   // ✅ FIXED - SINGLE QR CHECKIN HANDLER
   const handleQRCheckin = async (qrData) => {
-    try {
-      console.log("📱 QR Data Received:", qrData);
-      
-      // Parse QR data
-      if (typeof qrData === 'string') {
-        try {
-          JSON.parse(qrData);
-        } catch (e) {
-          // Not JSON, treat as string
-          console.log("QR Data is string:", qrData);
-        }
-      }
-
-      // Location permission
-      let latitude = 0;
-      let longitude = 0;
+  try {
+    console.log("📱 QR Data Received:", qrData);
+    
+    // ✅ Parse QR data
+    let parsedData = {};
+    if (typeof qrData === 'string') {
       try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          });
+        parsedData = JSON.parse(qrData);
+      } catch (e) {
+        // Not JSON, use as is
+        parsedData = { qr_code: qrData };
+      }
+    }
+
+    // ✅ Location permission
+    let latitude = 0;
+    let longitude = 0;
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         });
-        latitude = position.coords.latitude;
-        longitude = position.coords.longitude;
-        console.log("📍 Location:", latitude, longitude);
-      } catch (locErr) {
-        alert('❌ Location access denied. Please enable GPS.');
-        setShowScanner(false);
-        return;
-      }
+      });
+      latitude = position.coords.latitude;
+      longitude = position.coords.longitude;
+      console.log("📍 Location:", latitude, longitude);
+    } catch (locErr) {
+      alert('❌ Location access denied. Please enable GPS.');
+      setShowScanner(false);
+      return;
+    }
 
-      // Device token
-      const deviceToken = localStorage.getItem('device_token') || navigator.userAgent;
+    // ✅ Device token
+    const deviceToken = localStorage.getItem('device_token') || navigator.userAgent;
 
-      // ✅ Attendance API call
-      const payload = {
-        staff_id: staffData.id,
-        latitude: latitude,
-        longitude: longitude,
-        device_token: deviceToken
-      };
-      
-      console.log("📤 Sending payload:", payload);
+    // ✅ Attendance API call
+    const payload = {
+      staff_id: staffData.id,
+      latitude: latitude,
+      longitude: longitude,
+      device_token: deviceToken
+    };
+    
+    console.log("📤 Sending payload:", payload);
 
-      const res = await axios.post(`${BASE_URL}/api/staff/mark-attendance`, payload);
-      
-      console.log("📥 Response:", res.data);
-      
-      if (res.data.success) {
-        alert(res.data.message || '✅ Campus Entry Complete!');
-        fetchTodayAttendance();
-        fetchAttendanceHistory();
-        setShowScanner(false);
-      } else {
-        alert('❌ ' + (res.data.message || res.data.error || 'Check-in failed'));
-        setShowScanner(false);
-      }
-    } catch (err) {
-      console.error('❌ QR Checkin error:', err);
-      if (err.response) {
-        alert('❌ ' + (err.response.data?.error || err.response.data?.message || 'Server error'));
-      } else if (err.request) {
-        alert('❌ Backend server not responding. Please check your internet connection.');
-      } else {
-        alert('❌ Check-in failed. Please try again.');
-      }
+    const res = await axios.post(`${BASE_URL}/api/staff/mark-attendance`, payload);
+    
+    console.log("📥 Response:", res.data);
+    
+    if (res.data.success) {
+      alert(res.data.message || '✅ Campus Entry Complete!');
+      fetchTodayAttendance();
+      setShowScanner(false);
+    } else {
+      alert('❌ ' + (res.data.message || res.data.error || 'Check-in failed'));
       setShowScanner(false);
     }
-  };
+  } catch (err) {
+    console.error('❌ QR Checkin error:', err);
+    if (err.response) {
+      alert('❌ ' + (err.response.data?.error || err.response.data?.message || 'Server error'));
+    } else if (err.request) {
+      alert('❌ Backend server not responding. Please check your internet connection.');
+    } else {
+      alert('❌ Check-in failed. Please try again.');
+    }
+    setShowScanner(false);
+  }
+};
 
   const fetchTodayAttendance = async () => {
     try {
