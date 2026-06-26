@@ -58,9 +58,9 @@ const StaffPayrollAttendance = () => {
     try {
       setLoading(true);
       
-      // ⏱️ 5 second timeout -> 3 second karo
+      // ⏱️ 5 second timeout -> 15 second karo
 const timeoutPromise = new Promise((_, reject) => 
-  setTimeout(() => reject(new Error('Timeout')), 3000) // ✅ 5 se 3 kiya
+  setTimeout(() => reject(new Error('Timeout')), 15000)  // ✅ 5 se 15 kiya
 );
       
       // 🚀 Parallel fetch with timeout
