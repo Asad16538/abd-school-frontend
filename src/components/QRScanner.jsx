@@ -6,13 +6,15 @@ const QRScannerComponent = ({ onScan, onClose }) => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // ✅ Simple QR Code scanner using canvas
+  // ✅ Load jsQR library
   useEffect(() => {
-    // Load jsQR library dynamically
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
     script.onload = () => {
+      console.log('✅ jsQR loaded');
+      setIsLoaded(true);
       startCamera();
     };
     script.onerror = () => {
@@ -28,7 +30,11 @@ const QRScannerComponent = ({ onScan, onClose }) => {
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } }
+        video: { 
+          facingMode: 'environment', 
+          width: { ideal: 640 }, 
+          height: { ideal: 480 } 
+        }
       });
       
       if (videoRef.current) {
@@ -36,7 +42,10 @@ const QRScannerComponent = ({ onScan, onClose }) => {
         videoRef.current.play();
         setIsScanning(true);
         setError('');
-        scanQRCode();
+        // Start scanning after video is ready
+        videoRef.current.onloadedmetadata = () => {
+          scanQRCode();
+        };
       }
     } catch (err) {
       console.error('Camera error:', err);
@@ -52,32 +61,37 @@ const QRScannerComponent = ({ onScan, onClose }) => {
   };
 
   const scanQRCode = () => {
-    if (!isScanning) return;
+    if (!isScanning || !videoRef.current) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
     
-    if (!video || !canvas) return;
+    if (!canvas) return;
 
     const context = canvas.getContext('2d');
-    canvas.width = video.videoWidth || 640;
-    canvas.height = video.videoHeight || 480;
-
+    
+    // ✅ Check if video has data
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
       
       // ✅ Use jsQR to decode
       if (window.jsQR) {
-        const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
-        });
-        
-        if (code && code.data) {
-          console.log('✅ QR Scanned:', code.data);
-          stopCamera();
-          onScan(code.data);
-          return;
+        try {
+          const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          
+          if (code && code.data) {
+            console.log('✅ QR Scanned:', code.data);
+            stopCamera();
+            onScan(code.data);
+            return;
+          }
+        } catch (err) {
+          console.log('Scan error:', err);
         }
       }
     }
@@ -120,6 +134,7 @@ const QRScannerComponent = ({ onScan, onClose }) => {
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-green-500 rounded-lg"></div>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-0.5 bg-green-500/50 animate-pulse"></div>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-0.5 h-48 bg-green-500/50 animate-pulse"></div>
             </div>
           )}
         </div>
@@ -135,9 +150,6 @@ const QRScannerComponent = ({ onScan, onClose }) => {
             >
               🔄 Retry Camera Permission
             </button>
-            <p className="text-xs text-gray-400 text-center mt-2">
-              💡 Browser settings mein camera permission enable karein
-            </p>
           </div>
         )}
         
