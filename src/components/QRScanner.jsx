@@ -10,7 +10,6 @@ const QRScannerComponent = ({ onScan, onClose }) => {
   useEffect(() => {
     const startScanner = async () => {
       try {
-        // ✅ Check if element exists
         const element = document.getElementById('qr-reader');
         if (!element) {
           setError('Scanner element not found');
@@ -30,13 +29,11 @@ const QRScannerComponent = ({ onScan, onClose }) => {
           { facingMode: 'environment' },
           config,
           (decodedText) => {
-            // ✅ QR Code scanned successfully
             scanner.stop();
             setIsScanning(false);
             onScan(decodedText);
           },
           (errorMessage) => {
-            // Ignore errors (continuous scanning)
             console.log('Scanning...');
           }
         );
@@ -71,7 +68,6 @@ const QRScannerComponent = ({ onScan, onClose }) => {
       scannerRef.current.stop().catch(() => {});
       scannerRef.current.clear().catch(() => {});
     }
-    // Restart scanner
     const startAgain = async () => {
       try {
         const scanner = new Html5Qrcode('qr-reader');
@@ -108,7 +104,6 @@ const QRScannerComponent = ({ onScan, onClose }) => {
           </button>
         </div>
         
-        {/* ✅ QR Reader Container */}
         <div id="qr-reader" style={{ width: '100%' }}></div>
 
         {error && (
