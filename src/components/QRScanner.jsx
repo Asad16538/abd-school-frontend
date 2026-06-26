@@ -25,15 +25,21 @@ const QRScannerComponent = ({ onScan, onClose }) => {
           aspectRatio: 1.0
         };
 
+        // ✅ FIX: Use try-catch to handle all arguments
         await scanner.start(
           { facingMode: 'environment' },
           config,
-          (decodedText) => {
+          (decodedText, decodedResult) => {
+            // ✅ decodedText is the QR code data
+            console.log('✅ QR Scanned:', decodedText);
             scanner.stop();
             setIsScanning(false);
-            onScan(decodedText);
+            if (decodedText) {
+              onScan(decodedText);
+            }
           },
           (errorMessage) => {
+            // Ignore errors (continuous scanning)
             console.log('Scanning...');
           }
         );
@@ -75,10 +81,12 @@ const QRScannerComponent = ({ onScan, onClose }) => {
         await scanner.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
-          (decodedText) => {
+          (decodedText, decodedResult) => {
             scanner.stop();
             setIsScanning(false);
-            onScan(decodedText);
+            if (decodedText) {
+              onScan(decodedText);
+            }
           },
           () => {}
         );
