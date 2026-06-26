@@ -23,7 +23,7 @@ const StaffApp = () => {
   const [advanceHistory, setAdvanceHistory] = useState([]);
   const [assignedStudents, setAssignedStudents] = useState([]);
   
-  // ✅ Class Attendance States
+  // Class Attendance States
   const [classAttendanceStudents, setClassAttendanceStudents] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState({});
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -31,6 +31,12 @@ const StaffApp = () => {
   const [attendanceMessage, setAttendanceMessage] = useState({ type: '', text: '' });
   const [dayStatus, setDayStatus] = useState('INIT');
   const [lockMessage, setLockMessage] = useState('');
+
+  // Staff Attendance States
+  const [attendance, setAttendance] = useState([]);
+  const [todayStatus, setTodayStatus] = useState(null);
+  const [checkInTime, setCheckInTime] = useState('');
+  const [checkOutTime, setCheckOutTime] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('staff_token');
@@ -52,10 +58,11 @@ const StaffApp = () => {
         fetchNotifications(res.data.staff.id);
         fetchAssignedStudents(res.data.staff.id);
         fetchAdvanceHistory(res.data.staff.id);
-        // ✅ Auto fetch class attendance
         if (res.data.staff.assigned_class) {
           fetchClassAttendance(res.data.staff.assigned_class, res.data.staff.assigned_section || 'A');
         }
+        fetchTodayAttendance();
+        fetchAttendanceHistory();
       } else {
         localStorage.removeItem('staff_token');
       }
@@ -98,7 +105,6 @@ const StaffApp = () => {
     }
   };
 
-  // ✅ FETCH CLASS ATTENDANCE
   const fetchClassAttendance = async (className, sectionName) => {
     if (!className || !sectionName) return;
     
@@ -136,12 +142,10 @@ const StaffApp = () => {
     }
   };
 
-  // ✅ HANDLE ATTENDANCE STATUS CHANGE
   const handleStatusChange = (studentId, newStatus) => {
     setAttendanceRecords(prev => ({ ...prev, [studentId]: newStatus }));
   };
 
-  // ✅ SUBMIT CLASS ATTENDANCE
   const handleSubmitAttendance = async () => {
     if (classAttendanceStudents.length === 0 || dayStatus === 'LOCKED') return;
 
@@ -188,64 +192,79 @@ const StaffApp = () => {
     setNotifications([]);
   };
 
+  // ✅ FIXED - SINGLE QR CHECKIN HANDLER
   const handleQRCheckin = async (qrData) => {
-  try {
-    // ✅ QR data parse karo
-    let parsedData = qrData;
-    if (typeof qrData === 'string') {
-      try {
-        parsedData = JSON.parse(qrData);
-      } catch (e) {
-        parsedData = { qr_code: qrData };
-      }
-    }
-
-    // ✅ Location permission
-    let latitude = 0, longitude = 0;
     try {
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000
+      console.log("📱 QR Data Received:", qrData);
+      
+      // Parse QR data
+      if (typeof qrData === 'string') {
+        try {
+          JSON.parse(qrData);
+        } catch (e) {
+          // Not JSON, treat as string
+          console.log("QR Data is string:", qrData);
+        }
+      }
+
+      // Location permission
+      let latitude = 0;
+      let longitude = 0;
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          });
         });
-      });
-      latitude = position.coords.latitude;
-      longitude = position.coords.longitude;
-    } catch (locErr) {
-      alert('❌ Please enable GPS location.');
+        latitude = position.coords.latitude;
+        longitude = position.coords.longitude;
+        console.log("📍 Location:", latitude, longitude);
+      } catch (locErr) {
+        alert('❌ Location access denied. Please enable GPS.');
+        setShowScanner(false);
+        return;
+      }
+
+      // Device token
+      const deviceToken = localStorage.getItem('device_token') || navigator.userAgent;
+
+      // ✅ Attendance API call
+      const payload = {
+        staff_id: staffData.id,
+        latitude: latitude,
+        longitude: longitude,
+        device_token: deviceToken
+      };
+      
+      console.log("📤 Sending payload:", payload);
+
+      const res = await axios.post(`${BASE_URL}/api/staff/mark-attendance`, payload);
+      
+      console.log("📥 Response:", res.data);
+      
+      if (res.data.success) {
+        alert(res.data.message || '✅ Campus Entry Complete!');
+        fetchTodayAttendance();
+        fetchAttendanceHistory();
+        setShowScanner(false);
+      } else {
+        alert('❌ ' + (res.data.message || res.data.error || 'Check-in failed'));
+        setShowScanner(false);
+      }
+    } catch (err) {
+      console.error('❌ QR Checkin error:', err);
+      if (err.response) {
+        alert('❌ ' + (err.response.data?.error || err.response.data?.message || 'Server error'));
+      } else if (err.request) {
+        alert('❌ Backend server not responding. Please check your internet connection.');
+      } else {
+        alert('❌ Check-in failed. Please try again.');
+      }
       setShowScanner(false);
-      return;
     }
-
-    // ✅ Device token
-    const deviceToken = localStorage.getItem('device_token') || navigator.userAgent;
-
-    const res = await axios.post(`${BASE_URL}/api/staff/qr-checkin`, {
-      staff_id: staffData.id,
-      latitude: latitude,
-      longitude: longitude,
-      device_token: deviceToken
-    });
-    
-    if (res.data.success) {
-      alert(res.data.message);
-      fetchTodayAttendance();
-      fetchAttendanceHistory();
-    } else {
-      alert('❌ ' + res.data.message);
-    }
-    setShowScanner(false);
-  } catch (err) {
-    console.error('QR Checkin error:', err);
-    alert('❌ ' + (err.response?.data?.message || 'Check-in failed. Please try again.'));
-    setShowScanner(false);
-  }
-};
-
-  const [attendance, setAttendance] = useState([]);
-  const [todayStatus, setTodayStatus] = useState(null);
-  const [checkInTime, setCheckInTime] = useState('');
-  const [checkOutTime, setCheckOutTime] = useState('');
+  };
 
   const fetchTodayAttendance = async () => {
     try {
@@ -280,7 +299,6 @@ const StaffApp = () => {
     }
   }, [staffData]);
 
-  // ✅ Auto-refresh attendance when date changes
   useEffect(() => {
     if (staffData?.assigned_class) {
       fetchClassAttendance(staffData.assigned_class, staffData.assigned_section || 'A');
@@ -475,7 +493,7 @@ const StaffApp = () => {
 };
 
 // ============================================================
-// 👨‍🏫 STAFF LOGIN (Same as before)
+// 👨‍🏫 STAFF LOGIN
 // ============================================================
 const StaffLogin = ({ onLogin }) => {
   const [mobile, setMobile] = useState('');
@@ -591,14 +609,12 @@ const StaffLogin = ({ onLogin }) => {
 // 📊 STAFF DASHBOARD
 // ============================================================
 const StaffDashboard = ({ staffData, notifications, onViewAll, todayStatus, checkInTime, checkOutTime, setShowScanner, onCheckOut }) => {
-  // ✅ STATES
   const [stats, setStats] = useState({
     total_students: 0,
     present_today: 0,
     absent_today: 0
   });
 
-  // ✅ FETCH STATS
   useEffect(() => {
     fetchStats();
   }, []);
@@ -616,7 +632,6 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, todayStatus, chec
 
   return (
     <div className="space-y-4">
-      {/* Staff Profile Card */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -633,7 +648,6 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, todayStatus, chec
         </div>
       </div>
 
-      {/* Today's Attendance Quick Status */}
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
@@ -650,18 +664,12 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, todayStatus, chec
           </div>
           <div className="flex gap-2">
             {!todayStatus && (
-              <button 
-                onClick={() => setShowScanner(true)}
-                className="px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1 shadow-md hover:bg-purple-700 transition"
-              >
+              <button onClick={() => setShowScanner(true)} className="px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1 shadow-md hover:bg-purple-700 transition">
                 <QrCode className="w-4 h-4" /> Scan QR
               </button>
             )}
             {todayStatus && !checkOutTime && (
-              <button 
-                onClick={onCheckOut}
-                className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-orange-700 transition"
-              >
+              <button onClick={onCheckOut} className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-orange-700 transition">
                 🚗 Campus Exit
               </button>
             )}
@@ -669,7 +677,6 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, todayStatus, chec
         </div>
       </div>
 
-      {/* ✅ 3 STATS CARDS - Stats state se data le raha hai */}
       <div className="grid grid-cols-3 gap-3">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-sm">
           <div className="flex items-center justify-between">
@@ -700,7 +707,6 @@ const StaffDashboard = ({ staffData, notifications, onViewAll, todayStatus, chec
         </div>
       </div>
 
-      {/* Recent Notifications */}
       <div className="bg-white p-4 rounded-xl border border-gray-200">
         <div className="flex items-center justify-between mb-3">
           <h4 className="text-xs font-bold text-gray-600 uppercase tracking-wider">📬 ताज़ा सूचनाएं</h4>
@@ -782,7 +788,7 @@ const StaffNotifications = ({ notifications, onMarkRead }) => {
 };
 
 // ============================================================
-// 📋 STAFF ATTENDANCE (QR + History)
+// 📋 STAFF ATTENDANCE
 // ============================================================
 const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInTime, checkOutTime, setShowScanner, onCheckOut }) => {
   const presentCount = attendance.filter(a => a.status === 'Present').length;
@@ -810,18 +816,12 @@ const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInT
           </div>
           <div className="flex gap-2">
             {!todayStatus && (
-              <button 
-                onClick={() => setShowScanner(true)}
-                className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1"
-              >
+              <button onClick={() => setShowScanner(true)} className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1">
                 <QrCode className="w-4 h-4" /> Scan QR
               </button>
             )}
             {todayStatus && !checkOutTime && (
-              <button 
-                onClick={onCheckOut}
-                className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg"
-              >
+              <button onClick={onCheckOut} className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg">
                 🚗 Campus Exit
               </button>
             )}
@@ -855,18 +855,10 @@ const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInT
           attendance.map((a, i) => (
             <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
               <div className="flex items-center gap-3">
-                {a.status === 'Present' ? (
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                ) : a.status === 'Absent' ? (
-                  <XCircle className="w-5 h-5 text-red-500" />
-                ) : (
-                  <Clock className="w-5 h-5 text-amber-500" />
-                )}
+                {a.status === 'Present' ? <CheckCircle className="w-5 h-5 text-green-500" /> : a.status === 'Absent' ? <XCircle className="w-5 h-5 text-red-500" /> : <Clock className="w-5 h-5 text-amber-500" />}
                 <div>
                   <p className="text-sm font-medium text-gray-800">{a.date || 'N/A'}</p>
-                  <p className="text-[10px] text-gray-400">
-                    In: {a.check_in_time || '--'} | Out: {a.check_out_time || '--'}
-                  </p>
+                  <p className="text-[10px] text-gray-400">In: {a.check_in_time || '--'} | Out: {a.check_out_time || '--'}</p>
                 </div>
               </div>
               <span className={`text-xs font-bold px-3 py-1 rounded-full ${a.status === 'Present' ? 'bg-green-100 text-green-700' : a.status === 'Absent' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
@@ -881,7 +873,7 @@ const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInT
 };
 
 // ============================================================
-// 📚 CLASS ATTENDANCE (For Staff - Assigned Class Only)
+// 📚 CLASS ATTENDANCE
 // ============================================================
 const ClassAttendanceStaff = ({ 
   staffData, 
@@ -1008,7 +1000,7 @@ const ClassAttendanceStaff = ({
 };
 
 // ============================================================
-// 👨‍🎓 STAFF STUDENTS (Assigned Students)
+// 👨‍🎓 STAFF STUDENTS
 // ============================================================
 const StaffStudents = ({ assignedStudents }) => {
   return (
@@ -1033,9 +1025,7 @@ const StaffStudents = ({ assignedStudents }) => {
                 <p className="text-xs text-gray-500">Class {s.class} - {s.section} | Roll: {s.roll_no}</p>
               </div>
             </div>
-            <span className="text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500">
-              Active
-            </span>
+            <span className="text-xs font-bold px-2 py-1 rounded-full bg-gray-100 text-gray-500">Active</span>
           </div>
         ))
       )}
