@@ -189,55 +189,58 @@ const StaffApp = () => {
   };
 
   const handleQRCheckin = async (qrData) => {
-    try {
-      let parsedData = qrData;
-      if (typeof qrData === 'string') {
-        try {
-          parsedData = JSON.parse(qrData);
-        } catch (e) {
-          parsedData = { qr_code: qrData };
-        }
-      }
-
-      let latitude = 0;
-      let longitude = 0;
+  try {
+    // ✅ QR data parse karo
+    let parsedData = qrData;
+    if (typeof qrData === 'string') {
       try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0
-          });
-        });
-        latitude = position.coords.latitude;
-        longitude = position.coords.longitude;
-      } catch (locErr) {
-        alert('❌ Location access denied. Please enable GPS.');
-        setShowScanner(false);
-        return;
+        parsedData = JSON.parse(qrData);
+      } catch (e) {
+        parsedData = { qr_code: qrData };
       }
-
-      const res = await axios.post(`${BASE_URL}/api/staff/mark-attendance`, {
-        staff_id: staffData.id,
-        latitude: latitude,
-        longitude: longitude,
-        device_token: localStorage.getItem('device_token') || navigator.userAgent
-      });
-      
-      if (res.data.success) {
-        alert(res.data.message || '✅ Attendance marked successfully!');
-        fetchTodayAttendance();
-        setShowScanner(false);
-      } else {
-        alert('❌ ' + (res.data.message || res.data.error || 'Check-in failed'));
-        setShowScanner(false);
-      }
-    } catch (err) {
-      console.error('QR Checkin error:', err);
-      alert('❌ Check-in failed. Please try again.');
-      setShowScanner(false);
     }
-  };
+
+    // ✅ Location permission
+    let latitude = 0, longitude = 0;
+    try {
+      const position = await new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000
+        });
+      });
+      latitude = position.coords.latitude;
+      longitude = position.coords.longitude;
+    } catch (locErr) {
+      alert('❌ Please enable GPS location.');
+      setShowScanner(false);
+      return;
+    }
+
+    // ✅ Device token
+    const deviceToken = localStorage.getItem('device_token') || navigator.userAgent;
+
+    const res = await axios.post(`${BASE_URL}/api/staff/qr-checkin`, {
+      staff_id: staffData.id,
+      latitude: latitude,
+      longitude: longitude,
+      device_token: deviceToken
+    });
+    
+    if (res.data.success) {
+      alert(res.data.message);
+      fetchTodayAttendance();
+      fetchAttendanceHistory();
+    } else {
+      alert('❌ ' + res.data.message);
+    }
+    setShowScanner(false);
+  } catch (err) {
+    console.error('QR Checkin error:', err);
+    alert('❌ ' + (err.response?.data?.message || 'Check-in failed. Please try again.'));
+    setShowScanner(false);
+  }
+};
 
   const [attendance, setAttendance] = useState([]);
   const [todayStatus, setTodayStatus] = useState(null);
