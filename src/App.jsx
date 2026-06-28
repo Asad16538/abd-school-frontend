@@ -13,6 +13,7 @@ import StaffAttendanceTerminal from './components/StaffAttendanceTerminal';
 // ✅ PARENT APP & STAFF APP IMPORTS (ROUTING KE LIYE)
 import ParentApp from './ParentApp';
 import StaffApp from './StaffApp';
+import ExamManagement from './components/ExamManagement';  // ✅ YEH ADD KARO
 
 // ✅ CACHE FUNCTIONS
 const CACHE_TTL = 300000;
