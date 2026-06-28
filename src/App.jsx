@@ -500,31 +500,37 @@ const sendFeeReminder = async (studentId) => {
                   <span>🏫 Class Management</span>
                 </button>
 
-                {/* 🎯 EXACT YAHAN CHIPKAO NAYA ATTENDANCE BUTTON (DONO KE BEECH MEIN) */}
+                {/* 5th Position: NAYA ATTENDANCE BUTTON (DONO KE BEECH MEIN) */}
                 <button onClick={() => setActiveTab('student_attendance')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'student_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <CheckCircle2 className={`w-4 h-4 ${activeTab === 'student_attendance' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>📋 Student Attendance</span>
                 </button>
 
-                {/* 5th Position: Staff & Geo-Payroll */}
+                {/* 6th Position: - EXAM MANAGEMENT */}
+                <button onClick={() => setActiveTab('exam_management')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'exam_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <FileText className={`w-4 h-4 ${activeTab === 'exam_management' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>📝 Exam Management</span>
+                </button>
+
+                {/* 7th Position: Staff & Geo-Payroll */}
                 <button onClick={() => setActiveTab('payroll_attendance')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'payroll_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Users className={`w-4 h-4 ${activeTab === 'payroll_attendance' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>📅 Staff & Geo-Payroll</span>
                 </button>
 
-                {/* 6th Position: Fee Report Center */}
+                {/* 8th Position: Fee Report Center */}
                 <button onClick={() => setActiveTab('fee_report_center')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'fee_report_center' ? 'text-white bg-emerald-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Coins className={`w-4 h-4 ${activeTab === 'fee_report_center' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>🚀 Fee Report Center</span>
                 </button>
 
-                {/* 7th Position: Income & Expenses */}
+                {/* 9th Position: Income & Expenses */}
                 <button onClick={() => setActiveTab('expense_tracker')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'expense_tracker' ? 'text-white bg-rose-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Coins className={`w-4 h-4 ${activeTab === 'expense_tracker' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>📊 Income & Expenses</span>
                 </button>
 
-                {/* 8th Position: Settings */}
+                {/* 10th Position: Settings */}
                 <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'settings' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Settings className={`w-4 h-4 ${activeTab === 'settings' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>Settings</span>
@@ -745,6 +751,7 @@ const sendFeeReminder = async (studentId) => {
     {activeTab === 'expense_tracker' && <ExpenseTracker />}
     {activeTab === 'class_management' && <IDCardStudio />}
     {activeTab === 'student_attendance' && <ClassAttendance />}
+    {activeTab === 'exam_management' && <ExamManagement />}
   </Suspense>
 </main>
 
