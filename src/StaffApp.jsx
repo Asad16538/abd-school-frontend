@@ -192,23 +192,28 @@ const StaffApp = () => {
     setNotifications([]);
   };
 
-  // ✅ FIXED - SINGLE QR CHECKIN HANDLER
-  const handleQRCheckin = async (qrData) => {
+  // StaffApp.jsx - handleQRCheckin function
+const handleQRCheckin = async (qrData) => {
   try {
-    console.log("📱 QR Data Received:", qrData);
-    
-    // ✅ Parse QR data
-    let parsedData = {};
+    let parsedData = qrData;
     if (typeof qrData === 'string') {
       try {
         parsedData = JSON.parse(qrData);
       } catch (e) {
-        // Not JSON, use as is
         parsedData = { qr_code: qrData };
       }
     }
 
-    // ✅ Location permission
+    // ✅ Check if it's Entry or Exit QR
+    const isExit = parsedData.type === 'exit' || parsedData.action === 'exit';
+    
+    // ✅ Check if already checked in (for exit)
+    if (isExit && !todayStatus) {
+      alert('❌ Aapne aaj entry nahi kiya hai. Pehle entry karein!');
+      setShowScanner(false);
+      return;
+    }
+
     let latitude = 0;
     let longitude = 0;
     try {
@@ -221,47 +226,38 @@ const StaffApp = () => {
       });
       latitude = position.coords.latitude;
       longitude = position.coords.longitude;
-      console.log("📍 Location:", latitude, longitude);
     } catch (locErr) {
       alert('❌ Location access denied. Please enable GPS.');
       setShowScanner(false);
       return;
     }
 
-    // ✅ Device token
-    const deviceToken = localStorage.getItem('device_token') || navigator.userAgent;
+    // ✅ Entry or Exit API call
+    let endpoint = '/api/staff/mark-attendance';
+    if (isExit) {
+      endpoint = '/api/staff/checkout';
+    }
 
-    // ✅ Attendance API call
-    const payload = {
+    const res = await axios.post(`${BASE_URL}${endpoint}`, {
       staff_id: staffData.id,
       latitude: latitude,
       longitude: longitude,
-      device_token: deviceToken
-    };
-    
-    console.log("📤 Sending payload:", payload);
-
-    const res = await axios.post(`${BASE_URL}/api/staff/mark-attendance`, payload);
-    
-    console.log("📥 Response:", res.data);
+      device_token: localStorage.getItem('device_token') || navigator.userAgent
+    });
     
     if (res.data.success) {
-      alert(res.data.message || '✅ Campus Entry Complete!');
+      const message = isExit ? '🚗 Campus Exit successful!' : '✅ Campus Entry successful!';
+      alert(message);
       fetchTodayAttendance();
+      fetchAttendanceHistory();
       setShowScanner(false);
     } else {
-      alert('❌ ' + (res.data.message || res.data.error || 'Check-in failed'));
+      alert('❌ ' + (res.data.message || res.data.error || 'Failed'));
       setShowScanner(false);
     }
   } catch (err) {
-    console.error('❌ QR Checkin error:', err);
-    if (err.response) {
-      alert('❌ ' + (err.response.data?.error || err.response.data?.message || 'Server error'));
-    } else if (err.request) {
-      alert('❌ Backend server not responding. Please check your internet connection.');
-    } else {
-      alert('❌ Check-in failed. Please try again.');
-    }
+    console.error('QR error:', err);
+    alert('❌ Failed. Please try again.');
     setShowScanner(false);
   }
 };
@@ -821,13 +817,16 @@ const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInT
               </button>
             )}
             {todayStatus && !checkOutTime && (
-              <button onClick={onCheckOut} className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg">
-                🚗 Campus Exit
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
+        <button 
+          onClick={() => setShowScanner(true)}  // ✅ QR Scanner open karega
+          className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-orange-700 transition flex items-center gap-1"
+        >
+          <QrCode className="w-4 h-4" /> 🚗 Campus Exit
+        </button>
+      )}
+    </div>
+  </div>
+</div>
 
       <div className="grid grid-cols-4 gap-2">
         <div className="bg-green-50 p-3 rounded-xl text-center border border-green-200">
