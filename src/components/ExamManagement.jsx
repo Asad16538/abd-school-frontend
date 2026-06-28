@@ -5,7 +5,7 @@ import {
   Plus, Edit, Trash2, Eye, FileText, Download, 
   Printer, Calendar, BookOpen, Users, TrendingUp,
   Award, CheckCircle, XCircle, AlertCircle, Search,
-  Settings, Copy, RefreshCw, ChevronDown
+  Settings, Copy, RefreshCw, ChevronDown, FileSpreadsheet
 } from 'lucide-react';
 
 const BASE_URL = 'https://abd-school-backend.onrender.com';
