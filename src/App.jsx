@@ -3,7 +3,8 @@ import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   LogIn, User, Lock, ShieldAlert, Sparkles, KeyRound, RefreshCw, CheckCircle2, Phone, MapPin, Mail, Signature,
-  LayoutDashboard, Users, Camera, CreditCard, IdCard, Settings, LogOut, Smartphone, Coins, Wallet, Landmark, TrendingUp, HandCoins, Search
+  LayoutDashboard, Users, Camera, CreditCard, IdCard, Settings, LogOut, Smartphone, Coins, Wallet, Landmark, TrendingUp, HandCoins, Search,
+  FileText  // ✅ YEH ADD KARO
 } from 'lucide-react';
 import axios from 'axios';
 import AttendanceForm from './components/AttendanceForm';
