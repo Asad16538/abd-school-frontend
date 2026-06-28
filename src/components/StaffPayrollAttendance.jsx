@@ -583,7 +583,7 @@ useEffect(() => {
       {/* HEADER TITLE MATRIX ROW */}
       <div style={{ marginBottom: '24px', backgroundColor: '#fff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
         <h2 style={{ margin: 0, color: '#0f172a', fontSize: '24px', fontWeight: 'bold' }}>📅 Staff Management & Geo-Payroll Matrix</h2>
-        <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: '14px' }}>Track range bounds attendance, deploy automated WhatsApp alerts, and check live accounting sheets</p>
+        <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: '14px' }}>Track range bounds attendance, deploy automated Telegram alerts, and check live accounting sheets</p>
       </div>
 
       {uiMessage && (
