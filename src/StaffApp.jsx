@@ -204,7 +204,7 @@ const handleQRCheckin = async (qrData) => {
       }
     }
 
-    // ✅ Check if it's Entry or Exit QR
+    // ✅ Check if it's Exit QR
     const isExit = parsedData.type === 'exit' || parsedData.action === 'exit';
     
     // ✅ Check if already checked in (for exit)
@@ -232,7 +232,7 @@ const handleQRCheckin = async (qrData) => {
       return;
     }
 
-    // ✅ Entry or Exit API call
+    // ✅ Entry or Exit API
     let endpoint = '/api/staff/mark-attendance';
     if (isExit) {
       endpoint = '/api/staff/checkout';
@@ -801,24 +801,27 @@ const StaffAttendance = ({ staffData, attendance, loading, todayStatus, checkInT
         <div className="flex items-center justify-between">
           <div>
             {todayStatus ? (
-              <div>
-                <p className="text-sm font-bold text-green-600">✅ Campus Entry Done</p>
-                <p className="text-xs text-gray-500">⏱️ In: {checkInTime}</p>
-                {checkOutTime && <p className="text-xs text-gray-500">⏱️ Out: {checkOutTime}</p>}
-              </div>
-            ) : (
-              <p className="text-sm font-bold text-gray-400">❌ Campus Entry not done yet</p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {!todayStatus && (
-              <button onClick={() => setShowScanner(true)} className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1">
-                <QrCode className="w-4 h-4" /> Scan QR
-              </button>
-            )}
-            {todayStatus && !checkOutTime && (
+        <div>
+          <p className="text-sm font-bold text-green-600">✅ Campus Entry Done</p>
+          <p className="text-xs text-gray-500">⏱️ In: {checkInTime}</p>
+          {checkOutTime && <p className="text-xs text-gray-500">⏱️ Out: {checkOutTime}</p>}
+        </div>
+      ) : (
+        <p className="text-sm font-bold text-gray-400">❌ Campus Entry not done yet</p>
+      )}
+    </div>
+    <div className="flex gap-2">
+      {!todayStatus && (
         <button 
-          onClick={() => setShowScanner(true)}  // ✅ QR Scanner open karega
+          onClick={() => setShowScanner(true)}
+          className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg flex items-center gap-1"
+        >
+          <QrCode className="w-4 h-4" /> Scan QR
+        </button>
+      )}
+      {todayStatus && !checkOutTime && (
+        <button 
+          onClick={() => setShowScanner(true)}  // ✅ QR Scanner fir se open karega
           className="px-4 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg shadow-md hover:bg-orange-700 transition flex items-center gap-1"
         >
           <QrCode className="w-4 h-4" /> 🚗 Campus Exit
