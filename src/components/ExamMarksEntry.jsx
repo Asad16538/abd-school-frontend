@@ -65,8 +65,8 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
       const a = parseFloat(updated[studentId].attendance) || 0;
       
       updated[studentId].total = t + i + f + a;
-      // ✅ FIX 1: Attendance % - 10 marks max
-      updated[studentId].att_percent = a > 0 ? ((a / 10) * 100).toFixed(0) : 0; 
+      // Assume 5 marks for attendance column as per your UI
+      updated[studentId].att_percent = a > 0 ? ((a / 5) * 100).toFixed(0) : 0; 
       
       const totalMarks = examPattern.total_marks || 100;
       updated[studentId].grade = getGrade((updated[studentId].total / totalMarks) * 100);
@@ -97,27 +97,20 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
 
   return (
     <div className="space-y-4 p-4">
-      {/* Select Exam */}
       <select className="w-full p-3 border rounded-xl" onChange={(e) => handleExamSelect(e.target.value)}>
         <option value="">-- Select Exam --</option>
         {exams.map(e => <option key={e.id} value={e.id}>{e.exam_name} - {e.class}</option>)}
       </select>
-
-      {message.text && (
-        <div className={`p-2 rounded-xl text-xs font-bold ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-          {message.text}
-        </div>
-      )}
 
       {students.length > 0 && (
         <div className="overflow-x-auto border rounded-xl">
           <table className="w-full text-sm">
             <thead className="bg-gray-100 text-[10px] uppercase">
               <tr>
-                <th className="p-2">Roll - Name</th>
+                <th className="p-2">Name</th>
                 <th className="p-2">IA</th>
                 <th className="p-2">Theory</th>
-                <th className="p-2">Practical</th>
+                <th className="p-2">Final</th>
                 <th className="p-2">Attnd.</th>
                 <th className="p-2">Attnd %</th>
                 <th className="p-2">Total</th>
@@ -126,24 +119,21 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
             <tbody>
               {students.map(s => (
                 <tr key={s.id} className="border-b text-center">
-                  <td className="p-2 text-left font-bold">{s.roll_no || '-'} - {s.name}</td>
-                  <td><input type="number" className="w-12 border p-1 rounded" onChange={(e) => handleMarkChange(s.id, 'internal', e.target.value)}/></td>
-                  <td><input type="number" className="w-12 border p-1 rounded" onChange={(e) => handleMarkChange(s.id, 'theory', e.target.value)}/></td>
-                  <td><input type="number" className="w-12 border p-1 rounded" onChange={(e) => handleMarkChange(s.id, 'final', e.target.value)}/></td>
-                  <td><input type="number" className="w-12 border p-1 rounded" onChange={(e) => handleMarkChange(s.id, 'attendance', e.target.value)}/></td>
+                  <td className="p-2 text-left font-bold">{s.name}</td>
+                  <td><input type="number" className="w-12 border p-1" onChange={(e) => handleMarkChange(s.id, 'internal', e.target.value)}/></td>
+                  <td><input type="number" className="w-12 border p-1" onChange={(e) => handleMarkChange(s.id, 'theory', e.target.value)}/></td>
+                  <td><input type="number" className="w-12 border p-1" onChange={(e) => handleMarkChange(s.id, 'final', e.target.value)}/></td>
+                  <td><input type="number" className="w-12 border p-1" onChange={(e) => handleMarkChange(s.id, 'attendance', e.target.value)}/></td>
                   <td className="p-2 font-bold text-blue-600">{marksData[s.id]?.att_percent}%</td>
                   <td className="p-2 font-bold">{marksData[s.id]?.total}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-          <button onClick={handleSaveMarks} disabled={loading} className="w-full py-3 bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition">
-            {loading ? 'Saving...' : '💾 Save All Marks'}
-          </button>
+          <button onClick={handleSaveMarks} className="w-full py-3 bg-emerald-600 text-white font-bold">Save All Marks</button>
         </div>
       )}
     </div>
   );
 };
-
 export default ExamMarksEntry;
