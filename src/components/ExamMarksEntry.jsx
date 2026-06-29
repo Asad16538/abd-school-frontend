@@ -203,8 +203,8 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
 
       {students.length > 0 && selectedExam && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          {/* ✅ FIX: min-width add karo taaki columns compress na ho */}
-          <div className="overflow-x-auto max-h-[500px] overflow-y-auto" style={{ minWidth: '750px' }}>
+          {/* ✅ YAHI EK LINE CHANGE HAI - min-width add ki */}
+          <div className="overflow-x-auto max-h-[500px] overflow-y-auto" style={{ minWidth: '800px', width: '100%' }}>
             <table className="w-full text-left text-xs font-medium">
               <thead className="bg-gray-50 sticky top-0">
                 <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
