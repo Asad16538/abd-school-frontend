@@ -22,11 +22,32 @@ const ExamManagement = () => {
   const [marksData, setMarksData] = useState({});
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [examTemplates, setExamTemplates] = useState({
-    cbse: ['Periodic Test 1', 'Term 1', 'Periodic Test 2', 'Term 2'],
-    mp_board: ['Quarterly Exam', 'Half Yearly Exam', 'Annual Exam'],
-    up_board: ['Quarterly Exam', 'Half Yearly Exam', 'Pre-Board Exam', 'Annual Exam']
-  });
+  const [classFilter, setClassFilter] = useState('');
+  const [boardFilter, setBoardFilter] = useState('CBSE');
+  const [streamFilter, setStreamFilter] = useState('');
+  const [showAddSubject, setShowAddSubject] = useState(false);
+
+  const classesList = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+  const sectionsList = ['A', 'B', 'C'];
+  const examTypes = ['Unit Test', 'Monthly Test', 'Mid-term', 'Final', 'Weekly Test'];
+  const subjectsList = [
+    { name: 'Mathematics', code: 'MTH101' },
+    { name: 'Science', code: 'SCI101' },
+    { name: 'English', code: 'ENG101' },
+    { name: 'Hindi', code: 'HIN101' },
+    { name: 'Social Studies', code: 'SST101' },
+    { name: 'Computer', code: 'COM101' },
+    { name: 'Sanskrit', code: 'SAN101' },
+    { name: 'Physics', code: 'PHY101' },
+    { name: 'Chemistry', code: 'CHE101' },
+    { name: 'Biology', code: 'BIO101' },
+    { name: 'Accountancy', code: 'ACC101' },
+    { name: 'Business Studies', code: 'BST101' },
+    { name: 'Economics', code: 'ECO101' },
+    { name: 'History', code: 'HIS101' },
+    { name: 'Political Science', code: 'POL101' },
+    { name: 'Geography', code: 'GEO101' }
+  ];
 
   // Exam Setup Form
   const [examForm, setExamForm] = useState({
@@ -61,11 +82,6 @@ const ExamManagement = () => {
     { id: 'corporate_red', name: 'Corporate Red', preview: '🔴' }
   ];
 
-  const classesList = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-  const sectionsList = ['A', 'B', 'C'];
-  const examTypes = ['Unit Test', 'Monthly Test', 'Mid-term', 'Final', 'Weekly Test'];
-  const subjectsList = ['Mathematics', 'Science', 'English', 'Hindi', 'Social Studies', 'Computer', 'Sanskrit'];
-
   // ==============================
   // FETCH FUNCTIONS
   // ==============================
@@ -89,6 +105,7 @@ const ExamManagement = () => {
       const res = await axios.get(`${BASE_URL}/api/board-settings`);
       if (res.data) {
         setBoard(res.data.board_name || 'CBSE');
+        setBoardFilter(res.data.board_name || 'CBSE');
       }
     } catch (err) {
       console.log("Board settings fetch error");
@@ -113,13 +130,11 @@ const ExamManagement = () => {
       setStudents(res.data.students || []);
       setSelectedExam(res.data.exam);
       
-      // Initialize marks data
       const marks = {};
       res.data.students.forEach(s => {
-        const existingMark = res.data.marks?.find(m => m.student_id === s.id);
         marks[s.id] = { 
-          marks: existingMark?.marks_obtained || '', 
-          grade: existingMark?.grade || '' 
+          marks: s.marks_obtained !== null ? s.marks_obtained : '', 
+          grade: s.grade || '' 
         };
       });
       setMarksData(marks);
@@ -219,6 +234,7 @@ const ExamManagement = () => {
 
   const handleBoardChange = async (newBoard) => {
     setBoard(newBoard);
+    setBoardFilter(newBoard);
     try {
       await axios.post(`${BASE_URL}/api/board-settings`, { board_name: newBoard });
       setMessage({ type: 'success', text: `✅ Switched to ${newBoard} pattern!` });
@@ -279,6 +295,12 @@ const ExamManagement = () => {
           📚 Setup Exam
         </button>
         <button 
+          onClick={() => setActiveTab('subjects')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'subjects' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+        >
+          📖 Subjects
+        </button>
+        <button 
           onClick={() => setActiveTab('marks')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'marks' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
@@ -304,12 +326,9 @@ const ExamManagement = () => {
         </button>
       </div>
 
-      {/* ============================== */}
       {/* TAB 1: SETUP EXAM */}
-      {/* ============================== */}
       {activeTab === 'setup' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Create Exam Form */}
           <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="text-sm font-black text-gray-800 mb-4">📝 Create New Exam</h3>
             <form onSubmit={handleCreateExam} className="space-y-3">
@@ -367,7 +386,7 @@ const ExamManagement = () => {
                   required
                 >
                   <option value="">-- Select --</option>
-                  {subjectsList.map(s => <option key={s} value={s}>{s}</option>)}
+                  {subjectsList.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
                 </select>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -422,7 +441,6 @@ const ExamManagement = () => {
             </form>
           </div>
 
-          {/* Exam List */}
           <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="text-sm font-black text-gray-800 mb-4 flex items-center justify-between">
               <span>📋 All Exams</span>
@@ -486,98 +504,93 @@ const ExamManagement = () => {
         </div>
       )}
 
-      {/* 📚 Subject Setup */}
-{activeTab === 'subjects' && (
-  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-    <h3 className="text-sm font-black text-gray-800 mb-4">📚 Subject Setup</h3>
-    
-    {/* Class Selection */}
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-      <div>
-        <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Class</label>
-        <select 
-          className="w-full p-2.5 border border-gray-200 rounded-xl text-sm font-bold"
-          value={classFilter}
-          onChange={(e) => setClassFilter(e.target.value)}
-        >
-          <option value="">All Classes</option>
-          {classesList.map(c => <option key={c} value={c}>Class {c}</option>)}
-        </select>
-      </div>
-      <div>
-        <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Board</label>
-        <select 
-          className="w-full p-2.5 border border-gray-200 rounded-xl text-sm font-bold"
-          value={boardFilter}
-          onChange={(e) => setBoardFilter(e.target.value)}
-        >
-          <option value="CBSE">CBSE</option>
-          <option value="MP Board">MP Board</option>
-          <option value="UP Board">UP Board</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Stream (11-12)</label>
-        <select 
-          className="w-full p-2.5 border border-gray-200 rounded-xl text-sm font-bold"
-          value={streamFilter}
-          onChange={(e) => setStreamFilter(e.target.value)}
-        >
-          <option value="">Select Stream</option>
-          <option value="Science">Science</option>
-          <option value="Commerce">Commerce</option>
-          <option value="Arts">Arts</option>
-        </select>
-      </div>
-    </div>
-    
-    {/* Subject List */}
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-xs font-medium">
-        <thead className="bg-gray-50">
-          <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-            <th className="p-3">Subject</th>
-            <th className="p-3">Code</th>
-            <th className="p-3">Theory</th>
-            <th className="p-3">Internal</th>
-            <th className="p-3">Total</th>
-            <th className="p-3 text-center">Action</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {subjectsList.map((subject, index) => (
-            <tr key={index} className="hover:bg-gray-50">
-              <td className="p-3 font-bold">{subject.name}</td>
-              <td className="p-3">{subject.code || '-'}</td>
-              <td className="p-3">{subject.theory || 0}</td>
-              <td className="p-3">{subject.internal || 0}</td>
-              <td className="p-3 font-bold">{(subject.theory || 0) + (subject.internal || 0)}</td>
-              <td className="p-3 text-center">
-                <button className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition">
-                  🗑️
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-    
-    {/* Add Subject Button */}
-    <div className="mt-4">
-      <button 
-        onClick={() => setShowAddSubject(true)}
-        className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition flex items-center gap-2"
-      >
-        <Plus className="w-4 h-4" /> Add Subject
-      </button>
-    </div>
-  </div>
-)}
+      {/* TAB 2: SUBJECTS */}
+      {activeTab === 'subjects' && (
+        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+          <h3 className="text-sm font-black text-gray-800 mb-4">📚 Subject Setup</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Class</label>
+              <select 
+                className="w-full p-2.5 border border-gray-200 rounded-xl text-sm font-bold"
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+              >
+                <option value="">All Classes</option>
+                {classesList.map(c => <option key={c} value={c}>Class {c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Board</label>
+              <select 
+                className="w-full p-2.5 border border-gray-200 rounded-xl text-sm font-bold"
+                value={boardFilter}
+                onChange={(e) => setBoardFilter(e.target.value)}
+              >
+                <option value="CBSE">CBSE</option>
+                <option value="MP Board">MP Board</option>
+                <option value="UP Board">UP Board</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Stream (11-12)</label>
+              <select 
+                className="w-full p-2.5 border border-gray-200 rounded-xl text-sm font-bold"
+                value={streamFilter}
+                onChange={(e) => setStreamFilter(e.target.value)}
+              >
+                <option value="">Select Stream</option>
+                <option value="Science">Science</option>
+                <option value="Commerce">Commerce</option>
+                <option value="Arts">Arts</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-medium">
+              <thead className="bg-gray-50">
+                <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
+                  <th className="p-3">Subject</th>
+                  <th className="p-3">Code</th>
+                  <th className="p-3">Theory</th>
+                  <th className="p-3">Internal</th>
+                  <th className="p-3">Total</th>
+                  <th className="p-3 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {subjectsList.slice(0, 7).map((subject, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="p-3 font-bold">{subject.name}</td>
+                    <td className="p-3">{subject.code || '-'}</td>
+                    <td className="p-3">{board === 'CBSE' ? 80 : board === 'MP Board' ? 75 : 100}</td>
+                    <td className="p-3">{board === 'CBSE' ? 20 : board === 'MP Board' ? 25 : 0}</td>
+                    <td className="p-3 font-bold">{board === 'CBSE' ? 100 : board === 'MP Board' ? 100 : 100}</td>
+                    <td className="p-3 text-center">
+                      <button className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition">
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          <div className="mt-4">
+            <button 
+              onClick={() => setShowAddSubject(true)}
+              className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" /> Add Subject
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* ============================== */}
-      {/* TAB 2: ENTER MARKS */}
-      {/* ============================== */}
+      {/* TAB 3: MARKS */}
       {activeTab === 'marks' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -668,9 +681,7 @@ const ExamManagement = () => {
         </div>
       )}
 
-      {/* ============================== */}
-      {/* TAB 3: RESULTS */}
-      {/* ============================== */}
+      {/* TAB 4: RESULTS */}
       {activeTab === 'results' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <h3 className="text-sm font-black text-gray-800 mb-4">📊 Exam Results</h3>
@@ -682,14 +693,11 @@ const ExamManagement = () => {
         </div>
       )}
 
-      {/* ============================== */}
-      {/* TAB 4: REPORT CARDS */}
-      {/* ============================== */}
+      {/* TAB 5: REPORT CARDS */}
       {activeTab === 'reports' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <h3 className="text-sm font-black text-gray-800 mb-4">📄 Report Cards</h3>
           
-          {/* Template Selection */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             {marksheetTemplates.map((t) => (
               <div key={t.id} className={`p-3 border-2 rounded-xl text-center cursor-pointer transition hover:border-indigo-400 ${t.id === 'classic_blue' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'}`}>
@@ -707,9 +715,7 @@ const ExamManagement = () => {
         </div>
       )}
 
-      {/* ============================== */}
-      {/* TAB 5: GRADE SYSTEM */}
-      {/* ============================== */}
+      {/* TAB 6: GRADE SYSTEM */}
       {activeTab === 'grades' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <h3 className="text-sm font-black text-gray-800 mb-4">📊 Grade System</h3>
