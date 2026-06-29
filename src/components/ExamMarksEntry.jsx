@@ -154,7 +154,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
 
   const showAttendanceColumn = shouldShowAttendance();
 
-  // ✅ JAB TAK STUDENTS LOAD NAHI HOTE - EMPTY STATE
   if (students.length === 0) {
     return (
       <div className="space-y-4">
@@ -188,7 +187,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     <div className="space-y-4">
       <h3 className="text-sm font-bold text-gray-800">📝 Marks Entry</h3>
       
-      {/* Board Info */}
       <div className={`p-3 rounded-xl border flex items-center gap-2 ${
         boardName === 'MP Board' ? 'bg-orange-50 border-orange-200 text-orange-700' :
         boardName === 'CBSE' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
@@ -201,7 +199,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
         </span>
       </div>
       
-      {/* Select Exam */}
       <div className="bg-white p-4 rounded-xl border border-gray-200">
         <div className="flex items-center gap-3">
           <BookOpen className="w-5 h-5 text-gray-400" />
@@ -220,7 +217,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
         </div>
       </div>
 
-      {/* Messages */}
       {message.text && (
         <div className={`p-3 rounded-xl text-xs font-bold flex items-center gap-2 ${
           message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 
@@ -231,26 +227,23 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
         </div>
       )}
 
-      {/* ✅ MAIN MARKS TABLE - 4 COLUMNS */}
+      {/* ✅ MARKS TABLE WITH 4 COLUMNS */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[750px] text-sm">
+          <table className="w-full min-w-[700px] text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
                 <th className="px-3 py-2 text-left font-bold text-gray-600 text-xs w-12">Roll</th>
-                <th className="px-3 py-2 text-left font-bold text-gray-600 text-xs w-32">Student</th>
+                <th className="px-3 py-2 text-left font-bold text-gray-600 text-xs w-28">Student</th>
                 <th className="px-3 py-2 text-center font-bold text-gray-600 text-xs w-24">
-                  Theory <br/>
-                  <span className="font-normal text-[10px] text-gray-400">({examPattern.theory_marks})</span>
+                  Theory <span className="font-normal text-[10px] text-gray-400">({examPattern.theory_marks})</span>
                 </th>
                 <th className="px-3 py-2 text-center font-bold text-gray-600 text-xs w-24">
-                  Internal <br/>
-                  <span className="font-normal text-[10px] text-gray-400">({examPattern.internal_marks})</span>
+                  Internal <span className="font-normal text-[10px] text-gray-400">({examPattern.internal_marks})</span>
                 </th>
                 {showAttendanceColumn && (
                   <th className="px-3 py-2 text-center font-bold text-gray-600 text-xs w-20">
-                    Attendance <br/>
-                    <span className="font-normal text-[10px] text-gray-400">(5)</span>
+                    Attendance <span className="font-normal text-[10px] text-gray-400">(5)</span>
                   </th>
                 )}
                 <th className="px-3 py-2 text-center font-bold text-gray-600 text-xs w-16">Total</th>
@@ -260,10 +253,9 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
             <tbody className="divide-y divide-gray-100">
               {students.map((student) => (
                 <tr key={student.id} className="hover:bg-gray-50">
-                  <td className="px-3 py-2 font-bold text-gray-700 text-center">{student.roll_no || '-'}</td>
-                  <td className="px-3 py-2 font-medium text-gray-800 truncate max-w-[120px]">{student.name}</td>
+                  <td className="px-3 py-2 font-bold text-gray-700">{student.roll_no || '-'}</td>
+                  <td className="px-3 py-2 font-medium text-gray-800 truncate">{student.name}</td>
                   
-                  {/* Theory Input */}
                   <td className="px-3 py-2">
                     <input 
                       type="number" 
@@ -271,12 +263,11 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                       max={examPattern.theory_marks}
                       value={marksData[student.id]?.theory || ''}
                       onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
-                      className="w-16 mx-auto block px-2 py-1.5 border border-gray-300 rounded-lg text-center text-sm font-bold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-16 mx-auto block px-2 py-1.5 border border-gray-300 rounded-lg text-center text-sm font-bold"
                       placeholder="0"
                     />
                   </td>
                   
-                  {/* Internal Input */}
                   <td className="px-3 py-2">
                     <input 
                       type="number" 
@@ -284,12 +275,11 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                       max={examPattern.internal_marks}
                       value={marksData[student.id]?.internal || ''}
                       onChange={(e) => handleMarkChange(student.id, 'internal', e.target.value)}
-                      className="w-16 mx-auto block px-2 py-1.5 border border-gray-300 rounded-lg text-center text-sm font-bold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-16 mx-auto block px-2 py-1.5 border border-gray-300 rounded-lg text-center text-sm font-bold"
                       placeholder="0"
                     />
                   </td>
                   
-                  {/* Attendance Input */}
                   {showAttendanceColumn && (
                     <td className="px-3 py-2">
                       <input 
@@ -298,18 +288,16 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                         max="5"
                         value={marksData[student.id]?.attendance || ''}
                         onChange={(e) => handleMarkChange(student.id, 'attendance', e.target.value)}
-                        className="w-16 mx-auto block px-2 py-1.5 border border-gray-300 rounded-lg text-center text-sm font-bold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-16 mx-auto block px-2 py-1.5 border border-gray-300 rounded-lg text-center text-sm font-bold"
                         placeholder="0"
                       />
                     </td>
                   )}
                   
-                  {/* Total */}
                   <td className="px-3 py-2 text-center font-bold text-indigo-600">
                     {marksData[student.id]?.total || 0}
                   </td>
                   
-                  {/* Grade */}
                   <td className="px-3 py-2 text-center">
                     <span className={`px-2 py-1 rounded-full text-xs font-bold ${
                       (marksData[student.id]?.grade || 'F') === 'A+' || (marksData[student.id]?.grade || 'F') === 'A' ? 'bg-green-100 text-green-700' :
@@ -327,7 +315,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
           </table>
         </div>
         
-        {/* Save Button */}
         <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex justify-end">
           <button 
             onClick={handleSaveMarks}
