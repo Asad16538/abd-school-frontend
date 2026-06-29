@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Save, BookOpen, AlertCircle, Users, CheckCircle, XCircle, Plus, Trash2, Loader2 } from 'lucide-react';
+import { Save, BookOpen, Users, CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 const BASE_URL = 'https://abd-school-backend.onrender.com';
 
@@ -69,11 +69,12 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
           subject_marks: {}
         };
         
-        // Initialize subject marks
+        // Initialize subject marks with Theory, Practical, Internal
         subjectsList.forEach(sub => {
           initialMarks[student.id].subject_marks[sub.id] = {
             theory: existingMarks[student.id]?.subject_marks?.[sub.id]?.theory || '',
             practical: existingMarks[student.id]?.subject_marks?.[sub.id]?.practical || '',
+            internal: existingMarks[student.id]?.subject_marks?.[sub.id]?.internal || '',
             total: existingMarks[student.id]?.subject_marks?.[sub.id]?.total || 0
           };
         });
@@ -104,25 +105,26 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     }
   };
 
-  // Handle subject mark change with Theory+Practical support
+  // Handle subject mark change
   const handleSubjectMarkChange = (studentId, subjectId, field, value) => {
     setMarksData(prev => {
       const updated = { ...prev };
       const student = updated[studentId];
       
-      // Update theory or practical
+      // Update theory, practical, or internal
       student.subject_marks[subjectId][field] = value;
       
-      // Calculate total
+      // Calculate total (Theory + Practical + Internal)
       const theory = parseFloat(student.subject_marks[subjectId].theory) || 0;
       const practical = parseFloat(student.subject_marks[subjectId].practical) || 0;
-      student.subject_marks[subjectId].total = theory + practical;
+      const internal = parseFloat(student.subject_marks[subjectId].internal) || 0;
+      student.subject_marks[subjectId].total = theory + practical + internal;
       
       return updated;
     });
   };
 
-  // Handle attendance change (only for Annual exams)
+  // Handle attendance change
   const handleAttendanceChange = (studentId, value) => {
     setMarksData(prev => {
       const updated = { ...prev };
@@ -184,7 +186,8 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
             if (marks) {
               subjectMarks[sub.id] = {
                 theory: parseFloat(marks.theory) || 0,
-                practical: parseFloat(marks.practical) || 0
+                practical: parseFloat(marks.practical) || 0,
+                internal: parseFloat(marks.internal) || 0
               };
             }
           });
@@ -202,7 +205,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
       setMessage({ type: 'success', text: '✅ All marks saved successfully!' });
       if (onMarksSaved) onMarksSaved();
       
-      // Clear success message after 3 seconds
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
       
     } catch (err) {
@@ -266,19 +268,20 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     
     return (
       <div className="overflow-x-auto border rounded-xl">
-        <table className="w-full text-sm min-w-[800px]">
+        <table className="w-full text-sm min-w-[900px]">
           <thead className="bg-gray-100 text-[10px] uppercase sticky top-0 z-10">
             <tr>
-              <th className="p-3 text-left min-w-[100px]">Roll - Name</th>
+              <th className="p-3 text-left min-w-[100px] sticky left-0 bg-gray-100">Roll - Name</th>
               
-              {/* Subject columns */}
+              {/* Subject columns with Theory, Practical, Internal */}
               {subjects.map(sub => (
-                <th key={sub.id} className="p-2 text-center min-w-[120px]">
-                  <div className="flex flex-col items-center">
-                    <span className="font-bold">{sub.subject_name}</span>
-                    <div className="flex gap-1 text-[8px] text-gray-500">
-                      <span>T+P</span>
-                    </div>
+                <th key={sub.id} className="p-2 text-center min-w-[220px]">
+                  <div className="font-bold text-xs">{sub.subject_name}</div>
+                  <div className="flex gap-1 text-[8px] text-gray-500 justify-center">
+                    <span className="w-[50px]">Theory</span>
+                    <span className="w-[50px]">Pract.</span>
+                    <span className="w-[50px]">Internal</span>
+                    <span className="w-[40px] font-bold text-blue-600">Total</span>
                   </div>
                 </th>
               ))}
@@ -303,37 +306,56 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
               
               return (
                 <tr key={student.id} className="border-b hover:bg-gray-50">
-                  <td className="p-2 text-left font-bold text-xs">
+                  <td className="p-2 text-left font-bold text-xs sticky left-0 bg-white">
                     <div>{student.roll_no}</div>
                     <div className="font-normal text-gray-500">{student.name}</div>
                   </td>
                   
-                  {/* Subject marks */}
+                  {/* Subject marks with Theory, Practical, Internal fields */}
                   {subjects.map(sub => {
-                    const marks = studentMarks.subject_marks[sub.id] || { theory: '', practical: '', total: 0 };
-                    const inputValue = marks.theory && marks.practical ? `${marks.theory}+${marks.practical}` : (marks.theory || '');
+                    const marks = studentMarks.subject_marks[sub.id] || { theory: '', practical: '', internal: '', total: 0 };
                     
                     return (
                       <td key={sub.id} className="p-1 text-center">
-                        <input
-                          type="text"
-                          className="w-[65px] border border-gray-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                          placeholder="T+P"
-                          value={inputValue}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val.includes('+')) {
-                              const parts = val.split('+');
-                              const theory = parts[0]?.trim() || '';
-                              const practical = parts[1]?.trim() || '';
-                              handleSubjectMarkChange(student.id, sub.id, 'theory', theory);
-                              handleSubjectMarkChange(student.id, sub.id, 'practical', practical);
-                            } else {
-                              handleSubjectMarkChange(student.id, sub.id, 'theory', val);
-                              handleSubjectMarkChange(student.id, sub.id, 'practical', '');
-                            }
-                          }}
-                        />
+                        <div className="flex gap-1 justify-center items-center">
+                          {/* Theory Input */}
+                          <input
+                            type="number"
+                            className="w-[45px] border border-gray-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            placeholder="Th"
+                            value={marks.theory}
+                            onChange={(e) => handleSubjectMarkChange(student.id, sub.id, 'theory', e.target.value)}
+                            min="0"
+                            max={sub.max_marks || 100}
+                          />
+                          
+                          {/* Practical Input */}
+                          <input
+                            type="number"
+                            className="w-[45px] border border-gray-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            placeholder="Pr"
+                            value={marks.practical}
+                            onChange={(e) => handleSubjectMarkChange(student.id, sub.id, 'practical', e.target.value)}
+                            min="0"
+                            max={sub.max_marks || 100}
+                          />
+                          
+                          {/* Internal Input */}
+                          <input
+                            type="number"
+                            className="w-[45px] border border-gray-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            placeholder="Int"
+                            value={marks.internal}
+                            onChange={(e) => handleSubjectMarkChange(student.id, sub.id, 'internal', e.target.value)}
+                            min="0"
+                            max={sub.max_marks || 100}
+                          />
+                          
+                          {/* Total (Auto-calculated) */}
+                          <span className="w-[35px] text-center font-bold text-blue-600 text-xs">
+                            {marks.total || 0}
+                          </span>
+                        </div>
                       </td>
                     );
                   })}
@@ -405,10 +427,10 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <BookOpen className="w-6 h-6 text-blue-600" />
-          <h2 className="text-xl font-bold">📝 Marks Entry</h2>
+          <h2 className="text-xl font-bold">✏️ Enter Marks</h2>
         </div>
         <span className="text-xs text-gray-400">
-          Theory+Practical format: e.g., 70+18
+          Theory + Practical + Internal = Total
         </span>
       </div>
       
