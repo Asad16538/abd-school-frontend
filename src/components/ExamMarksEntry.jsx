@@ -203,24 +203,25 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
 
       {students.length > 0 && selectedExam && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
+          {/* ✅ FIX: min-width add karo taaki columns compress na ho */}
+          <div className="overflow-x-auto max-h-[500px] overflow-y-auto" style={{ minWidth: '750px' }}>
             <table className="w-full text-left text-xs font-medium">
               <thead className="bg-gray-50 sticky top-0">
                 <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-                  <th className="p-3 w-12">Roll</th>
+                  <th className="p-3 w-12 text-center">Roll</th>
                   <th className="p-3 w-32">Student Name</th>
-                  <th className="p-3 w-24">
-                    <div className="text-center">Theory</div>
-                    <div className="text-center text-[8px] font-normal">({examPattern.theory_marks})</div>
+                  <th className="p-3 w-24 text-center">
+                    <div>Theory</div>
+                    <div className="text-[8px] font-normal">({examPattern.theory_marks})</div>
                   </th>
-                  <th className="p-3 w-24">
-                    <div className="text-center">Internal</div>
-                    <div className="text-center text-[8px] font-normal">({examPattern.internal_marks})</div>
+                  <th className="p-3 w-24 text-center">
+                    <div>Internal</div>
+                    <div className="text-[8px] font-normal">({examPattern.internal_marks})</div>
                   </th>
                   {showAttendanceColumn && (
-                    <th className="p-3 w-20">
-                      <div className="text-center">Attendance</div>
-                      <div className="text-center text-[8px] font-normal">(5)</div>
+                    <th className="p-3 w-20 text-center">
+                      <div>Attendance</div>
+                      <div className="text-[8px] font-normal">(5)</div>
                     </th>
                   )}
                   <th className="p-3 w-16 text-center">Total</th>
@@ -232,7 +233,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                   <tr key={student.id} className="hover:bg-gray-50">
                     <td className="p-2 text-center font-bold">{student.roll_no || '-'}</td>
                     <td className="p-2 font-medium truncate">{student.name}</td>
-                    <td className="p-2">
+                    <td className="p-2 text-center">
                       <input 
                         type="number" 
                         min="0"
@@ -243,7 +244,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                         placeholder="0"
                       />
                     </td>
-                    <td className="p-2">
+                    <td className="p-2 text-center">
                       <input 
                         type="number" 
                         min="0"
@@ -255,7 +256,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                       />
                     </td>
                     {showAttendanceColumn && (
-                      <td className="p-2">
+                      <td className="p-2 text-center">
                         <input 
                           type="number" 
                           min="0"
