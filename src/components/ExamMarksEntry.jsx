@@ -3,15 +3,12 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   FileText, Users, CheckCircle, XCircle, Save, 
-  BookOpen, AlertCircle, Calendar, UserCheck
+  BookOpen, AlertCircle
 } from 'lucide-react';
 
 const BASE_URL = 'https://abd-school-backend.onrender.com';
 
 const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
-  // ==============================
-  // STATES
-  // ==============================
   const [exams, setExams] = useState([]);
   const [selectedExam, setSelectedExam] = useState(null);
   const [students, setStudents] = useState([]);
@@ -26,17 +23,11 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
   });
   const [showAttendance, setShowAttendance] = useState(false);
 
-  // ==============================
-  // useEffect
-  // ==============================
   useEffect(() => {
     fetchAssignedExams();
     fetchBoardSettings();
   }, []);
 
-  // ==============================
-  // FETCH FUNCTIONS
-  // ==============================
   const fetchBoardSettings = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/board-settings`);
@@ -68,7 +59,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
       });
       setExamPattern(res.data);
       
-      // Show attendance only for Final/Term 2/Annual/Half Yearly exams
       const isFinalExam = selectedExam?.exam_type === 'Final' || 
                           selectedExam?.exam_type === 'Term 2' || 
                           selectedExam?.exam_type === 'Annual' ||
@@ -87,10 +77,8 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
       setStudents(res.data.students || []);
       setSelectedExam(res.data.exam);
       
-      // Fetch exam pattern
       await fetchExamPattern(res.data.exam?.class, res.data.exam?.subject_type);
       
-      // Initialize marks with all fields
       const marks = {};
       res.data.students.forEach(s => {
         marks[s.id] = { 
@@ -109,21 +97,16 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     }
   };
 
-  // ==============================
-  // HANDLE FUNCTIONS
-  // ==============================
   const handleMarkChange = (studentId, field, value) => {
     setMarksData(prev => {
       const updated = { ...prev };
       updated[studentId] = { ...updated[studentId], [field]: value };
       
-      // ✅ AUTO-CALCULATE TOTAL
       const theory = parseFloat(updated[studentId].theory) || 0;
       const internal = parseFloat(updated[studentId].internal) || 0;
       const attendance = parseFloat(updated[studentId].attendance) || 0;
       updated[studentId].total = theory + internal + attendance;
       
-      // ✅ AUTO-CALCULATE GRADE
       const totalMarks = examPattern.total_marks || 100;
       const percentage = (updated[studentId].total / totalMarks) * 100;
       updated[studentId].grade = getGrade(percentage);
@@ -167,7 +150,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     }
   };
 
-  // ✅ CHECK IF ATTENDANCE SHOULD SHOW
   const shouldShowAttendance = () => {
     const examTypes = ['Final', 'Term 2', 'Annual', 'Half Yearly'];
     return examTypes.some(t => selectedExam?.exam_type?.includes(t));
@@ -179,7 +161,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     <div className="space-y-4">
       <h3 className="text-sm font-bold text-gray-800">📝 Marks Entry</h3>
       
-      {/* Board Info */}
       <div className={`p-3 rounded-xl border flex items-center gap-2 ${
         boardName === 'MP Board' ? 'bg-orange-50 border-orange-200 text-orange-700' :
         boardName === 'CBSE' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
@@ -192,7 +173,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
         </span>
       </div>
       
-      {/* Select Exam */}
       <div className="bg-white p-4 rounded-xl border border-gray-200">
         <div className="flex items-center gap-3">
           <BookOpen className="w-5 h-5 text-gray-400" />
@@ -221,7 +201,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
         </div>
       )}
 
-      {/* ✅ STUDENTS MARKS TABLE WITH MULTIPLE COLUMNS */}
       {students.length > 0 && selectedExam && (
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
@@ -230,31 +209,21 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                 <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
                   <th className="p-3 w-16">Roll</th>
                   <th className="p-3 min-w-[120px]">Student Name</th>
-                  
-                  {/* ✅ THEORY COLUMN */}
                   <th className="p-3 w-28">
                     <div className="text-center">Theory</div>
                     <div className="text-center text-[8px] font-normal">({examPattern.theory_marks})</div>
                   </th>
-                  
-                  {/* ✅ INTERNAL COLUMN */}
                   <th className="p-3 w-28">
                     <div className="text-center">Internal/SE/NB</div>
                     <div className="text-center text-[8px] font-normal">({examPattern.internal_marks})</div>
                   </th>
-                  
-                  {/* ✅ ATTENDANCE COLUMN (Only for Final Exams) */}
                   {showAttendanceColumn && (
                     <th className="p-3 w-24">
                       <div className="text-center">Attendance</div>
                       <div className="text-center text-[8px] font-normal">(5)</div>
                     </th>
                   )}
-                  
-                  {/* ✅ TOTAL COLUMN */}
                   <th className="p-3 w-20 text-center">Total</th>
-                  
-                  {/* ✅ GRADE COLUMN */}
                   <th className="p-3 w-16 text-center">Grade</th>
                 </tr>
               </thead>
@@ -263,8 +232,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                   <tr key={student.id} className="hover:bg-gray-50">
                     <td className="p-3 font-bold">{student.roll_no || '-'}</td>
                     <td className="p-3 font-medium">{student.name}</td>
-                    
-                    {/* ✅ THEORY INPUT */}
                     <td className="p-3">
                       <input 
                         type="number" 
@@ -276,8 +243,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                         placeholder="0"
                       />
                     </td>
-                    
-                    {/* ✅ INTERNAL INPUT */}
                     <td className="p-3">
                       <input 
                         type="number" 
@@ -289,8 +254,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                         placeholder="0"
                       />
                     </td>
-                    
-                    {/* ✅ ATTENDANCE INPUT (Only for Final Exams) */}
                     {showAttendanceColumn && (
                       <td className="p-3">
                         <input 
@@ -304,15 +267,11 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                         />
                       </td>
                     )}
-                    
-                    {/* ✅ TOTAL DISPLAY */}
                     <td className="p-3 text-center">
                       <span className="font-bold text-indigo-600 text-sm">
                         {marksData[student.id]?.total || 0}
                       </span>
                     </td>
-                    
-                    {/* ✅ GRADE DISPLAY */}
                     <td className="p-3 text-center">
                       <span className={`text-xs font-bold px-2 py-1 rounded-full ${
                         (marksData[student.id]?.grade || 'F') === 'A+' || (marksData[student.id]?.grade || 'F') === 'A' ? 'bg-green-100 text-green-700' :
@@ -329,8 +288,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
               </tbody>
             </table>
           </div>
-          
-          {/* Save Button */}
           <div className="p-3 bg-gray-50 border-t border-gray-200 flex justify-end">
             <button 
               onClick={handleSaveMarks}
