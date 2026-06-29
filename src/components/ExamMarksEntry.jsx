@@ -24,7 +24,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     internal_marks: 20,
     total_marks: 100
   });
-  const [showAttendance, setShowAttendance] = useState(false);
+  const [showAttendance, setShowAttendance] = useState(false); // ✅ EK BAAR
 
   // ==============================
   // useEffect
@@ -68,8 +68,11 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
       });
       setExamPattern(res.data);
       
-      // Show attendance only for Final/Term 2 exams
-      const isFinalExam = selectedExam?.exam_type === 'Final' || selectedExam?.exam_type === 'Term 2' || selectedExam?.exam_type === 'Annual';
+      // ✅ Show attendance only for Final/Term 2/Annual/Half Yearly exams
+      const isFinalExam = selectedExam?.exam_type === 'Final' || 
+                          selectedExam?.exam_type === 'Term 2' || 
+                          selectedExam?.exam_type === 'Annual' ||
+                          selectedExam?.exam_type === 'Half Yearly';
       setShowAttendance(isFinalExam);
       
     } catch (err) {
@@ -163,13 +166,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
       setLoading(false);
     }
   };
-
-  const isExamType = (type) => {
-    const examTypes = ['Final', 'Term 2', 'Annual', 'Half Yearly'];
-    return examTypes.some(t => selectedExam?.exam_type?.includes(t));
-  };
-
-  const showAttendance = isExamType();
 
   return (
     <div className="space-y-4">
