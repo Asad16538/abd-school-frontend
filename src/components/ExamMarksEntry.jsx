@@ -207,72 +207,72 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
             <table className="w-full text-left text-xs font-medium">
               <thead className="bg-gray-50 sticky top-0">
                 <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-                  <th className="p-3 w-16">Roll</th>
-                  <th className="p-3 min-w-[120px]">Student Name</th>
-                  <th className="p-3 w-28">
+                  <th className="p-3 w-12">Roll</th>
+                  <th className="p-3 w-32">Student Name</th>
+                  <th className="p-3 w-24">
                     <div className="text-center">Theory</div>
                     <div className="text-center text-[8px] font-normal">({examPattern.theory_marks})</div>
                   </th>
-                  <th className="p-3 w-28">
-                    <div className="text-center">Internal/SE/NB</div>
+                  <th className="p-3 w-24">
+                    <div className="text-center">Internal</div>
                     <div className="text-center text-[8px] font-normal">({examPattern.internal_marks})</div>
                   </th>
                   {showAttendanceColumn && (
-                    <th className="p-3 w-24">
+                    <th className="p-3 w-20">
                       <div className="text-center">Attendance</div>
                       <div className="text-center text-[8px] font-normal">(5)</div>
                     </th>
                   )}
-                  <th className="p-3 w-20 text-center">Total</th>
+                  <th className="p-3 w-16 text-center">Total</th>
                   <th className="p-3 w-16 text-center">Grade</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {students.map((student) => (
                   <tr key={student.id} className="hover:bg-gray-50">
-                    <td className="p-3 font-bold">{student.roll_no || '-'}</td>
-                    <td className="p-3 font-medium">{student.name}</td>
-                    <td className="p-3">
+                    <td className="p-2 text-center font-bold">{student.roll_no || '-'}</td>
+                    <td className="p-2 font-medium truncate">{student.name}</td>
+                    <td className="p-2">
                       <input 
                         type="number" 
                         min="0"
                         max={examPattern.theory_marks}
                         value={marksData[student.id]?.theory || ''}
                         onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
-                        className="w-full max-w-[60px] p-1.5 border border-gray-200 rounded-lg text-center text-sm font-bold mx-auto block"
+                        className="w-20 p-2 border border-gray-200 rounded-lg text-center text-sm font-bold mx-auto block"
                         placeholder="0"
                       />
                     </td>
-                    <td className="p-3">
+                    <td className="p-2">
                       <input 
                         type="number" 
                         min="0"
                         max={examPattern.internal_marks}
                         value={marksData[student.id]?.internal || ''}
                         onChange={(e) => handleMarkChange(student.id, 'internal', e.target.value)}
-                        className="w-full max-w-[60px] p-1.5 border border-gray-200 rounded-lg text-center text-sm font-bold mx-auto block"
+                        className="w-20 p-2 border border-gray-200 rounded-lg text-center text-sm font-bold mx-auto block"
                         placeholder="0"
                       />
                     </td>
                     {showAttendanceColumn && (
-                      <td className="p-3">
+                      <td className="p-2">
                         <input 
                           type="number" 
                           min="0"
                           max="5"
                           value={marksData[student.id]?.attendance || ''}
                           onChange={(e) => handleMarkChange(student.id, 'attendance', e.target.value)}
-                          className="w-full max-w-[60px] p-1.5 border border-gray-200 rounded-lg text-center text-sm font-bold mx-auto block"
+                          className="w-20 p-2 border border-gray-200 rounded-lg text-center text-sm font-bold mx-auto block"
                           placeholder="0"
                         />
                       </td>
                     )}
-                    <td className="p-3 text-center">
+                    <td className="p-2 text-center">
                       <span className="font-bold text-indigo-600 text-sm">
                         {marksData[student.id]?.total || 0}
                       </span>
                     </td>
-                    <td className="p-3 text-center">
+                    <td className="p-2 text-center">
                       <span className={`text-xs font-bold px-2 py-1 rounded-full ${
                         (marksData[student.id]?.grade || 'F') === 'A+' || (marksData[student.id]?.grade || 'F') === 'A' ? 'bg-green-100 text-green-700' :
                         (marksData[student.id]?.grade || 'F') === 'B+' || (marksData[student.id]?.grade || 'F') === 'B' ? 'bg-blue-100 text-blue-700' :
