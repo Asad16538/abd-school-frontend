@@ -92,14 +92,52 @@ function App() {
   // ============================================================
   // ✅ STEP 2: SARE FUNCTIONS
   // ============================================================
-  const verifyKey = async () => {
-    try {
-      const res = await axios.post(`${BASE_URL}/api/verify-licence`, { key: keyInput });
-      if (res.data.success) setIsLicenced(true);
-      else alert("❌ Invalid Key!");
-    } catch (err) { alert("❌ Server Error!"); }
-  };
+  // 🎯 DEVICE ID GENERATE KARO
+const getDeviceId = () => {
+  let deviceId = localStorage.getItem('device_id');
+  if (!deviceId) {
+    const fingerprint = `${navigator.userAgent}_${screen.width}x${screen.height}_${navigator.language}`;
+    deviceId = btoa(fingerprint);
+    localStorage.setItem('device_id', deviceId);
+  }
+  return deviceId;
+};
 
+const verifyKey = async () => {
+  if (!keyInput.trim()) {
+    alert("Please enter a license key!");
+    return;
+  }
+  
+  try {
+    const res = await axios.post(`${BASE_URL}/api/licence/verify`, { 
+      key: keyInput,
+      domain: window.location.hostname,
+      device_id: getDeviceId()
+    });
+    
+    if (res.data.success) {
+      setIsLicenced(true);
+      
+      // Store license info
+      localStorage.setItem('licence_key', keyInput);
+      localStorage.setItem('licence_expiry', res.data.expiry_date);
+      localStorage.setItem('licence_domain', window.location.hostname);
+      
+      if (res.data.days_left <= 7) {
+        alert(`⚠️ Your license will expire in ${res.data.days_left} days! Please renew.`);
+      } else {
+        alert(`✅ License Verified! ${res.data.days_left} days remaining.`);
+      }
+    } else {
+      alert("❌ " + (res.data.error || "Invalid Key!"));
+    }
+  } catch (err) {
+    console.error("License verification error:", err);
+    const errorMsg = err.response?.data?.error || "❌ Server Error! Please try again.";
+    alert(errorMsg);
+  }
+};
   const generateCaptcha = () => {
     setNum1(Math.floor(Math.random() * 10) + 1);
     setNum2(Math.floor(Math.random() * 10) + 1);
