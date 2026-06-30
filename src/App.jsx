@@ -362,7 +362,7 @@ const sendFeeReminder = async (studentId) => {
     }
   };
 
-  const isAttendanceForm = window.location.pathname === '/attendance-form';
+const isAttendanceForm = window.location.pathname === '/attendance-form';
 
 if (isAttendanceForm) {
   return <AttendanceForm />;
@@ -792,7 +792,7 @@ return (
       </div>
     )}
   </div>
-);
+)}
 
 const CircleCardIcon = ({ component: Component }) => (
   <Component className="w-8 h-8 opacity-20" />
