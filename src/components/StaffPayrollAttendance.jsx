@@ -669,22 +669,31 @@ useEffect(() => {
                         {s?.pf_enabled === 1 && <span style={{ fontSize: '10px', padding: '2px 6px', backgroundColor: '#f0fdf4', color: '#16a34a', borderRadius: '4px', fontWeight: 'bold' }}>PF Bound</span>}
                       </div>
                     </div>
-                    <button 
-                      onClick={() => {
-                        const link = `https://abd-school-frontend.vercel.app/staff-link-telegram?telegram_id=${s.telegram_id || ''}`;
-                        const msg = `Namaste Sir/Madam, apni Telegram ID link karne ke liye is link par click karein: ${link}`;
-                        const whatsappUrl = `https://wa.me/${s.mobile}?text=${encodeURIComponent(msg)}`;
-                        window.open(whatsappUrl, '_blank');
-                      }}
-                      className="px-2 py-1 bg-green-600 text-white text-[10px] font-bold rounded-lg"
-                      style={{ border: 'none', cursor: 'pointer' }}
-                    >
-                      📱 Link Telegram
-                    </button>
+                    
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '95px' }}>
                       <button onClick={() => handleOpenAdvanceModal(s)} style={{ ...rowActionBtnStyle, backgroundColor: '#fff3e0', color: '#e65100', borderColor: '#ffe0b2' }}><DollarSign size={11}/> + Advance</button>
                       <button onClick={() => fetchIndividualPaySlip(s?.id)} style={{ ...rowActionBtnStyle, backgroundColor: '#4f46e5', color: '#fff', borderColor: '#4f46e5' }}><FileText size={11}/> Pay Slip</button>
-                      {/* 🎯 DELETE ACTION: Isse dynamic handle click bind ho jayega */}
+                      
+                      {/* ✅ YAHAN LINK TELEGRAM BUTTON - ANDAR SHIFT KARO */}
+                      <button 
+                        onClick={() => {
+                          const link = `https://abd-school-frontend.vercel.app/staff-link-telegram?telegram_id=${s.telegram_id || ''}`;
+                          const msg = `Namaste Sir/Madam, apni Telegram ID link karne ke liye is link par click karein: ${link}`;
+                          const whatsappUrl = `https://wa.me/${s.mobile}?text=${encodeURIComponent(msg)}`;
+                          window.open(whatsappUrl, '_blank');
+                        }}
+                        style={{ 
+                          ...rowActionBtnStyle, 
+                          backgroundColor: '#22c55e', 
+                          color: 'white', 
+                          borderColor: '#22c55e',
+                          fontSize: '10px',
+                          padding: '4px 8px'
+                        }}
+                      >
+                        📱 Link Telegram
+                      </button>
+                      
                       <button onClick={() => handleDeleteStaff(s.id, s.name)} style={{ ...rowActionBtnStyle, backgroundColor: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5', marginTop: '2px' }}>❌ Delete Staff</button>
                     </div>
                   </div>
