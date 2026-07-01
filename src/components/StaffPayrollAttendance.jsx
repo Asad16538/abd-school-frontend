@@ -679,7 +679,16 @@ useEffect(() => {
                         onClick={() => {
                           const link = `https://abd-school-frontend.vercel.app/staff-link-telegram?telegram_id=${s.telegram_id || ''}`;
                           const msg = `Namaste Sir/Madam, apni Telegram ID link karne ke liye is link par click karein: ${link}`;
-                          const whatsappUrl = `https://wa.me/${s.mobile}?text=${encodeURIComponent(msg)}`;
+    
+                          // 🎯 FIX: Mobile number ko +91 ke saath format karo
+                          let mobile = s.mobile || '';
+                          mobile = mobile.replace(/\D/g, ''); // Sirf digits
+                          if (mobile.startsWith('0')) mobile = mobile.substring(1);
+                          if (!mobile.startsWith('91') && mobile.length === 10) {
+                          mobile = `91${mobile}`;
+                          }
+    
+                          const whatsappUrl = `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
                           window.open(whatsappUrl, '_blank');
                         }}
                         style={{ 
