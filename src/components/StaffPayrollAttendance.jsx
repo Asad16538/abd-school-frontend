@@ -679,7 +679,7 @@ useEffect(() => {
                         onClick={() => {
                           // 🎯 SAHI LINK - Staff Telegram Link page (component already exists!)
                           const link = `https://abd-school-frontend.vercel.app/staff-link-telegram`;
-                          const msg = `Namaste Sir/Madam, apni Telegram ID link karne ke liye is link par click karein: ${link}`;
+                          const msg = `Dear Sir/Madam, apni Telegram ID link karne ke liye is link par click karein: ${link}`;
     
                           let mobile = s.mobile || '';
                           mobile = mobile.replace(/\D/g, '');
