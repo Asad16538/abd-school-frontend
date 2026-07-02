@@ -26,31 +26,40 @@ const QRCodeAttendance = () => {
   }, []);
 
   const requestGpsLocation = () => {
-    setLoading(true);
-    if (!navigator.geolocation) {
-      setLocError("🚨 Aapka browser GPS Location support nahi karta.");
-      setLocation({ lat: 0.0, lng: 0.0 });
-      setLoading(false);
-      return;
-    }
+  setLoading(true);
+  if (!navigator.geolocation) {
+    setLocError("🚨 Aapka browser GPS Location support nahi karta.");
+    setLocation({ lat: 0.0, lng: 0.0 });
+    setLoading(false);
+    return;
+  }
 
-    const gpsOptions = { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 };
+  const gpsOptions = { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 };
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setLocError(null);
-        setLoading(false);
-      },
-      (err) => {
-        console.error("GPS Error handled safely:", err);
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      // 🎯 FAKE GPS CHECK - SIRF 3 LINES!
+      const accuracy = position.coords.accuracy;
+      if (accuracy < 5) {
+        setLocError("🚨 Fake GPS Detected! Kripya fake location app band karein.");
         setLocation({ lat: 0.0, lng: 0.0 });
-        setLocError("❌ GPS Access Denied! Kripya permission allow karein.");
         setLoading(false);
-      },
-      gpsOptions
-    );
-  };
+        return;
+      }
+      
+      setLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
+      setLocError(null);
+      setLoading(false);
+    },
+    (err) => {
+      console.error("GPS Error handled safely:", err);
+      setLocation({ lat: 0.0, lng: 0.0 });
+      setLocError("❌ GPS Access Denied! Kripya permission allow karein.");
+      setLoading(false);
+    },
+    gpsOptions
+  );
+};
 
   // 🎯 STRICTLY ASYNC BINDING: Ab compiler line 33 par kabhi error nahi dega!
   const handleMarkAttendance = async () => {
