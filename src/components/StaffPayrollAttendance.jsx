@@ -677,11 +677,10 @@ useEffect(() => {
                       {/* ✅ YAHAN LINK TELEGRAM BUTTON - ANDAR SHIFT KARO */}
                       <button 
                         onClick={() => {
-                          // 🎯 Staff ke WhatsApp par link bhejo
-                          const link = `https://abd-school-frontend.vercel.app/staff-link-telegram?telegram_id=${s.telegram_id || ''}`;
-                          const msg = `Dear Sir/Madam, apni Telegram ID link karne ke liye is link par click karein: ${link}`;
+                          // 🎯 SAHI LINK - Staff Telegram Link page (component already exists!)
+                          const link = `https://abd-school-frontend.vercel.app/staff-link-telegram`;
+                          const msg = `Namaste Sir/Madam, apni Telegram ID link karne ke liye is link par click karein: ${link}`;
     
-                          // Mobile number format karo (+91)
                           let mobile = s.mobile || '';
                           mobile = mobile.replace(/\D/g, '');
                           if (mobile.startsWith('0')) mobile = mobile.substring(1);
@@ -690,7 +689,7 @@ useEffect(() => {
                           }
     
                           const whatsappUrl = `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
-                          window.open(whatsappUrl, '_blank');  // ← WhatsApp open
+                          window.open(whatsappUrl, '_blank');
                         }}
                         style={{ 
                           ...rowActionBtnStyle, 
