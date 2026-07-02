@@ -677,25 +677,17 @@ useEffect(() => {
                       {/* ✅ YAHAN LINK TELEGRAM BUTTON - ANDAR SHIFT KARO */}
                       <button 
                         onClick={() => {
-                          const link = `https://abd-school-frontend.vercel.app/staff-link-telegram?telegram_id=${s.telegram_id || ''}`;
-                          const msg = `Namaste Sir/Madam, apni Telegram ID link karne ke liye is link par click karein: ${link}`;
-    
-                          // 🎯 FIX: Mobile number ko +91 ke saath format karo
-                          let mobile = s.mobile || '';
-                          mobile = mobile.replace(/\D/g, ''); // Sirf digits
-                          if (mobile.startsWith('0')) mobile = mobile.substring(1);
-                          if (!mobile.startsWith('91') && mobile.length === 10) {
-                          mobile = `91${mobile}`;
-                          }
-    
-                          const whatsappUrl = `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
-                          window.open(whatsappUrl, '_blank');
+                          // ✅ BINA @ KE - Telegram URL mein @ nahi lagta!
+                          const botUsername = 'abd_digital_work_bot';  // ← BINA @
+                          const startParam = s.id || 'unknown';
+                          const telegramUrl = `https://t.me/${botUsername}?start=${startParam}`;
+                          window.open(telegramUrl, '_blank');
                         }}
                         style={{ 
                           ...rowActionBtnStyle, 
-                          backgroundColor: '#22c55e', 
+                          backgroundColor: '#0088cc', 
                           color: 'white', 
-                          borderColor: '#22c55e',
+                          borderColor: '#0088cc',
                           fontSize: '10px',
                           padding: '4px 8px'
                         }}
