@@ -149,6 +149,15 @@ useEffect(() => {
     loadInitialBranding();
 }, []); // ⚡ KEEP THIS EMPTY DEPENDENCY ARRAY STRICTLY FOR 1-TIME EXECUTION!
 
+// 👇 YAHAN PASTE KARO - ISKE NICHE (EXACT LOCATION)
+// Master timetable auto-refresh on filter change
+useEffect(() => {
+    if (activeSubTab === 'master-timetable') {
+        fetchMasterTimetable();
+    }
+}, [masterFilterDay, masterFilterTeacher, masterFilterClass]);
+
+// 👆 YAHAN TAK
     const fetchTimetableSheet = () => {
         if (!selectedClass) return alert("Bhai pehle Class select karo!");
         const targetSection = selectedSection === 'All' ? 'A' : selectedSection;
@@ -181,6 +190,62 @@ useEffect(() => {
             });
     };
 
+    // 🏫 MASTER TIMETABLE - FETCH & UTILITY FUNCTIONS
+const fetchMasterTimetable = () => {
+    setLoading(true);
+    axios.get(`${BASE_URL}/api/timetable/master-view`)
+        .then(res => {
+            if (res.data.success) {
+                let data = res.data.timetable || [];
+                
+                // Apply filters
+                if (masterFilterDay !== 'All') {
+                    data = data.filter(slot => slot.day === masterFilterDay);
+                }
+                if (masterFilterTeacher !== 'All') {
+                    data = data.filter(slot => slot.teacher_id === masterFilterTeacher);
+                }
+                if (masterFilterClass !== 'All') {
+                    data = data.filter(slot => slot.class_name === masterFilterClass);
+                }
+                
+                setMasterTimetableData(data);
+                calculateMasterStats(data);
+            }
+            setLoading(false);
+        })
+        .catch(err => {
+            console.error("Master timetable fetch error:", err);
+            setLoading(false);
+        });
+};
+
+// CONFLICT DETECTION
+const checkTeacherConflict = (slot) => {
+    if (!slot.teacher_id) return false;
+    return masterTimetableData.some(s => 
+        s.teacher_id === slot.teacher_id && 
+        s.day === slot.day && 
+        s.period === slot.period && 
+        s.id !== slot.id
+    );
+};
+
+// STATISTICS CALCULATOR
+const calculateMasterStats = (data) => {
+    const total = data.length;
+    const assigned = data.filter(s => s.teacher_id).length;
+    const pending = total - assigned;
+    const conflicts = data.filter(s => checkTeacherConflict(s)).length;
+    
+    setMasterStats({ 
+        totalSlots: total, 
+        assignedSlots: assigned, 
+        pendingSlots: pending, 
+        conflicts: conflicts 
+    });
+};
+
     const handlePrint = () => {
         window.print();
     };
@@ -206,6 +271,17 @@ useEffect(() => {
     // ⚙️ A.B.DIGITAL WORK - DYNAMIC TIMETABLE CONFIGURATION CONTROL
     const [configTotalPeriods, setConfigTotalPeriods] = useState(8); // Default 8 periods chalenge
     const [configLunchAfter, setConfigLunchAfter] = useState(4);    // Default 4th period ke baad lunch break hoga
+    // 🏫 MASTER TIMETABLE - ADMIN OVERVIEW STATES
+    const [masterTimetableData, setMasterTimetableData] = useState([]);
+    const [masterFilterDay, setMasterFilterDay] = useState('All');
+    const [masterFilterTeacher, setMasterFilterTeacher] = useState('All');
+    const [masterFilterClass, setMasterFilterClass] = useState('All');
+    const [masterStats, setMasterStats] = useState({
+        totalSlots: 0,
+        assignedSlots: 0,
+        pendingSlots: 0,
+        conflicts: 0
+    });
 
     return (
     <div className="w-full bg-gray-50 min-h-screen font-sans">
@@ -215,6 +291,17 @@ useEffect(() => {
             <button onClick={() => setActiveSubTab('timetable')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${activeSubTab === 'timetable' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-gray-500 hover:bg-gray-100'}`}><Calendar className="w-4 h-4" /><span>📅 Class Timetable</span></button>
             <button onClick={() => setActiveSubTab('teachers')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${activeSubTab === 'teachers' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-gray-500 hover:bg-gray-100'}`}><UserCheck className="w-4 h-4" /><span>👨‍🏫 Teacher Assign</span></button>
             <button onClick={() => setActiveSubTab('subjects')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${activeSubTab === 'subjects' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-gray-500 hover:bg-gray-100'}`}><BookOpen className="w-4 h-4" /><span>📚 Subject Assign</span></button>
+            
+            {/* ✅ MASTER TIMETABLE BUTTON - CONTROLS HUB KE ANDAR */}
+            <button 
+                onClick={() => setActiveSubTab('master-timetable')} 
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${activeSubTab === 'master-timetable' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-gray-500 hover:bg-gray-100'}`}
+            >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span>🏫 Master Timetable</span>
+            </button>
         </div>
 
         {/* 🎙️ बोलो भाई (Voice Assistant) Mic Button */}
@@ -410,6 +497,128 @@ useEffect(() => {
                         ))}
                     </>
                 )}
+            </div>
+        </div>
+    </div>
+)}
+
+{/* ===================================================================== */}
+{/* MODULE 5: 🏫 MASTER TIMETABLE - ADMIN OVERVIEW */}
+{/* ===================================================================== */}
+{activeSubTab === 'master-timetable' && (
+    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm no-print m-6">
+        <div className="flex justify-between items-center mb-6">
+            <div>
+                <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider">🏫 Master Timetable - School Overview</h3>
+                <p className="text-xs text-gray-400 mt-0.5">Complete school class management: Teacher allocation, room tracking, and conflict detection</p>
+            </div>
+            <button 
+                onClick={fetchMasterTimetable}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider p-2.5 px-5 rounded-xl transition shadow-md cursor-pointer"
+            >
+                🔄 Refresh Master View
+            </button>
+        </div>
+
+        {/* FILTER CONTROLS */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
+            <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Filter by Day</label>
+                <select className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold" value={masterFilterDay} onChange={(e) => setMasterFilterDay(e.target.value)}>
+                    <option value="All">All Days</option>
+                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Filter by Teacher</label>
+                <select className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold" value={masterFilterTeacher} onChange={(e) => setMasterFilterTeacher(e.target.value)}>
+                    <option value="All">All Teachers</option>
+                    {teachersList.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Filter by Class</label>
+                <select className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold" value={masterFilterClass} onChange={(e) => setMasterFilterClass(e.target.value)}>
+                    <option value="All">All Classes</option>
+                    {classes.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+            </div>
+            <div className="flex gap-2 items-end">
+                <button onClick={() => window.print()} className="w-full bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-wider p-2.5 rounded-xl transition shadow-md cursor-pointer">
+                    🖨️ Print Master Report
+                </button>
+            </div>
+        </div>
+
+        {/* MASTER TIMETABLE GRID */}
+        {masterTimetableData.length === 0 ? (
+            <div className="p-12 text-center border border-dashed rounded-xl text-gray-400 font-bold text-xs">
+                📊 "Refresh Master View" click karein. Saare classes ka complete schedule ek jagah dekhein!
+            </div>
+        ) : (
+            <div className="overflow-x-auto border border-gray-100 rounded-xl">
+                <table className="w-full text-left text-xs font-medium border-collapse">
+                    <thead>
+                        <tr className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[9px] font-black border-b border-gray-200">
+                            <th className="p-3 border-r border-gray-200/60">Day</th>
+                            <th className="p-3 border-r border-gray-200/60">Period</th>
+                            <th className="p-3 border-r border-gray-200/60">Class</th>
+                            <th className="p-3 border-r border-gray-200/60">Section</th>
+                            <th className="p-3 border-r border-gray-200/60">Subject</th>
+                            <th className="p-3 border-r border-gray-200/60">Teacher</th>
+                            <th className="p-3 border-r border-gray-200/60">Time</th>
+                            <th className="p-3">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-gray-700 font-semibold">
+                        {masterTimetableData.map((slot, idx) => {
+                            const isConflict = checkTeacherConflict(slot);
+                            return (
+                                <tr key={idx} className={`hover:bg-gray-50/60 transition-colors ${isConflict ? 'bg-red-50/50' : ''}`}>
+                                    <td className="p-3 font-black text-slate-800 uppercase text-[10px]">{slot.day}</td>
+                                    <td className="p-3 text-center">Period {slot.period}</td>
+                                    <td className="p-3 font-bold text-indigo-700">{slot.class_name}</td>
+                                    <td className="p-3 text-gray-500">Section {slot.section}</td>
+                                    <td className="p-3 font-bold text-slate-800">{slot.subject || '—'}</td>
+                                    <td className="p-3">
+                                        <span className={isConflict ? 'text-red-600 font-black' : 'text-gray-700'}>
+                                            {slot.teacher_name || '⚠️ Not Assigned'}
+                                        </span>
+                                        {isConflict && <span className="ml-2 text-[8px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-black">⚠️ CONFLICT</span>}
+                                    </td>
+                                    <td className="p-3 text-gray-600 font-mono">{slot.start_time} - {slot.end_time}</td>
+                                    <td className="p-3">
+                                        <span className={`text-[8px] font-black uppercase px-2 py-1 rounded-full ${slot.teacher_id ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                                            {slot.teacher_id ? '✅ Assigned' : '🟡 Pending'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+            </div>
+        )}
+
+        {/* STATISTICS CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">
+            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                <div className="text-2xl font-black text-indigo-700">{masterStats.totalSlots}</div>
+                <div className="text-[9px] font-black text-indigo-500 uppercase">Total Scheduled Slots</div>
+            </div>
+            <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+                <div className="text-2xl font-black text-green-700">{masterStats.assignedSlots}</div>
+                <div className="text-[9px] font-black text-green-500 uppercase">Teacher Assigned</div>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+                <div className="text-2xl font-black text-yellow-700">{masterStats.pendingSlots}</div>
+                <div className="text-[9px] font-black text-yellow-500 uppercase">Pending Assignment</div>
+            </div>
+            <div className={`p-4 rounded-xl border ${masterStats.conflicts > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+                <div className={`text-2xl font-black ${masterStats.conflicts > 0 ? 'text-red-700' : 'text-gray-400'}`}>{masterStats.conflicts}</div>
+                <div className={`text-[9px] font-black uppercase ${masterStats.conflicts > 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                    {masterStats.conflicts > 0 ? '⚠️ Teacher Conflicts Detected' : '✅ No Conflicts'}
+                </div>
             </div>
         </div>
     </div>
