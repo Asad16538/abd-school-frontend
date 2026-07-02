@@ -25,37 +25,69 @@ const StaffAttendanceTerminal = () => {
   }, []);
 
   const requestGpsLocation = () => {
-    if (!navigator.geolocation) {
-      setLocError("🚨 Aapka browser GPS Location support nahi karta.");
-      return;
-    }
-    
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        // 🎯 FAKE GPS CHECK
-        const accuracy = position.coords.accuracy;
-        if (accuracy < 5) {
-          setLocError("🚨 Fake GPS Detected! Kripya fake location app band karein.");
-          setLoading(false);
-          return;
-        }
-        
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-        setLocError(null);
-        setLoading(false);
-      },
-      (err) => {
-        console.error(err);
-        setLocError("❌ GPS Access Denied! Kripya mobile settings me jaakar browser ko Location Permission allow karein.");
-        setLoading(false);
-      },
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
-  };
+  if (!navigator.geolocation) {
+    setLocError("🚨 Aapka browser GPS Location support nahi karta.");
+    return;
+  }
+  
+  setLoading(true);
+  
+  // 🎯 FIRST READING LO
+  navigator.geolocation.getCurrentPosition(
+    (position1) => {
+      const accuracy1 = position1.coords.accuracy;
+      const lat1 = position1.coords.latitude;
+      const lng1 = position1.coords.longitude;
+      
+      // 🎯 2 SECOND BAAD SECOND READING LO
+      setTimeout(() => {
+        navigator.geolocation.getCurrentPosition(
+          (position2) => {
+            const accuracy2 = position2.coords.accuracy;
+            const lat2 = position2.coords.latitude;
+            const lng2 = position2.coords.longitude;
+            
+            // 🛡️ FAKE GPS DETECTION
+            const diff = Math.abs(lat1 - lat2) + Math.abs(lng1 - lng2);
+            
+            // Agar accuracy perfect hai (< 5) YA dono readings same hain -> FAKE GPS
+            if ((accuracy1 < 5 || accuracy2 < 5) || diff < 0.000001) {
+              setLocError("🚨 Fake GPS Detected! Aap real location se attendance nahi laga sakte.");
+              setLocation({ lat: 0.0, lng: 0.0 });
+              setLoading(false);
+              return;
+            }
+            
+            // ✅ REAL GPS - Second reading use karo
+            setLocation({
+              lat: lat2,
+              lng: lng2
+            });
+            setLocError(null);
+            setLoading(false);
+          },
+          (err) => {
+            // 🎯 SECOND READING FAIL - First reading use karo
+            console.warn("Second GPS reading failed, using first:", err);
+            setLocation({
+              lat: lat1,
+              lng: lng1
+            });
+            setLocError(null);
+            setLoading(false);
+          },
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      }, 2000); // 2 second delay
+    },
+    (err) => {
+      console.error(err);
+      setLocError("❌ GPS Access Denied! Kripya mobile settings me jaakar browser ko Location Permission allow karein.");
+      setLoading(false);
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+};
 
   const handleMarkAttendance = async (e) => {
     e.preventDefault();
