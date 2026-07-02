@@ -33,6 +33,14 @@ const StaffAttendanceTerminal = () => {
     setLoading(true);
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        // 🎯 FAKE GPS CHECK
+        const accuracy = position.coords.accuracy;
+        if (accuracy < 5) {
+          setLocError("🚨 Fake GPS Detected! Kripya fake location app band karein.");
+          setLoading(false);
+          return;
+        }
+        
         setLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude
@@ -83,7 +91,6 @@ const StaffAttendanceTerminal = () => {
       const identifiedStaff = staffData[0];
 
       // 🛡️ STEP B: Identified staff member ke ID aur token ke sath post request bheinjo
-      // 🎯 FIX: Quotes aur brackets ekdam tightly tight close hain yahan
       const res = await fetch(`${BASE_URL}/api/staff/mark-attendance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
