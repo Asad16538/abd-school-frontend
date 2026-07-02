@@ -677,22 +677,31 @@ useEffect(() => {
                       {/* ✅ YAHAN LINK TELEGRAM BUTTON - ANDAR SHIFT KARO */}
                       <button 
                         onClick={() => {
-                          // ✅ BINA @ KE - Telegram URL mein @ nahi lagta!
-                          const botUsername = 'abd_digital_work_bot';  // ← BINA @
-                          const startParam = s.id || 'unknown';
-                          const telegramUrl = `https://t.me/${botUsername}?start=${startParam}`;
-                          window.open(telegramUrl, '_blank');
+                          // 🎯 Staff ke WhatsApp par link bhejo
+                          const link = `https://abd-school-frontend.vercel.app/staff-link-telegram?telegram_id=${s.telegram_id || ''}`;
+                          const msg = `Dear Sir/Madam, apni Telegram ID link karne ke liye is link par click karein: ${link}`;
+    
+                          // Mobile number format karo (+91)
+                          let mobile = s.mobile || '';
+                          mobile = mobile.replace(/\D/g, '');
+                          if (mobile.startsWith('0')) mobile = mobile.substring(1);
+                          if (!mobile.startsWith('91') && mobile.length === 10) {
+                            mobile = `91${mobile}`;
+                          }
+    
+                          const whatsappUrl = `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
+                          window.open(whatsappUrl, '_blank');  // ← WhatsApp open
                         }}
                         style={{ 
                           ...rowActionBtnStyle, 
-                          backgroundColor: '#0088cc', 
+                          backgroundColor: '#25D366', 
                           color: 'white', 
-                          borderColor: '#0088cc',
+                          borderColor: '#25D366',
                           fontSize: '10px',
                           padding: '4px 8px'
                         }}
                       >
-                        📱 Link Telegram
+                        📱 Send Telegram Link
                       </button>
                       
                       <button onClick={() => handleDeleteStaff(s.id, s.name)} style={{ ...rowActionBtnStyle, backgroundColor: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5', marginTop: '2px' }}>❌ Delete Staff</button>
