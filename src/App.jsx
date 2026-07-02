@@ -1,4 +1,5 @@
 // src/App.jsx
+import StaffTelegramLink from './components/StaffTelegramLink';
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -311,6 +312,11 @@ function App() {
   // 🎯 WHITE-LABEL COMMERCIAL BYPASS
   if (window.location.href.includes('staff-attendance-terminal') || window.location.pathname === '/staff-attendance-terminal') {
     return <StaffAttendanceTerminal />;
+  }
+
+  // STAFF TELEGRAM LINKING ROUTE
+  if (window.location.pathname === '/staff-link-telegram') {
+    return <StaffTelegramLink />;
   }
 
   // PARENT APP ROUTE
