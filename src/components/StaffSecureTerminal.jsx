@@ -25,29 +25,37 @@ const StaffSecureTerminal = () => {
   }, []);
 
   const requestGpsLocation = () => {
-    if (!navigator.geolocation) {
-      setLocError("🚨 Aapka browser GPS Location support nahi karta.");
-      return;
-    }
-    
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude
-        });
-        setLocError(null);
+  if (!navigator.geolocation) {
+    setLocError("🚨 Aapka browser GPS Location support nahi karta.");
+    return;
+  }
+  
+  setLoading(true);
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      // 🎯 FAKE GPS CHECK - SIRF 3 LINES!
+      const accuracy = position.coords.accuracy;
+      if (accuracy < 5) {
+        setLocError("🚨 Fake GPS Detected! Kripya fake location app band karein.");
         setLoading(false);
-      },
-      (err) => {
-        console.error(err);
-        setLocError("❌ GPS Access Denied! Kripya mobile settings me jaakar browser ko Location Permission allow karein.");
-        setLoading(false);
-      },
-      { enableHighAccuracy: true, timeout: 15000 }
-    );
-  };
+        return;
+      }
+      
+      setLocation({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      });
+      setLocError(null);
+      setLoading(false);
+    },
+    (err) => {
+      console.error(err);
+      setLocError("❌ GPS Access Denied! Kripya mobile settings me jaakar browser ko Location Permission allow karein.");
+      setLoading(false);
+    },
+    { enableHighAccuracy: true, timeout: 15000 }
+  );
+};
 
   const handleMarkAttendance = async (e) => {
     e.preventDefault();
