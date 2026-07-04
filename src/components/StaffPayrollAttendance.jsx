@@ -6,6 +6,16 @@ import * as XLSX from 'xlsx';
 // 🎯 FIX: Ise component function ke strictly BAHAR aur UPAR rakhein taaki ReferenceError khatam ho!
 const BASE_URL = 'https://abd-school-backend.onrender.com';
 const StaffPayrollAttendance = () => {
+  // Edit modal states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingStaff, setEditingStaff] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+      name: '',
+      designation: '',
+      mobile: '',
+      base_salary: '',
+      epf_enabled: false
+  });
   // Core System States with Strict Safe Defaults
   const [staffList, setStaffList] = useState([]);
   const [activeTab, setActiveTab] = useState('directory'); // directory | reports | rules | qr_wall
@@ -464,6 +474,34 @@ useEffect(() => {
     }
   };
 
+  // ✏️ OPEN EDIT MODAL
+const handleEditClick = (staff) => {
+    setEditingStaff(staff);
+    setEditFormData({
+        name: staff.name || '',
+        designation: staff.designation || '',
+        mobile: staff.mobile || '',
+        base_salary: staff.base_salary || '',
+        epf_enabled: staff.epf_enabled || false
+    });
+    setShowEditModal(true);
+};
+
+// 💾 SAVE EDIT
+const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+        const response = await axios.put(`${BASE_URL}/api/staff/${editingStaff.id}`, editFormData);
+        if (response.data.success) {
+            alert("✅ Staff Updated Successfully!");
+            setShowEditModal(false);
+            loadTeachersData(); // Refresh list
+        }
+    } catch (err) {
+        alert("❌ Error updating staff: " + err.message);
+    }
+};
+
   // 🎯 RULES FORM EDITED FULLY: Ab settings aur rules table dono perfect automatic sync hongi
   const handleUpdateRules = async (e) => {
     e.preventDefault();
@@ -702,6 +740,21 @@ useEffect(() => {
                       >
                         📱 Send Telegram Link
                       </button>
+
+                      {/* ✅ EDIT BUTTON - YAHAN ADD KARO */}
+    <button 
+        onClick={() => handleEditClick(s)}
+        style={{ 
+            ...rowActionBtnStyle, 
+            backgroundColor: '#f59e0b', 
+            color: 'white', 
+            borderColor: '#f59e0b',
+            fontSize: '10px',
+            padding: '4px 8px'
+        }}
+    >
+        ✏️ Edit
+    </button>
                       
                       <button onClick={() => handleDeleteStaff(s.id, s.name)} style={{ ...rowActionBtnStyle, backgroundColor: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5', marginTop: '2px' }}>❌ Delete Staff</button>
                     </div>
@@ -970,6 +1023,62 @@ useEffect(() => {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✏️ EDIT STAFF MODAL */}
+      {showEditModal && editingStaff && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          backgroundColor: 'rgba(15,23,42,0.6)', display: 'flex',
+          justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 2000
+        }}>
+          <div style={{
+            backgroundColor: 'white', borderRadius: '14px', padding: '24px',
+            maxWidth: '450px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+          }}>
+            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 'bold', color: '#0f172a' }}>
+              ✏️ Edit Staff Profile
+            </h3>
+            <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={labelStyle}>Full Name *</label>
+                <input type="text" required style={inpStyle} value={editFormData.name}
+                  onChange={(e) => setEditFormData({...editFormData, name: e.target.value})} />
+              </div>
+              <div>
+                <label style={labelStyle}>Designation *</label>
+                <input type="text" required style={inpStyle} value={editFormData.designation}
+                  onChange={(e) => setEditFormData({...editFormData, designation: e.target.value})} />
+              </div>
+              <div>
+                <label style={labelStyle}>Mobile Number *</label>
+                <input type="text" required style={inpStyle} value={editFormData.mobile}
+                  onChange={(e) => setEditFormData({...editFormData, mobile: e.target.value})} />
+              </div>
+              <div>
+                <label style={labelStyle}>Base Salary (₹) *</label>
+                <input type="number" required style={inpStyle} value={editFormData.base_salary}
+                  onChange={(e) => setEditFormData({...editFormData, base_salary: e.target.value})} />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input type="checkbox" id="edit_pf" checked={editFormData.epf_enabled}
+                  onChange={(e) => setEditFormData({...editFormData, epf_enabled: e.target.checked})}
+                  style={{ width: '16px', height: '16px' }} />
+                <label htmlFor="edit_pf" style={{ fontSize: '13px', fontWeight: 'bold' }}>Enable EPF (12%)</label>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+                <button type="button" onClick={() => setShowEditModal(false)}
+                  style={{ flex: 1, padding: '10px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  Cancel
+                </button>
+                <button type="submit"
+                  style={{ flex: 2, padding: '10px', backgroundColor: '#f59e0b', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  💾 Update
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
