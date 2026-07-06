@@ -101,31 +101,49 @@ const IDCardStudio = () => {
     };
 
     const handleSaveSlotSubmit = (e) => {
-        e.preventDefault();
-        if (!selectedClass || !selectedSlotData) return;
-        const payload = {
-            class_id: selectedClass,
-            section: selectedSection === 'All' ? 'A' : selectedSection,
-            day: selectedSlotData.day,
-            period: selectedSlotData.period,
-            start_time: formStartTime,
-            end_time: formEndTime,
-            subject_id: formSubjectId,
-            subject: formSubjectId,
-            teacher_id: formTeacherId || null
-        };
-        axios.post(`${BASE_URL}/api/timetable/save-slot`, payload)
-            .then(res => {
-                if (res.data.success) {
-                    alert("🎉 Routine Matrix Saved Directly!");
-                    setShowModal(false);
-                    fetchTimetableSheet();
-                }
-            })
-            .catch(err => {
-                alert(err.response?.data?.error || "Matrix Network Error!");
-            });
+    e.preventDefault();
+    if (!selectedClass || !selectedSlotData) return;
+
+    // ✅ FIX: Class ID ko integer mein convert karo
+    let classIdValue = selectedClass;
+    // Agar selectedClass string hai toh integer mein convert karo
+    if (typeof selectedClass === 'string') {
+        // Agar "Class 10th" hai toh sirf number nikal lo
+        const classMatch = selectedClass.match(/\d+/);
+        if (classMatch) {
+            classIdValue = parseInt(classMatch[0]);
+        } else {
+            classIdValue = selectedClass;
+        }
+    }
+
+    const payload = {
+        class_id: classIdValue,
+        section: selectedSection === 'All' ? 'A' : selectedSection,
+        day: selectedSlotData.day,
+        period: selectedSlotData.period,
+        start_time: formStartTime,
+        end_time: formEndTime,
+        subject_id: formSubjectId,
+        subject: formSubjectId,
+        teacher_id: formTeacherId || null
     };
+
+    console.log("📤 Sending payload:", payload); // 🔥 DEBUG
+
+    axios.post(`${BASE_URL}/api/timetable/save-slot`, payload)
+        .then(res => {
+            if (res.data.success) {
+                alert("🎉 Routine Matrix Saved Directly!");
+                setShowModal(false);
+                fetchTimetableSheet();
+            }
+        })
+        .catch(err => {
+            console.error("❌ Error:", err.response?.data || err.message);
+            alert(err.response?.data?.error || "Matrix Network Error!");
+        });
+};
 
     const fetchTimetableSheet = () => {
         if (!selectedClass) return alert("Bhai pehle Class select karo!");
