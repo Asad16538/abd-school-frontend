@@ -40,6 +40,17 @@ const StaffPayrollAttendance = () => {
   const [baseSalary, setBaseSalary] = useState('');
   const [pfEnabled, setPfEnabled] = useState(0);
   const [clEncashment, setClEncashment] = useState({}); // Stores per staff CL pay rule boolean state
+  // ✅ YAHAN PASTE KARO - clEncashment ke BAAD
+  // Manual Attendance States
+  const [manualStaffId, setManualStaffId] = useState('');
+  const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
+  const [manualCheckIn, setManualCheckIn] = useState('09:00');
+  const [manualCheckOut, setManualCheckOut] = useState('');
+  const [manualStatus, setManualStatus] = useState('Present');
+  const [manualAttendanceList, setManualAttendanceList] = useState([]);
+  const [editingManualAttendance, setEditingManualAttendance] = useState(null);
+  // ✅ YAHAN TAK
+
 
   // Rule Book States Linked to Dynamic Settings Table
   const [rules, setRules] = useState({
@@ -142,6 +153,13 @@ useEffect(() => {
       fetchManagementPayrollSheet();
     }
   }, [clEncashment, selectedMonth]);
+
+    // ✅ MANUAL ATTENDANCE - Fetch on tab change
+  useEffect(() => {
+    if (activeTab === 'manual_attendance') {
+      fetchManualAttendanceList();
+    }
+  }, [activeTab, manualDate]);
 
   // Fetch Reports dynamically jab report mode ya month select badle
   useEffect(() => {
@@ -471,6 +489,82 @@ useEffect(() => {
     } catch (err) {
       console.error("Failed connecting to deactivation pipeline:", err);
       alert("Backend server connection failed.");
+    }
+  };
+
+    // 📋 MANUAL ATTENDANCE FUNCTIONS
+  const handleManualAttendanceSubmit = async () => {
+    if (!manualStaffId || !manualDate || !manualCheckIn) {
+      alert("Staff, Date aur Check-In time zaroori hain!");
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/staff/manual-attendance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          staff_id: manualStaffId,
+          date: manualDate,
+          check_in_time: manualCheckIn,
+          check_out_time: manualCheckOut || null,
+          status: manualStatus
+        })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(data.message);
+        fetchManualAttendanceList();
+        setManualStaffId('');
+        setManualCheckIn('09:00');
+        setManualCheckOut('');
+        setManualStatus('Present');
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (err) {
+      alert("Server error: " + err.message);
+    }
+  };
+
+  const fetchManualAttendanceList = async () => {
+    try {
+      const dateFilter = manualDate || new Date().toISOString().split('T')[0];
+      const response = await fetch(`${BASE_URL}/api/staff/attendance/all?date=${dateFilter}`);
+      const data = await response.json();
+      if (data.success) {
+        setManualAttendanceList(data.attendance);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+    }
+  };
+
+  const editManualAttendance = (att) => {
+    setManualStaffId(att.staff_id);
+    setManualDate(att.date);
+    setManualCheckIn(att.check_in_time || '09:00');
+    setManualCheckOut(att.check_out_time || '');
+    setManualStatus(att.status || 'Present');
+    setEditingManualAttendance(att);
+    document.querySelector('.manual-attendance-form')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const deleteManualAttendance = async (attendanceId) => {
+    if (!confirm("Kya aap yeh attendance record delete karna chahte hain?")) return;
+    
+    try {
+      const response = await fetch(`${BASE_URL}/api/staff/attendance/${attendanceId}/delete`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert(data.message);
+        fetchManualAttendanceList();
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
     }
   };
 
