@@ -655,6 +655,18 @@ const handleEditSubmit = async (e) => {
         )}
       </div>
 
+      <button 
+    onClick={() => setActiveTab('manual_attendance')} 
+    style={{ 
+        ...tabBtnStyle, 
+        backgroundColor: activeTab === 'manual_attendance' ? '#8b5cf6' : '#fff', 
+        color: activeTab === 'manual_attendance' ? 'white' : '#475569', 
+        border: '1px solid #cbd5e1' 
+    }}
+>
+    📋 Manual Attendance
+</button>
+
       {/* TAB CONTENT: DIRECTORY COMPONENT */}
       {activeTab === 'directory' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
@@ -789,6 +801,152 @@ const handleEditSubmit = async (e) => {
           </div>
         </div>
       )}
+
+      {/* ===== MANUAL ATTENDANCE MODULE ===== */}
+{activeTab === 'manual_attendance' && (
+    <div style={cardStyle}>
+        <h3 style={cardTitleStyle}>
+            <Clock size={18} color="#8b5cf6"/> Manual Staff Attendance
+        </h3>
+        <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
+            Admin manually mark attendance for staff without smartphones (Maid, Peon, etc.)
+        </p>
+        
+        {/* Attendance Form */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '10px' }}>
+            <div>
+                <label style={labelStyle}>Select Staff *</label>
+                <select 
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                    value={manualStaffId}
+                    onChange={(e) => setManualStaffId(e.target.value)}
+                >
+                    <option value="">-- Select Staff --</option>
+                    {staffList.map(s => (
+                        <option key={s.id} value={s.id}>{s.name} ({s.designation})</option>
+                    ))}
+                </select>
+            </div>
+            <div>
+                <label style={labelStyle}>Date *</label>
+                <input 
+                    type="date" 
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                    value={manualDate}
+                    onChange={(e) => setManualDate(e.target.value)}
+                />
+            </div>
+            <div>
+                <label style={labelStyle}>Check-In Time *</label>
+                <input 
+                    type="time" 
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                    value={manualCheckIn}
+                    onChange={(e) => setManualCheckIn(e.target.value)}
+                />
+            </div>
+            <div>
+                <label style={labelStyle}>Check-Out Time</label>
+                <input 
+                    type="time" 
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                    value={manualCheckOut}
+                    onChange={(e) => setManualCheckOut(e.target.value)}
+                />
+            </div>
+            <div>
+                <label style={labelStyle}>Status</label>
+                <select 
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                    value={manualStatus}
+                    onChange={(e) => setManualStatus(e.target.value)}
+                >
+                    <option value="Present">Present</option>
+                    <option value="Late">Late</option>
+                    <option value="Half-Day">Half-Day</option>
+                    <option value="Leave">Leave</option>
+                    <option value="Absent">Absent</option>
+                </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'end', gap: '8px' }}>
+                <button 
+                    onClick={handleManualAttendanceSubmit}
+                    style={{ ...submitBtnStyle, backgroundColor: '#8b5cf6', marginTop: '0' }}
+                >
+                    💾 Save Attendance
+                </button>
+                <button 
+                    onClick={fetchManualAttendanceList}
+                    style={{ ...submitBtnStyle, backgroundColor: '#3b82f6', marginTop: '0' }}
+                >
+                    🔄 Refresh
+                </button>
+            </div>
+        </div>
+        
+        {/* Attendance List */}
+        <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                    <tr style={{ backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 'bold' }}>
+                        <th style={thTdStyle}>Staff</th>
+                        <th style={thTdStyle}>Designation</th>
+                        <th style={thTdStyle}>Date</th>
+                        <th style={thTdStyle}>Check-In</th>
+                        <th style={thTdStyle}>Check-Out</th>
+                        <th style={thTdStyle}>Status</th>
+                        <th style={thTdStyle}>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {manualAttendanceList.length === 0 ? (
+                        <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>No attendance records found</td></tr>
+                    ) : (
+                        manualAttendanceList.map((att) => (
+                            <tr key={att.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                <td style={thTdStyle}><b>{att.name}</b></td>
+                                <td style={thTdStyle}>{att.designation}</td>
+                                <td style={thTdStyle}>{att.date}</td>
+                                <td style={thTdStyle}>{att.check_in_time || '--:--'}</td>
+                                <td style={thTdStyle}>{att.check_out_time || '--:--'}</td>
+                                <td style={thTdStyle}>
+                                    <span style={{ 
+                                        padding: '2px 8px', 
+                                        borderRadius: '4px', 
+                                        backgroundColor: att.status === 'Present' ? '#dcfce7' : 
+                                                       att.status === 'Late' ? '#fef3c7' : 
+                                                       att.status === 'Half-Day' ? '#fef9c3' : '#fee2e2',
+                                        color: att.status === 'Present' ? '#16a34a' : 
+                                               att.status === 'Late' ? '#d97706' : 
+                                               att.status === 'Half-Day' ? '#a16207' : '#dc2626',
+                                        fontWeight: 'bold',
+                                        fontSize: '11px'
+                                    }}>
+                                        {att.status}
+                                    </span>
+                                </td>
+                                <td style={thTdStyle}>
+                                    <button 
+                                        onClick={() => editManualAttendance(att)}
+                                        style={{ ...rowActionBtnStyle, backgroundColor: '#dbeafe', color: '#2563eb', marginRight: '4px' }}
+                                    >
+                                        ✏️ Edit
+                                    </button>
+                                    <button 
+                                        onClick={() => deleteManualAttendance(att.id)}
+                                        style={{ ...rowActionBtnStyle, backgroundColor: '#fee2e2', color: '#dc2626' }}
+                                    >
+                                        🗑️ Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        ))
+                    )}
+                </tbody>
+            </table>
+        </div>
+    </div>
+)}
 
       {/* TAB CONTENT: ADVANCED REPORTS ENGINE MODULE */}
       {activeTab === 'reports' && (
