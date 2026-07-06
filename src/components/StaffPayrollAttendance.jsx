@@ -714,32 +714,40 @@ const handleEditSubmit = async (e) => {
                       
                       {/* ✅ YAHAN LINK TELEGRAM BUTTON - ANDAR SHIFT KARO */}
                       <button 
-                        onClick={() => {
-                          // 🎯 SAHI LINK - Staff Telegram Link page (component already exists!)
-                          const link = `https://abd-school-frontend.vercel.app/staff-link-telegram`;
-                          const msg = `Namaste Sir/Madam, apni Telegram ID link karne ke liye is link par click karein: ${link}`;
-    
-                          let mobile = s.mobile || '';
-                          mobile = mobile.replace(/\D/g, '');
-                          if (mobile.startsWith('0')) mobile = mobile.substring(1);
-                          if (!mobile.startsWith('91') && mobile.length === 10) {
-                            mobile = `91${mobile}`;
-                          }
-    
-                          const whatsappUrl = `https://wa.me/${mobile}?text=${encodeURIComponent(msg)}`;
-                          window.open(whatsappUrl, '_blank');
-                        }}
-                        style={{ 
-                          ...rowActionBtnStyle, 
-                          backgroundColor: '#25D366', 
-                          color: 'white', 
-                          borderColor: '#25D366',
-                          fontSize: '10px',
-                          padding: '4px 8px'
-                        }}
-                      >
-                        📱 Send Telegram Link
-                      </button>
+    onClick={async () => {
+        const mobile = s.mobile || '';
+        const telegramId = prompt("📱 Apna Telegram ID daalein (jo aapne Telegram app mein 'Settings' ke andar hai):");
+        
+        if (!telegramId) return;
+        
+        try {
+            const response = await fetch('https://abd-school-backend.onrender.com/api/staff/link-telegram', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mobile: mobile, telegram_id: telegramId })
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                alert("✅ " + data.message);
+            } else {
+                alert("❌ " + data.error);
+            }
+        } catch (err) {
+            alert("❌ Server connection failed!");
+        }
+    }}
+    style={{ 
+        ...rowActionBtnStyle, 
+        backgroundColor: '#25D366', 
+        color: 'white', 
+        borderColor: '#25D366',
+        fontSize: '10px',
+        padding: '4px 8px'
+    }}
+>
+    📱 Link Telegram
+</button>
 
                       {/* ✅ EDIT BUTTON - YAHAN ADD KARO */}
     <button 
