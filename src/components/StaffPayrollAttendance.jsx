@@ -450,23 +450,54 @@ useEffect(() => {
 
   const handleAddStaff = async (e) => {
     e.preventDefault();
-    const payload = { name: staffName, designation, mobile, base_salary: parseFloat(baseSalary) || 0, pf_enabled: pfEnabled };
-    try {
-      const res = await fetch(`${BASE_URL}/api/staff`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if (res.ok) {
-        setUiMessage('🎉 New Staff Member Registered into Ledger!');
-        setStaffName(''); setDesignation(''); setMobile(''); setBaseSalary(''); setPfEnabled(0);
-        fetchStaff();
-        setTimeout(() => setUiMessage(''), 3000);
-      }
-    } catch (err) {
-      alert("Error logging staff metrics.");
+    
+    // ✅ VALIDATION - Pehle check karo
+    if (!staffName || !staffName.trim()) {
+        alert("❌ Staff Name zaroori hai!");
+        return;
     }
-  };
+    if (!mobile || !mobile.trim()) {
+        alert("❌ Mobile Number zaroori hai!");
+        return;
+    }
+    
+    const payload = { 
+        name: staffName.trim(), 
+        designation: designation.trim() || 'Teacher', 
+        mobile: mobile.trim(), 
+        base_salary: parseFloat(baseSalary) || 0, 
+        pf_enabled: pfEnabled ? 1 : 0 
+    };
+    
+    console.log("📤 Sending payload:", payload); // 🔥 Debug ke liye
+    
+    try {
+        const res = await fetch(`${BASE_URL}/api/staff`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        console.log("📥 Response:", data); // 🔥 Debug ke liye
+        
+        if (res.ok && data.success) {
+            setUiMessage('🎉 New Staff Member Registered into Ledger!');
+            setStaffName('');
+            setDesignation('');
+            setMobile('');
+            setBaseSalary('');
+            setPfEnabled(0);
+            fetchStaff();
+            setTimeout(() => setUiMessage(''), 3000);
+        } else {
+            alert("❌ Error: " + (data.error || "Unknown error"));
+        }
+    } catch (err) {
+        console.error("❌ Network Error:", err);
+        alert("❌ Server connection failed!");
+    }
+};
 
   // 🎯 STAFF REMOVAL PROCESS ENGINE (SOFT DELETE CALL)
   const handleDeleteStaff = async (staffId, staffName) => {
