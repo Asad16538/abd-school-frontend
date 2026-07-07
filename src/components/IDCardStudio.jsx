@@ -104,32 +104,19 @@ const IDCardStudio = () => {
     e.preventDefault();
     if (!selectedClass || !selectedSlotData) return;
 
-    // ✅ FIX: Class ID ko integer mein convert karo
-    let classIdValue = selectedClass;
-    // Agar selectedClass string hai toh integer mein convert karo
-    if (typeof selectedClass === 'string') {
-        // Agar "Class 10th" hai toh sirf number nikal lo
-        const classMatch = selectedClass.match(/\d+/);
-        if (classMatch) {
-            classIdValue = parseInt(classMatch[0]);
-        } else {
-            classIdValue = selectedClass;
-        }
-    }
-
+    // ✅ Class name directly send karo, backend handle kar lega
     const payload = {
-        class_id: classIdValue,
+        class_id: selectedClass,  // "Class 10th" hi bhejo
         section: selectedSection === 'All' ? 'A' : selectedSection,
         day: selectedSlotData.day,
         period: selectedSlotData.period,
         start_time: formStartTime,
         end_time: formEndTime,
         subject_id: formSubjectId,
-        subject: formSubjectId,
         teacher_id: formTeacherId || null
     };
 
-    console.log("📤 Sending payload:", payload); // 🔥 DEBUG
+    console.log("📤 Sending payload:", payload);
 
     axios.post(`${BASE_URL}/api/timetable/save-slot`, payload)
         .then(res => {
