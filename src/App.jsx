@@ -78,8 +78,9 @@ function App() {
     school_signature: null,
     school_latitude: 0.0,
     school_longitude: 0.0,
-    school_location_radius: 100
-  });
+    school_location_radius: 100,
+    telegram_admin_id: ''  // ✅ YEH ADD KARO
+});
   const [stats, setStats] = useState({
     total_students: 0, total_fees_target: 0, total_fees_paid: 0, today_fees_paid: 0, total_pending: 0, total_expenses: 0, total_income: 0
   });
@@ -721,6 +722,23 @@ function App() {
                           />
                         </div>
                       </div>
+                      {/* ✅ YAHAN TELEGRAM ADMIN ID FIELD ADD KARO */}
+      <div className="grid grid-cols-1 gap-4 pt-2 border-t border-gray-100">
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">🤖 Admin Telegram ID</label>
+          <input
+            type="text"
+            placeholder="e.g., 1989970458"
+            value={schoolData?.telegram_admin_id || ''}
+            onChange={(e) => setSchoolData({...schoolData, telegram_admin_id: e.target.value})}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
+          />
+          <p className="text-[8px] text-gray-400 mt-1">
+            ⚡ @userinfobot se apni Telegram ID nikalein. Saare admin notifications yahan aayenge.
+          </p>
+        </div>
+      </div>
+      {/* ✅ YAHAN TAK */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                         <div>
                           <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Upload System Brand Logo</label>
