@@ -295,13 +295,18 @@ function App() {
   // ✅ STEP 3: useEffect
   // ============================================================
   useEffect(() => {
-  // ✅ SECURITY CHECK - Sirf aapschool.in se access
+   // ✅ SECURITY CHECK - Domain + Referer dono check
   const hostname = window.location.hostname;
-  const allowed = ['aapschool.in', 'www.aapschool.in', 'localhost'];
+  const referer = document.referrer || '';
+  const allowedDomains = ['aapschool.in', 'www.aapschool.in', 'localhost'];
   
-  if (!allowed.includes(hostname) && hostname !== 'localhost') {
-      document.body.innerHTML = '<h1 style="text-align:center;margin-top:50px;font-family:sans-serif;">🔒 Access Denied</h1>';
-      return; // ✅ YEH IMPORTANT HAI
+  // ✅ Agar hostname allowed hai ya referer aapschool.in se hai toh allow
+  const isAllowed = allowedDomains.includes(hostname) || 
+                    allowedDomains.some(domain => referer.includes(domain));
+  
+  if (!isAllowed && hostname !== 'localhost') {
+    document.body.innerHTML = '<h1 style="text-align:center;margin-top:50px;font-family:sans-serif;">🔒 Access Denied</h1>';
+    return;
   }
   
   // ✅ Existing code
