@@ -295,16 +295,26 @@ function App() {
   // ✅ STEP 3: useEffect
   // ============================================================
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedRole = localStorage.getItem('role');
-    if (savedToken && savedRole) {
-      setIsLoggedIn(true);
-      setRole(savedRole);
-      loadDashboardData();
-    }
-    fetchSettings();
-    generateCaptcha();
-  }, [isLoggedIn]);
+  // ✅ SECURITY CHECK - Sirf aapschool.in se access
+  const hostname = window.location.hostname;
+  const allowed = ['aapschool.in', 'www.aapschool.in', 'localhost'];
+  
+  if (!allowed.includes(hostname) && hostname !== 'localhost') {
+      document.body.innerHTML = '<h1 style="text-align:center;margin-top:50px;font-family:sans-serif;">🔒 Access Denied</h1>';
+      return; // ✅ YEH IMPORTANT HAI
+  }
+  
+  // ✅ Existing code
+  const savedToken = localStorage.getItem('token');
+  const savedRole = localStorage.getItem('role');
+  if (savedToken && savedRole) {
+    setIsLoggedIn(true);
+    setRole(savedRole);
+    loadDashboardData();
+  }
+  fetchSettings();
+  generateCaptcha();
+}, [isLoggedIn]);
 
   // ============================================================
   // ✅ STEP 4: CONDITIONAL RETURNS (SAB KE BAAD)
