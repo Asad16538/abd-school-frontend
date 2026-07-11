@@ -38,9 +38,6 @@ const StudentRegistration = () => {
 20. Account No (बैंक खाता संख्या)
 21. IFSC Code (आईएफएससी कोड)
 
-💡 PHOTO UPLOAD NOTE:
-Photos ab ID/Admit Card/Marksheet generate karte waqt upload ki jayengi.
-Student registration ke time photo upload nahi karna hai.
   `;
 
   const handleChange = (e) => {
