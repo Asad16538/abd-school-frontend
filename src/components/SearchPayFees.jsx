@@ -663,7 +663,33 @@ const fetchFeeHistory = async (studentId) => {
                     <div style={{ gridColumn: 'span 2' }}><label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Full Name</label><input type="text" value={selectedStudent.name || ''} onChange={(e) => handleFieldChange('name', e.target.value)} style={inpStyle} required /></div>
                     <div><label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Admission/Scholar No</label><input type="text" value={selectedStudent.admission_no || ''} onChange={(e) => handleFieldChange('admission_no', e.target.value)} style={inpStyle} required /></div>
                     <div><label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Roll Number</label><input type="text" value={selectedStudent.roll_no || ''} onChange={(e) => handleFieldChange('roll_no', e.target.value)} style={inpStyle} /></div>
-                    <div><label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Class</label><input type="text" value={selectedStudent.class || ''} onChange={(e) => handleFieldChange('class', e.target.value)} style={inpStyle} required /></div>
+                    <div>
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Class</label>
+                        <select value={selectedStudent.class || ''} onChange={(e) => handleFieldChange('class', e.target.value)} style={inpStyle} required>
+                            <option value="">-- Select Class --</option>
+                            <option value="Nursery">Nursery</option>
+                            <option value="LKG">LKG</option>
+                            <option value="UKG">UKG</option>
+                            <option value="Class 1">Class 1</option>
+                            <option value="Class 2">Class 2</option>
+                            <option value="Class 3">Class 3</option>
+                            <option value="Class 4">Class 4</option>
+                            <option value="Class 5">Class 5</option>
+                            <option value="Class 6">Class 6</option>
+                            <option value="Class 7">Class 7</option>
+                            <option value="Class 8">Class 8</option>
+                            <option value="Class 9">Class 9</option>
+                            <option value="Class 10">Class 10</option>
+                            <option value="Class 11 (PCB)">Class 11 (PCB)</option>
+                            <option value="Class 11 (PCM)">Class 11 (PCM)</option>
+                            <option value="Class 11 (Commerce)">Class 11 (Commerce)</option>
+                            <option value="Class 11 (Arts)">Class 11 (Arts)</option>
+                            <option value="Class 12 (PCB)">Class 12 (PCB)</option>
+                            <option value="Class 12 (PCM)">Class 12 (PCM)</option>
+                            <option value="Class 12 (Commerce)">Class 12 (Commerce)</option>
+                            <option value="Class 12 (Arts)">Class 12 (Arts)</option>
+                        </select>
+                    </div>
                     <div>
                       <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569' }}>Section</label>
                       <select value={selectedStudent.section || 'A'} onChange={(e) => handleFieldChange('section', e.target.value)} style={inpStyle}>
