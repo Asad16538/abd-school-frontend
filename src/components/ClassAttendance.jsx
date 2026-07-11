@@ -18,7 +18,13 @@ const ClassAttendance = () => {
     const [lockMessage, setLockMessage] = useState('');
     const [message, setMessage] = useState({ type: '', text: '' });
 
-    const classesList = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+    const classesList = [
+        'Nursery', 'LKG', 'UKG',
+        'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5',
+        'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10',
+        'Class 11 (PCB)', 'Class 11 (PCM)', 'Class 11 (Commerce)', 'Class 11 (Arts)',
+        'Class 12 (PCB)', 'Class 12 (PCM)', 'Class 12 (Commerce)', 'Class 12 (Arts)'
+    ];
     const sectionsList = ['A', 'B', 'C'];
 
     // 🔍 1. Fetch Students & Check Holiday Status
