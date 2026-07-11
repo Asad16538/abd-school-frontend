@@ -20,9 +20,10 @@ const ClassAttendance = () => {
 
     const classesList = [
         'Nursery', 'LKG', 'UKG',
-        'Class 1st', 'Class 2nd', 'Class 3rd', 'Class 4th', 'Class 5th', 
-        'Class 6th', 'Class 7th', 'Class 8th', 'Class 9th', 'Class 10th',
-        'Class 11th (PCB)','Class 11th (PCM)', 'Class 11th (Commerce)', 'Class 11th (Arts)',
+        'Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 
+        'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10',
+        'Class 11 (PCB)','Class 11 (PCM)', 'Class 11 (Commerce)', 'Class 11 (Arts)',
+        'Class 12 (PCB)','Class 12 (PCM)', 'Class 12 (Commerce)', 'Class 12 (Arts)',
         'Class 12th (PCB)','Class 12th (PCM)', 'Class 12th (Commerce)', 'Class 12th (Arts)'
     ];
     const sectionsList = ['A', 'B', 'C'];
