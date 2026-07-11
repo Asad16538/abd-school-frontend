@@ -11,10 +11,11 @@ const IDCardStudio = () => {
     // 1️⃣ SARI STATES - PEHLE
     // ============================================
     const [classes] = useState([
+        'Nursery', 'LKG', 'UKG',
         'Class 1st', 'Class 2nd', 'Class 3rd', 'Class 4th', 'Class 5th', 
         'Class 6th', 'Class 7th', 'Class 8th', 'Class 9th', 'Class 10th',
-        'Class 11th (Science)', 'Class 11th (Commerce)', 'Class 11th (Arts)',
-        'Class 12th (Science)', 'Class 12th (Commerce)', 'Class 12th (Arts)'
+        'Class 11th (PCB)','Class 11th (PCM)', 'Class 11th (Commerce)', 'Class 11th (Arts)',
+        'Class 12th (PCB)','Class 12th (PCM)', 'Class 12th (Commerce)', 'Class 12th (Arts)'
     ]);
     
     const [selectedClass, setSelectedClass] = useState('');
@@ -33,6 +34,7 @@ const IDCardStudio = () => {
     const [formEndTime, setFormEndTime] = useState('10:15');
     // Class Teacher Assignment States
     const [classTeacherClass, setClassTeacherClass] = useState('');
+    const [classTeacherSection, setClassTeacherSection] = useState('A');  // ✅ YEH ADD KARO
     const [classTeacherId, setClassTeacherId] = useState('');
     const [classTeacherList, setClassTeacherList] = useState([]);
 
@@ -68,31 +70,43 @@ const IDCardStudio = () => {
             .catch(err => console.error("Faculty Sync Delay Handled Safely", err));
     };
 
-        // 👨‍🏫 CLASS TEACHER ASSIGNMENT FUNCTIONS
-    const handleAssignClassTeacher = async () => {
-        if (!classTeacherClass || !classTeacherId) {
-            alert("Class aur Teacher dono select karo!");
-            return;
-        }
         
-        try {
-            const response = await axios.post(`${BASE_URL}/api/class-teacher/assign`, {
-                class_name: classTeacherClass,
-                teacher_id: classTeacherId
-            });
-            
-            if (response.data.success) {
-                alert(response.data.message);
-                setClassTeacherClass('');
-                setClassTeacherId('');
-                fetchClassTeachers();
-            } else {
-                alert("❌ " + response.data.error);
-            }
-        } catch (err) {
-            alert("❌ Error: " + err.message);
+    // 👨‍🏫 CLASS TEACHER ASSIGNMENT FUNCTIONS
+    const handleAssignClassTeacher = async () => {
+    if (!classTeacherClass || !classTeacherId) {
+        alert("Class aur Teacher dono select karo!");
+        return;
+    }
+    
+    try {
+        console.log("📤 Sending:", {
+            class_name: classTeacherClass,
+            section: classTeacherSection,  // ✅ YEH ADD KARO
+            teacher_id: classTeacherId
+        });
+        
+        const response = await axios.post(`${BASE_URL}/api/class-teacher/assign`, {
+            class_name: classTeacherClass,
+            section: classTeacherSection,  // ✅ YEH ADD KARO
+            teacher_id: parseInt(classTeacherId)
+        });
+        
+        console.log("📥 Response:", response.data);
+        
+        if (response.data.success) {
+            alert(response.data.message);
+            setClassTeacherClass('');
+            setClassTeacherSection('A');  // ✅ YEH ADD KARO
+            setClassTeacherId('');
+            fetchClassTeachers();
+        } else {
+            alert("❌ " + response.data.error);
         }
-    };
+    } catch (err) {
+        console.error("❌ Error:", err.response?.data || err.message);
+        alert("❌ Error: " + (err.response?.data?.error || err.message));
+    }
+};
 
     const fetchClassTeachers = async () => {
         try {
@@ -969,7 +983,7 @@ const IDCardStudio = () => {
         <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider mb-4">👨‍🏫 Class Teacher Assignment</h3>
         
         {/* Assignment Form */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
             <div>
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Select Class</label>
                 <select 
@@ -979,6 +993,18 @@ const IDCardStudio = () => {
                 >
                     <option value="">-- Select Class --</option>
                     {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Select Section</label>
+                <select 
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                    value={classTeacherSection}
+                    onChange={(e) => setClassTeacherSection(e.target.value)}
+                >
+                    <option value="A">Section A</option>
+                    <option value="B">Section B</option>
+                    <option value="C">Section C</option>
                 </select>
             </div>
             <div>
