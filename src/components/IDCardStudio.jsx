@@ -31,6 +31,10 @@ const IDCardStudio = () => {
     const [formTeacherId, setFormTeacherId] = useState('');
     const [formStartTime, setFormStartTime] = useState('09:30');
     const [formEndTime, setFormEndTime] = useState('10:15');
+    // Class Teacher Assignment States
+    const [classTeacherClass, setClassTeacherClass] = useState('');
+    const [classTeacherId, setClassTeacherId] = useState('');
+    const [classTeacherList, setClassTeacherList] = useState([]);
 
     // 🏫 MASTER TIMETABLE STATES
     const [masterTimetableData, setMasterTimetableData] = useState([]);
@@ -62,6 +66,58 @@ const IDCardStudio = () => {
         axios.get(`${BASE_URL}/api/staff`)
             .then(res => { if(Array.isArray(res.data)) setTeachersList(res.data); })
             .catch(err => console.error("Faculty Sync Delay Handled Safely", err));
+    };
+
+        // 👨‍🏫 CLASS TEACHER ASSIGNMENT FUNCTIONS
+    const handleAssignClassTeacher = async () => {
+        if (!classTeacherClass || !classTeacherId) {
+            alert("Class aur Teacher dono select karo!");
+            return;
+        }
+        
+        try {
+            const response = await axios.post(`${BASE_URL}/api/class-teacher/assign`, {
+                class_name: classTeacherClass,
+                teacher_id: classTeacherId
+            });
+            
+            if (response.data.success) {
+                alert(response.data.message);
+                setClassTeacherClass('');
+                setClassTeacherId('');
+                fetchClassTeachers();
+            } else {
+                alert("❌ " + response.data.error);
+            }
+        } catch (err) {
+            alert("❌ Error: " + err.message);
+        }
+    };
+
+    const fetchClassTeachers = async () => {
+        try {
+            const response = await axios.get(`${BASE_URL}/api/class-teacher/list`);
+            if (response.data.success) {
+                setClassTeacherList(response.data.teachers);
+            }
+        } catch (err) {
+            console.error("Error fetching class teachers:", err);
+            setClassTeacherList([]);
+        }
+    };
+
+    const removeClassTeacher = async (teacherId) => {
+        if (!confirm("Kya aap is teacher ko class se hataana chahte hain?")) return;
+        
+        try {
+            const response = await axios.delete(`${BASE_URL}/api/class-teacher/remove/${teacherId}`);
+            if (response.data.success) {
+                alert(response.data.message);
+                fetchClassTeachers();
+            }
+        } catch (err) {
+            alert("❌ Error: " + err.message);
+        }
     };
 
     const handleVoiceAction = (jsonResponse) => {
@@ -298,6 +354,14 @@ const IDCardStudio = () => {
         }
     }, [masterFilterDay, masterFilterTeacher, masterFilterClass]);
 
+        // 👨‍🏫 CLASS TEACHER - Fetch on tab change
+    useEffect(() => {
+        if (activeSubTab === 'class_teacher') {
+            fetchClassTeachers();
+            loadTeachersData();
+        }
+    }, [activeSubTab]);
+
     // ============================================
     // 4️⃣ TEMPLATES & CALCULATIONS
     // ============================================
@@ -331,6 +395,7 @@ const IDCardStudio = () => {
                 <button onClick={() => setActiveSubTab('timetable')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${activeSubTab === 'timetable' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-gray-500 hover:bg-gray-100'}`}><Calendar className="w-4 h-4" /><span>📅 Class Timetable</span></button>
                 <button onClick={() => setActiveSubTab('teachers')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${activeSubTab === 'teachers' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-gray-500 hover:bg-gray-100'}`}><UserCheck className="w-4 h-4" /><span>👨‍🏫 Teacher Assign</span></button>
                 <button onClick={() => setActiveSubTab('subjects')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${activeSubTab === 'subjects' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-gray-500 hover:bg-gray-100'}`}><BookOpen className="w-4 h-4" /><span>📚 Subject Assign</span></button>
+                <button onClick={() => setActiveSubTab('class_teacher')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${activeSubTab === 'class_teacher' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-gray-500 hover:bg-gray-100'}`}><UserCheck className="w-4 h-4" /><span>👨‍🏫 Class Teacher</span></button>
                 <button onClick={() => setActiveSubTab('master-timetable')} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer ${activeSubTab === 'master-timetable' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' : 'text-gray-500 hover:bg-gray-100'}`}>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -895,6 +960,105 @@ const IDCardStudio = () => {
                     </div>
                 </div>
             )}
+
+            {/* ===================================================================== */}
+{/* MODULE 6: 👨‍🏫 CLASS TEACHER ASSIGNMENT */}
+{/* ===================================================================== */}
+{activeSubTab === 'class_teacher' && (
+    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm no-print m-6">
+        <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider mb-4">👨‍🏫 Class Teacher Assignment</h3>
+        
+        {/* Assignment Form */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
+            <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Select Class</label>
+                <select 
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                    value={classTeacherClass}
+                    onChange={(e) => setClassTeacherClass(e.target.value)}
+                >
+                    <option value="">-- Select Class --</option>
+                    {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                </select>
+            </div>
+            <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Assign Teacher</label>
+                <select 
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                    value={classTeacherId}
+                    onChange={(e) => setClassTeacherId(e.target.value)}
+                >
+                    <option value="">-- Select Teacher --</option>
+                    {teachersList.map((t) => (
+                        <option key={t.id} value={t.id}>
+                            {t.name} ({t.designation || 'Teacher'})
+                        </option>
+                    ))}
+                </select>
+            </div>
+            <div className="flex items-end gap-2">
+                <button 
+                    onClick={handleAssignClassTeacher}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider p-2.5 rounded-xl transition shadow-md cursor-pointer"
+                >
+                    💾 Assign Class Teacher
+                </button>
+                <button 
+                    onClick={fetchClassTeachers}
+                    className="bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-wider p-2.5 rounded-xl transition shadow-md cursor-pointer"
+                >
+                    🔄
+                </button>
+            </div>
+        </div>
+        
+        {/* Assigned Teachers List */}
+        <div>
+            <h4 className="text-xs font-black text-gray-600 uppercase tracking-wider mb-3">
+                📋 Assigned Class Teachers ({classTeacherList.length})
+            </h4>
+            <div className="overflow-x-auto border border-gray-100 rounded-xl max-h-[300px] overflow-y-auto">
+                <table className="w-full text-left text-xs font-medium border-collapse">
+                    <thead>
+                        <tr className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[9px] font-black border-b border-gray-200">
+                            <th className="p-3">Teacher Name</th>
+                            <th className="p-3">Designation</th>
+                            <th className="p-3">Assigned Class</th>
+                            <th className="p-3">Section</th>
+                            <th className="p-3">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 text-gray-700 font-semibold">
+                        {classTeacherList.length === 0 ? (
+                            <tr>
+                                <td colSpan="5" className="p-6 text-center text-gray-400 font-bold text-xs">
+                                    ⚠️ No class teacher assigned yet
+                                </td>
+                            </tr>
+                        ) : (
+                            classTeacherList.map((item) => (
+                                <tr key={item.teacher_id} className="hover:bg-gray-50/60 transition-colors">
+                                    <td className="p-3 font-bold text-slate-800">{item.name}</td>
+                                    <td className="p-3 text-gray-500">{item.designation || 'Teacher'}</td>
+                                    <td className="p-3 font-bold text-indigo-700">{item.class}</td>
+                                    <td className="p-3 text-gray-500">{item.section}</td>
+                                    <td className="p-3">
+                                        <button 
+                                            onClick={() => removeClassTeacher(item.teacher_id)}
+                                            className="bg-red-500 hover:bg-red-600 text-white text-[9px] font-black px-2 py-1 rounded"
+                                        >
+                                            Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+)}
 
             {/* ===== STYLES ===== */}
             <style>{`
