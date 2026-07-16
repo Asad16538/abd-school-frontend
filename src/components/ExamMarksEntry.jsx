@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Save, BookOpen, Users, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Save, BookOpen, Users, CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
 
 const BASE_URL = 'https://abd-school-backend.onrender.com';
 
 const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
-  // State variables
+  // ==============================
+  // STATES
+  // ==============================
   const [exams, setExams] = useState([]);
   const [selectedExam, setSelectedExam] = useState(null);
   const [selectedClass, setSelectedClass] = useState('');
@@ -16,8 +18,20 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [classes, setClasses] = useState([]);
+  
+  // ==============================
+  // FIELD CONFIGURATION (NBSE HATAYA)
+  // ==============================
+  const subjectFields = [
+    { key: 'theory', label: 'Theory', color: 'text-blue-600', width: 'w-[65px]' },
+    { key: 'practical', label: 'Pract./Project', color: 'text-green-600', width: 'w-[80px]' },
+    { key: 'internal', label: 'Internal/Other', color: 'text-orange-600', width: 'w-[75px]' },
+    { key: 'total', label: 'Total', color: 'text-purple-700 font-bold', width: 'w-[60px]', readOnly: true }
+  ];
 
-  // Fetch assigned exams on mount
+  // ==============================
+  // FETCH FUNCTIONS
+  // ==============================
   useEffect(() => {
     fetchAssignedExams();
   }, []);
@@ -27,7 +41,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
       const res = await axios.get(`${BASE_URL}/api/staff/exams/${staffData.id}`);
       setExams(res.data.exams || []);
       
-      // Extract unique classes
       const uniqueClasses = [...new Set((res.data.exams || []).map(e => e.class))];
       setClasses(uniqueClasses);
     } catch (err) {
@@ -36,7 +49,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     }
   };
 
-  // Load students and subjects when exam/class changes
   const loadStudentsAndSubjects = useCallback(async (examId, className) => {
     if (!examId || !className) return;
     
@@ -69,20 +81,20 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
           subject_marks: {}
         };
         
-        // Initialize subject marks with Theory, Practical, Internal
+        // Initialize subject marks with Theory, Practical, Internal, Total
         subjectsList.forEach(sub => {
+          const existing = existingMarks[student.id]?.subject_marks?.[sub.id] || {};
           initialMarks[student.id].subject_marks[sub.id] = {
-            theory: existingMarks[student.id]?.subject_marks?.[sub.id]?.theory || '',
-            practical: existingMarks[student.id]?.subject_marks?.[sub.id]?.practical || '',
-            internal: existingMarks[student.id]?.subject_marks?.[sub.id]?.internal || '',
-            total: existingMarks[student.id]?.subject_marks?.[sub.id]?.total || 0
+            theory: existing.theory || '',
+            practical: existing.practical || '',
+            internal: existing.internal || '',
+            total: existing.total || 0
           };
         });
       });
       
       setMarksData(initialMarks);
       
-      // Find exam details
       const exam = exams.find(e => e.id === parseInt(examId));
       setSelectedExam(exam || null);
       setSelectedClass(className);
@@ -95,7 +107,9 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     }
   }, [exams]);
 
-  // Handle exam selection (both exam and class)
+  // ==============================
+  // HANDLE FUNCTIONS
+  // ==============================
   const handleExamSelect = (examId) => {
     const exam = exams.find(e => e.id === parseInt(examId));
     if (exam) {
@@ -105,16 +119,16 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     }
   };
 
-  // Handle subject mark change
-  const handleSubjectMarkChange = (studentId, subjectId, field, value) => {
+  // Handle mark change for any field
+  const handleMarkChange = (studentId, subjectId, field, value) => {
     setMarksData(prev => {
       const updated = { ...prev };
       const student = updated[studentId];
       
-      // Update theory, practical, or internal
+      // Update the specific field
       student.subject_marks[subjectId][field] = value;
       
-      // Calculate total (Theory + Practical + Internal)
+      // Auto-calculate total: Theory + Practical + Internal
       const theory = parseFloat(student.subject_marks[subjectId].theory) || 0;
       const practical = parseFloat(student.subject_marks[subjectId].practical) || 0;
       const internal = parseFloat(student.subject_marks[subjectId].internal) || 0;
@@ -124,19 +138,10 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     });
   };
 
-  // Handle attendance change
-  const handleAttendanceChange = (studentId, value) => {
-    setMarksData(prev => {
-      const updated = { ...prev };
-      updated[studentId].attendance = value;
-      return updated;
-    });
-  };
-
-  // Calculate total, percentage, grade for a student
+  // Calculate totals for a student
   const calculateStudentTotals = (studentId) => {
     const student = marksData[studentId];
-    if (!student) return { total: 0, percentage: 0, grade: '-' };
+    if (!student) return { total: 0, percentage: 0, grade: '-', maxMarks: 0 };
     
     let totalMarks = 0;
     let maxMarks = 0;
@@ -150,6 +155,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     });
     
     const percentage = maxMarks > 0 ? (totalMarks / maxMarks) * 100 : 0;
+    
     let grade = '-';
     if (percentage >= 91) grade = 'A1';
     else if (percentage >= 81) grade = 'A2';
@@ -160,7 +166,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     else if (percentage >= 33) grade = 'D';
     else grade = 'E';
     
-    return { total: totalMarks, percentage, grade };
+    return { total: totalMarks, percentage, grade, maxMarks };
   };
 
   // Save all marks
@@ -215,10 +221,9 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     }
   };
 
-  // Check if this is an Annual exam (for attendance column)
-  const isAnnualExam = selectedExam?.exam_name?.toLowerCase() === 'annual';
-
-  // Render message
+  // ==============================
+  // RENDER
+  // ==============================
   const renderMessage = () => {
     if (!message.text) return null;
     
@@ -237,7 +242,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     );
   };
 
-  // Render marks entry table
   const renderMarksTable = () => {
     if (loading) {
       return (
@@ -268,33 +272,28 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     
     return (
       <div className="overflow-x-auto border rounded-xl">
-        <table className="w-full text-sm min-w-[900px]">
+        <table className="w-full text-sm min-w-[1100px]">
           <thead className="bg-gray-100 text-[10px] uppercase sticky top-0 z-10">
             <tr>
-              <th className="p-3 text-left min-w-[100px] sticky left-0 bg-gray-100">Roll - Name</th>
+              <th className="p-3 text-left min-w-[100px] sticky left-0 bg-gray-100 z-20">Roll - Name</th>
               
-              {/* Subject columns with Theory, Practical, Internal */}
+              {/* Subject columns with Theory, Practical, Internal, Total */}
               {subjects.map(sub => (
-                <th key={sub.id} className="p-2 text-center min-w-[220px]">
-                  <div className="font-bold text-xs">{sub.subject_name}</div>
+                <th key={sub.id} className="p-2 text-center min-w-[300px]">
+                  <div className="font-bold text-xs mb-1">{sub.subject_name}</div>
                   <div className="flex gap-1 text-[8px] text-gray-500 justify-center">
-                    <span className="w-[50px]">Theory</span>
-                    <span className="w-[50px]">Pract.</span>
-                    <span className="w-[50px]">Internal</span>
-                    <span className="w-[40px] font-bold text-blue-600">Total</span>
+                    <span className="w-[65px] text-blue-600">Theory</span>
+                    <span className="w-[80px] text-green-600">Pract./Project</span>
+                    <span className="w-[75px] text-orange-600">Internal/Other</span>
+                    <span className="w-[60px] font-bold text-purple-700">Total</span>
                   </div>
                 </th>
               ))}
               
-              {/* Total, %, Grade */}
-              <th className="p-2 text-center min-w-[60px]">Total</th>
-              <th className="p-2 text-center min-w-[60px]">%</th>
+              {/* Grand Total, %, Grade */}
+              <th className="p-2 text-center min-w-[60px]">Grand Total</th>
+              <th className="p-2 text-center min-w-[55px]">%</th>
               <th className="p-2 text-center min-w-[50px]">Grade</th>
-              
-              {/* Attendance - only for Annual exams */}
-              {isAnnualExam && (
-                <th className="p-2 text-center min-w-[60px]">Attd.</th>
-              )}
             </tr>
           </thead>
           <tbody>
@@ -302,16 +301,16 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
               const studentMarks = marksData[student.id];
               if (!studentMarks) return null;
               
-              const { total, percentage, grade } = calculateStudentTotals(student.id);
+              const { total, percentage, grade, maxMarks } = calculateStudentTotals(student.id);
               
               return (
                 <tr key={student.id} className="border-b hover:bg-gray-50">
-                  <td className="p-2 text-left font-bold text-xs sticky left-0 bg-white">
+                  <td className="p-2 text-left font-bold text-xs sticky left-0 bg-white z-10">
                     <div>{student.roll_no}</div>
                     <div className="font-normal text-gray-500">{student.name}</div>
                   </td>
                   
-                  {/* Subject marks with Theory, Practical, Internal fields */}
+                  {/* Subject marks with Theory, Practical, Internal, Total */}
                   {subjects.map(sub => {
                     const marks = studentMarks.subject_marks[sub.id] || { theory: '', practical: '', internal: '', total: 0 };
                     
@@ -321,38 +320,38 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                           {/* Theory Input */}
                           <input
                             type="number"
-                            className="w-[45px] border border-gray-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="w-[65px] border border-blue-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-200"
                             placeholder="Th"
                             value={marks.theory}
-                            onChange={(e) => handleSubjectMarkChange(student.id, sub.id, 'theory', e.target.value)}
+                            onChange={(e) => handleMarkChange(student.id, sub.id, 'theory', e.target.value)}
                             min="0"
                             max={sub.max_marks || 100}
                           />
                           
-                          {/* Practical Input */}
+                          {/* Practical/Project Input */}
                           <input
                             type="number"
-                            className="w-[45px] border border-gray-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                            placeholder="Pr"
+                            className="w-[80px] border border-green-300 rounded px-1 py-1 text-center text-xs focus:border-green-500 focus:ring-1 focus:ring-green-200"
+                            placeholder="Pract./Proj."
                             value={marks.practical}
-                            onChange={(e) => handleSubjectMarkChange(student.id, sub.id, 'practical', e.target.value)}
+                            onChange={(e) => handleMarkChange(student.id, sub.id, 'practical', e.target.value)}
                             min="0"
                             max={sub.max_marks || 100}
                           />
                           
-                          {/* Internal Input */}
+                          {/* Internal/Other Input */}
                           <input
                             type="number"
-                            className="w-[45px] border border-gray-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                            placeholder="Int"
+                            className="w-[75px] border border-orange-300 rounded px-1 py-1 text-center text-xs focus:border-orange-500 focus:ring-1 focus:ring-orange-200"
+                            placeholder="Internal"
                             value={marks.internal}
-                            onChange={(e) => handleSubjectMarkChange(student.id, sub.id, 'internal', e.target.value)}
+                            onChange={(e) => handleMarkChange(student.id, sub.id, 'internal', e.target.value)}
                             min="0"
                             max={sub.max_marks || 100}
                           />
                           
                           {/* Total (Auto-calculated) */}
-                          <span className="w-[35px] text-center font-bold text-blue-600 text-xs">
+                          <span className="w-[60px] text-center font-bold text-purple-700 text-sm bg-purple-50 rounded py-1">
                             {marks.total || 0}
                           </span>
                         </div>
@@ -360,8 +359,8 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                     );
                   })}
                   
-                  {/* Total */}
-                  <td className="p-2 text-center font-bold text-blue-600 text-xs">
+                  {/* Grand Total */}
+                  <td className="p-2 text-center font-bold text-blue-600 text-sm">
                     {total}
                   </td>
                   
@@ -374,20 +373,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                   <td className={`p-2 text-center font-bold text-xs ${grade === 'E' ? 'text-red-600' : 'text-green-600'}`}>
                     {grade}
                   </td>
-                  
-                  {/* Attendance - only for Annual exams */}
-                  {isAnnualExam && (
-                    <td className="p-2 text-center">
-                      <input
-                        type="number"
-                        className="w-[50px] border border-gray-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        value={studentMarks.attendance || ''}
-                        onChange={(e) => handleAttendanceChange(student.id, e.target.value)}
-                        min="0"
-                        max="220"
-                      />
-                    </td>
-                  )}
                 </tr>
               );
             })}
@@ -429,9 +414,12 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
           <BookOpen className="w-6 h-6 text-blue-600" />
           <h2 className="text-xl font-bold">✏️ Enter Marks</h2>
         </div>
-        <span className="text-xs text-gray-400">
-          Theory + Practical + Internal = Total
-        </span>
+        <div className="flex gap-3 text-[10px] font-bold">
+          <span className="text-blue-600">Theory</span>
+          <span className="text-green-600">Pract./Project</span>
+          <span className="text-orange-600">Internal/Other</span>
+          <span className="text-purple-700">= Total</span>
+        </div>
       </div>
       
       {/* Exam Selection */}
@@ -444,7 +432,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
           <option value="">-- Select Exam --</option>
           {exams.map(exam => (
             <option key={exam.id} value={exam.id}>
-              {exam.exam_name} - {exam.class}
+              {exam.exam_name} - Class {exam.class} - {exam.subject}
             </option>
           ))}
         </select>
