@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { IdCard, Calendar, UserCheck, BookOpen, Printer, Palette } from 'lucide-react';
 
-const BASE_URL = 'https://abd-school-backend.onrender.com';
+const BASE_URL = 'https://erp-api.aapschool.in';
 
 const IDCardStudio = () => {
     // ============================================

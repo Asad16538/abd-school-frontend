@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Save, BookOpen, Users, CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
 
-const BASE_URL = 'https://abd-school-backend.onrender.com';
+const BASE_URL = 'https://erp-api.aapschool.in';
 
 const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
   // ==============================

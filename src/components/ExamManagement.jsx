@@ -8,7 +8,7 @@ import {
   Settings, Copy, RefreshCw, ChevronDown, FileSpreadsheet
 } from 'lucide-react';
 
-const BASE_URL = 'https://abd-school-backend.onrender.com';
+const BASE_URL = 'https://erp-api.aapschool.in';
 
 const ExamManagement = () => {
   // ==============================

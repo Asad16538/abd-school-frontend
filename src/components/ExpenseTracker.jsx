@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Filter, FileSpreadsheet, PlusCircle, Wallet, ArrowDownRight, Tag, IndianRupee } from 'lucide-react'; // 👈 DollarSign hatakar IndianRupee jadd diya
 import * as XLSX from 'xlsx';
 
+const BASE_URL = 'https://erp-api.aapschool.in';
+
 const ExpenseTracker = () => {
   const [expenses, setExpenses] = useState([]);
   const [filterCategory, setFilterCategory] = useState('All');
@@ -28,7 +30,7 @@ const ExpenseTracker = () => {
 
   const fetchFinancialSummary = async () => {
     try {
-      const res = await fetch('https://abd-school-backend.onrender.com/api/accounting/fetch-financial-summary'); // 🎯 Fixed endpoint
+      const res = await fetch(`${BASE_URL}/api/accounting/fetch-financial-summary`); // 🎯 Fixed endpoint
       const data = await res.json();
       if (data.success) {
         setSummary({
@@ -44,7 +46,7 @@ const ExpenseTracker = () => {
 
   const fetchExpensesList = async () => {
     try {
-      const res = await fetch(`https://abd-school-backend.onrender.com/api/accounting/fetch-expenses-list?category=${filterCategory}`); // 🎯 Fixed endpoint
+      const res = await fetch(`https://erp-api.aapschool.in/api/accounting/fetch-expenses-list?category=${filterCategory}`); // 🎯 Fixed endpoint
       const data = await res.json();
       if (data.success && Array.isArray(data.expenses)) {
         setExpenses(data.expenses);
@@ -63,7 +65,7 @@ const ExpenseTracker = () => {
 
     try {
       setLoading(true);
-      const res = await fetch('https://abd-school-backend.onrender.com/api/accounting/save-new-expense', { // 🎯 Fixed endpoint
+      const res = await fetch('https://erp-api.aapschool.in/api/accounting/save-new-expense', { // 🎯 Fixed endpoint
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, category, amount: parseFloat(amount), date, payment_mode: paymentMode, vendor_name: vendorName, remarks })

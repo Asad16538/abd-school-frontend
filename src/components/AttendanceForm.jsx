@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, MapPin, Loader, Smartphone, Send } from 'lucide-react';
 
+const BASE_URL = 'https://erp-api.aapschool.in';
+
 const AttendanceForm = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -105,7 +107,7 @@ const AttendanceForm = () => {
     };
     
     try {
-      const response = await fetch('https://abd-school-backend.onrender.com/api/attendance/mark', {
+      const response = await fetch(`${BASE_URL}/api/attendance/mark`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(attendanceData)
@@ -143,7 +145,7 @@ const AttendanceForm = () => {
         `✅ Status: PRESENT\n\n` +
         `_Powered by A.B.Digital Work_`;
       
-      await fetch('https://abd-school-backend.onrender.com/send-message', {
+      await fetch(`${BASE_URL}/send-message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ mobile: data.teacher_mobile, message: message })

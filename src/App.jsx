@@ -49,7 +49,8 @@ const ExpenseTracker = lazy(() => import('./components/ExpenseTracker'));
 const IDCardStudio = lazy(() => import('./components/IDCardStudio'));
 const ClassAttendance = lazy(() => import('./components/ClassAttendance'));
 
-const BASE_URL = "https://abd-school-backend.onrender.com";
+// ✅ YEH CHANGE KARO
+const BASE_URL = "https://erp-api.aapschool.in";
 
 function App() {
   // ============================================================
@@ -131,11 +132,10 @@ function App() {
       }
       
       const [statsRes, listRes, staffRes] = await Promise.all([
-        axios.get('https://abd-school-backend.onrender.com/api/dashboard-stats'),
-        axios.get('https://abd-school-backend.onrender.com/api/pending-students'),
-        axios.get('https://abd-school-backend.onrender.com/api/staff')
+        axios.get(`${BASE_URL}/api/dashboard-stats`),
+        axios.get(`${BASE_URL}/api/pending-students`),
+        axios.get(`${BASE_URL}/api/staff`)
       ]);
-      
       const statsData = statsRes.data;
       statsData.total_staff = staffRes.data.length;
       setStats(statsData);
@@ -160,7 +160,7 @@ function App() {
     }
     setLoading(true);
     try {
-      const response = await axios.post('https://abd-school-backend.onrender.com/api/login', { username, password });
+      const response = await axios.post(`${BASE_URL}/api/login`, { username, password });
       if (response.data.success) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('role', response.data.role);

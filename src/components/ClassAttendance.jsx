@@ -3,7 +3,7 @@ import axios from 'axios';
 import { Calendar, ShieldAlert, CheckCircle, Search, Save, AlertCircle } from 'lucide-react';
 
 const ClassAttendance = () => {
-    const BASE_URL = 'https://abd-school-backend.onrender.com';
+    const BASE_URL = 'https://erp-api.aapschool.in';
 
     // States
     const [className, setClassName] = useState('');

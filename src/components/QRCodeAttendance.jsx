@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, CheckCircle, XCircle, ShieldCheck, RefreshCw } from 'lucide-react';
 
+const BASE_URL = 'https://erp-api.aapschool.in';
+
 const QRCodeAttendance = () => {
   const [staffList, setStaffList] = useState([]);
   const [selectedStaffId, setSelectedStaffId] = useState('');
@@ -13,7 +15,7 @@ const QRCodeAttendance = () => {
   useEffect(() => {
     const loadStaff = async () => {
       try {
-        const res = await fetch('https://abd-school-backend.onrender.com/api/staff');
+        const res = await fetch(`${BASE_URL}/api/staff`);
         const data = await res.json();
         if (Array.isArray(data)) setStaffList(data);
       } catch (err) {
@@ -107,7 +109,7 @@ const QRCodeAttendance = () => {
     setStatusMsg({ type: '', text: '' });
 
     try {
-      const res = await fetch('https://abd-school-backend.onrender.com/api/staff/mark-attendance', {
+      const res = await fetch('https://erp-api.aapschool.in/api/staff/mark-attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
