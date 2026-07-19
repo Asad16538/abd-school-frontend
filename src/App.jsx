@@ -183,7 +183,7 @@ function App() {
     setSuccessMsg('');
     setLoading(true);
     try {
-      const response = await axios.post('https://abd-school-backend.onrender.com/api/send-verification', { username });
+      const response = await axios.post('https://erp-api.aapschool.in/api/send-verification', { username });
       if (response.data.success) {
         setSuccessMsg(response.data.message);
         setFormMode('forgot_verify');
@@ -203,7 +203,7 @@ function App() {
     setSuccessMsg('');
     setLoading(true);
     try {
-      const response = await axios.post('https://abd-school-backend.onrender.com/api/verify-and-reset', {
+      const response = await axios.post('https://erp-api.aapschool.in/api/verify-and-reset', {
         username,
         otp: otpCode,
         new_password: newPassword
@@ -228,7 +228,7 @@ function App() {
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('https://abd-school-backend.onrender.com/api/settings', schoolData);
+      const response = await axios.post('https://erp-api.aapschool.in/api/settings', schoolData);
       alert(response.data.message);
       setCachedData('settings', schoolData);
     } catch (err) {
@@ -257,7 +257,7 @@ function App() {
   const handleFeeSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('https://abd-school-backend.onrender.com/api/submit-fee', {
+      await axios.post('https://erp-api.aapschool.in/api/submit-fee', {
         student_id: selectedStudent.id,
         school_pay: schoolPay || 0,
         transport_pay: transportPay || 0
