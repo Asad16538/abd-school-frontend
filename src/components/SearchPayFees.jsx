@@ -39,7 +39,7 @@ const SearchPayFees = () => {
   // 2. Fetch School Settings Function
   const fetchSchoolSettings = async () => {
     try {
-      const res = await fetch('https://abd-school-backend.onrender.com/api/settings');
+      const res = await fetch('https://erp-api.aapschool.in/api/settings');
       const data = await res.json();
       if (data) {
         setSchoolSettings({
@@ -61,7 +61,7 @@ const SearchPayFees = () => {
 
   const fetchStudentsList = async () => {
     try {
-      const res = await fetch('https://abd-school-backend.onrender.com/api/students');
+      const res = await fetch('https://erp-api.aapschool.in/api/students');
       const data = await res.json();
       setStudents(data);
     } catch (err) {
@@ -74,7 +74,7 @@ const fetchFeeHistory = async (studentId) => {
   setLoadingHistory(true);
   try {
     console.log("📡 Fetching history for student ID:", studentId);
-    const res = await fetch(`https://abd-school-backend.onrender.com/api/fee-history/${studentId}`);
+    const res = await fetch(`https://erp-api.aapschool.in/api/fee-history/${studentId}`);
     
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
@@ -209,7 +209,7 @@ const fetchFeeHistory = async (studentId) => {
   const handleDeleteProfile = async (id) => {
     if (!window.confirm("🚨 WARNING: Kya aap sach me is student profile ko hamesha ke liye delete karna chahte hain?")) return;
     try {
-      await fetch(`https://abd-school-backend.onrender.com/api/students/delete/${id}`, { method: 'DELETE' });
+      await fetch(`https://erp-api.aapschool.in/api/students/delete/${id}`, { method: 'DELETE' });
       setSelectedStudent(null);
       fetchStudentsList();
       alert("❌ Student Profile Deleted!");
@@ -221,7 +221,7 @@ const fetchFeeHistory = async (studentId) => {
   const handleEditUpdate = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://abd-school-backend.onrender.com/api/students/update-profile', {
+      const response = await fetch('https://erp-api.aapschool.in/api/students/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(selectedStudent)
@@ -269,7 +269,7 @@ const fetchFeeHistory = async (studentId) => {
     };
 
     try {
-      const res = await fetch('https://abd-school-backend.onrender.com/api/submit-fee-advanced', {
+      const res = await fetch('https://erp-api.aapschool.in/api/submit-fee-advanced', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
