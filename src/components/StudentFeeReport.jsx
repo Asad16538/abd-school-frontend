@@ -19,7 +19,7 @@ const StudentFeeReport = () => {
 
   const fetchSchoolName = async () => {
     try {
-      const res = await fetch('https://abd-school-backend.onrender.com/api/settings');
+      const res = await fetch('https://erp-api.aapschool.in/api/settings');
       if (res.ok) {
         const data = await res.json();
         if (data.school_name) setSchoolName(data.school_name);
@@ -31,7 +31,7 @@ const StudentFeeReport = () => {
 
   const fetchClassFeeReport = async () => {
     try {
-      const res = await fetch(`https://abd-school-backend.onrender.com/api/payroll/fees-class-report?class=${filterClass}&section=${filterSection}`);
+      const res = await fetch(`https://erp-api.aapschool.in/api/payroll/fees-class-report?class=${filterClass}&section=${filterSection}`);
       const data = await res.json();
       if (data.success && Array.isArray(data.report)) {
         setFeeReport(data.report);
@@ -133,7 +133,7 @@ const StudentFeeReport = () => {
 
     try {
       setBulkLoading(true);
-      const res = await fetch('https://abd-school-backend.onrender.com/api/payroll/send-bulk-fee-reminders', {
+      const res = await fetch('https://erp-api.aapschool.in/api/payroll/send-bulk-fee-reminders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ student_ids: selectedStudents })
