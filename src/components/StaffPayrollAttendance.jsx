@@ -4,7 +4,7 @@ import { UserPlus, Settings, QrCode, Download, Users, AlertTriangle, MapPin, Clo
 import * as XLSX from 'xlsx';
 
 // 🎯 FIX: Ise component function ke strictly BAHAR aur UPAR rakhein taaki ReferenceError khatam ho!
-const BASE_URL = 'https://abd-school-backend.onrender.com';
+const BASE_URL = 'https://erp-api.aapschool.in';
 const StaffPayrollAttendance = () => {
   // Edit modal states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -858,7 +858,7 @@ const handleEditSubmit = async (e) => {
         if (!telegramId) return;
         
         try {
-            const response = await fetch('https://abd-school-backend.onrender.com/api/staff/link-telegram', {
+            const response = await fetch('https://erp-api.aapschool.in/api/staff/link-telegram', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ mobile: mobile, telegram_id: telegramId })
