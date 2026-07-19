@@ -55,7 +55,7 @@ const StudentRegistration = () => {
     formData.append('zip_file', file);
 
     try {
-      const response = await fetch('https://abd-school-backend.onrender.com/api/students/bulk-import-with-photos', {
+      const response = await fetch('https://erp-api.aapschool.in/api/students/bulk-import-with-photos', {
         method: 'POST',
         body: formData
       });
@@ -111,7 +111,7 @@ const handleManualSubmit = async (e) => {
   }
 
   try {
-    const response = await fetch('https://abd-school-backend.onrender.com/api/students/register-manual', {
+    const response = await fetch('https://erp-api.aapschool.in/api/students/register-manual', {
       method: 'POST',
       body: formDataToSend  // ✅ Content-Type HEADER MAT DALO - Browser auto set karega
     });
@@ -161,7 +161,7 @@ const handleManualSubmit = async (e) => {
           return;
         }
 
-        const response = await fetch('https://abd-school-backend.onrender.com/api/students/bulk-import', {
+        const response = await fetch('https://erp-api.aapschool.in/api/students/bulk-import', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ students: jsonData })
