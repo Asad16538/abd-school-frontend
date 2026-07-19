@@ -321,12 +321,19 @@ function App() {
     // Existing authentication initialization check
     const savedToken = localStorage.getItem('token');
     const savedRole = localStorage.getItem('role');
+    
     if (savedToken && savedRole) {
       setIsLoggedIn(true);
       setRole(savedRole);
+      
+      // ✅ BULLETPROOF: Sirf logged in user ke liye hi data database se kheenchega
       loadDashboardData();
+      fetchSettings(); 
+    } else {
+      // ✅ SAFE BYPASS: Agar user log out ho chuka hai, toh public branding data fetch karega bina crash kiye
+      fetchSettings();
     }
-    fetchSettings();
+    
     generateCaptcha();
   }, [isLoggedIn]);
 
