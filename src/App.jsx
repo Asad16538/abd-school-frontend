@@ -295,31 +295,40 @@ function App() {
   // ✅ STEP 3: useEffect
   // ============================================================
   useEffect(() => {
-   // ✅ SECURITY CHECK - Domain + Referer dono check
-  const hostname = window.location.hostname;
-  const referer = document.referrer || '';
-  const allowedDomains = ['aapschool.in', 'www.aapschool.in', 'localhost'];
-  
-  // ✅ Agar hostname allowed hai ya referer aapschool.in se hai toh allow
-  const isAllowed = allowedDomains.includes(hostname) || 
-                    allowedDomains.some(domain => referer.includes(domain));
-  
-  if (!isAllowed && hostname !== 'localhost') {
-    document.body.innerHTML = '<h1 style="text-align:center;margin-top:50px;font-family:sans-serif;">🔒 Access Denied</h1>';
-    return;
-  }
-  
-  // ✅ Existing code
-  const savedToken = localStorage.getItem('token');
-  const savedRole = localStorage.getItem('role');
-  if (savedToken && savedRole) {
-    setIsLoggedIn(true);
-    setRole(savedRole);
-    loadDashboardData();
-  }
-  fetchSettings();
-  generateCaptcha();
-}, [isLoggedIn]);
+    // ✅ DOMAIN VERIFICATION ENGINE
+    const hostname = window.location.hostname;
+    const referer = document.referrer || '';
+    
+    // Whitelist includes local workspace, main domain and your current live deployment platform
+    const allowedDomains = [
+      'aapschool.in', 
+      'www.aapschool.in', 
+      'ab-digital-work.vercel.app', 
+      'vercel.app', 
+      'localhost', 
+      '127.0.0.1'
+    ];
+    
+    const isAllowed = allowedDomains.includes(hostname) || 
+                      allowedDomains.some(domain => referer.includes(domain)) ||
+                      hostname.endsWith('.vercel.app');
+    
+    if (!isAllowed) {
+      document.body.innerHTML = '<h1 style="text-align:center;margin-top:50px;font-family:sans-serif;">🔒 Access Denied - Enterprise Shield Activated</h1>';
+      return;
+    }
+    
+    // Existing authentication initialization check
+    const savedToken = localStorage.getItem('token');
+    const savedRole = localStorage.getItem('role');
+    if (savedToken && savedRole) {
+      setIsLoggedIn(true);
+      setRole(savedRole);
+      loadDashboardData();
+    }
+    fetchSettings();
+    generateCaptcha();
+  }, [isLoggedIn]);
 
   // ============================================================
   // ✅ STEP 4: CONDITIONAL RETURNS (SAB KE BAAD)
