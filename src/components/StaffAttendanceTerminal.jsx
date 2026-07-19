@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { MapPin, CheckCircle, XCircle, ShieldCheck, RefreshCw, Send } from 'lucide-react';
 
 // 🎯 SECURE BASE URL: Aapka live local secure IP address
-const BASE_URL = 'https://abd-school-backend.onrender.com';
+const BASE_URL = 'https://erp-api.aapschool.in';
 
 const StaffAttendanceTerminal = () => {
   const [mobileNumber, setMobileNumber] = useState('');
