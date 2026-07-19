@@ -21,7 +21,7 @@ const StaffTelegramLink = () => {
       const urlParams = new URLSearchParams(window.location.search);
       const telegramId = urlParams.get('telegram_id') || 'UNKNOWN';
 
-      const res = await axios.post('https://abd-school-backend.onrender.com/api/staff/link-telegram', {
+      const res = await axios.post('https://erp-api.aapschool.in/api/staff/link-telegram', {
         mobile: mobile,
         telegram_id: telegramId
       });
