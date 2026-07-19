@@ -100,25 +100,41 @@ function App() {
   };
 
   const fetchSettings = async () => {
-    try {
-      const cached = getCachedData('settings');
-      if (cached) {
-        setSchoolData(cached);
-        return;
-      }
-      const res = await axios.get(`${BASE_URL}/api/settings`);
+  try {
+    // 1. Cache check
+    const cached = getCachedData('settings');
+    if (cached) {
+      setSchoolData(prev => ({ ...prev, ...cached }));
+      return;
+    }
+
+    // 2. Fresh API call
+    const res = await axios.get(`${BASE_URL}/api/settings`);
+    
+    // 3. Validation
+    if (res && res.data) {
       const data = {
         ...res.data,
         school_latitude: res.data.school_latitude || 23.2599,
         school_longitude: res.data.school_longitude || 77.4126,
         school_location_radius: res.data.school_location_radius || 100
       };
+      
+      // State aur Cache update
       setSchoolData(prev => ({ ...prev, ...data }));
       setCachedData('settings', data);
-    } catch (err) {
-      console.log("Settings load error");
     }
-  };
+  } catch (err) {
+    // ✅ DEBUGGING: Error pata chalega ki 500 error kyu aa raha hai
+    console.error("Settings load failed:", err.response ? err.response.data : err.message);
+    
+    // Optional: Agar error aaye toh ek baar purana cached data zaroor load karo
+    const cached = getCachedData('settings');
+    if (cached) {
+      setSchoolData(prev => ({ ...prev, ...cached }));
+    }
+  }
+};
 
   const loadDashboardData = async (forceRefresh = false) => {
     try {
