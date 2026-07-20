@@ -244,11 +244,13 @@ function App() {
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('https://erp-api.aapschool.in/api/settings', schoolData);
+      // ✅ Hardcoded URL hata kar BASE_URL variable lagayein
+      const response = await axios.post(`${BASE_URL}/api/settings`, schoolData);
       alert(response.data.message);
       setCachedData('settings', schoolData);
     } catch (err) {
-      alert('Settings save nahi ho payi.');
+      console.error("Settings save error:", err);
+      alert('Settings save nahi ho payi. Network ya Server Error!');
     }
   };
 
