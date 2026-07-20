@@ -54,7 +54,7 @@ const IDCardStudio = () => {
         school_name: 'Smart School ERP',
         logo_url: 'https://via.placeholder.com/80',
         address: 'Madhya Pradesh, India',
-        contact: '9876543210',
+        contact: '9893260067',
         principal_signature_url: 'https://via.placeholder.com/100x40?text=Signature'
     });
     const [selectedTemplate, setSelectedTemplate] = useState('classic-navy');
@@ -344,19 +344,29 @@ const IDCardStudio = () => {
     useEffect(() => {
         const loadInitialBranding = async () => {
             try {
+                // 1. Pehle localStorage se check karo taaki instant load ho bina flash ke
+                const cachedSettings = localStorage.getItem('school_branding_cache');
+                if (cachedSettings) {
+                    setSchoolSettings(JSON.parse(cachedSettings));
+                }
+
+                // 2. Phir server se latest fetch karo
                 const res = await axios.get(`${BASE_URL}/api/settings`);
                 if (res.data) {
-                    setSchoolSettings(prev => ({
-                        ...prev,
-                        school_name: res.data.school_name || prev.school_name,
-                        logo_url: res.data.school_logo || prev.logo_url,
-                        address: res.data.school_address || prev.address,
-                        contact: res.data.school_mobile || prev.contact,
-                        principal_signature_url: res.data.school_signature || prev.principal_signature_url
-                    }));
+                    const freshData = {
+                        school_name: res.data.school_name || 'Smart School ERP',
+                        logo_url: res.data.school_logo || 'https://via.placeholder.com/80',
+                        address: res.data.school_address || 'Madhya Pradesh, India',
+                        contact: res.data.school_mobile || '9893260067',
+                        principal_signature_url: res.data.school_signature || 'https://via.placeholder.com/100x40?text=Signature'
+                    };
+                    
+                    setSchoolSettings(freshData);
+                    // LocalStorage mein securely save karlo taaki logout/login ya refresh par gayab na ho
+                    localStorage.setItem('school_branding_cache', JSON.stringify(freshData));
                 }
             } catch (err) {
-                console.log("Branding metadata loop controlled safely");
+                console.log("Branding metadata loop controlled safely", err);
             }
         };
         loadInitialBranding();
