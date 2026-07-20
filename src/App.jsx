@@ -16,14 +16,15 @@ import StaffApp from './StaffApp';
 import ExamManagement from './components/ExamManagement';
 
 // ✅ CACHE FUNCTIONS
-const CACHE_TTL = 300000;
+const CACHE_TTL = 86400000;
 
 const getCachedData = (key) => {
   const cached = localStorage.getItem(`cache_${key}`);
   if (!cached) return null;
   try {
     const data = JSON.parse(cached);
-    if (Date.now() - data.timestamp > CACHE_TTL) {
+    // ✅ Check karo TTL (Time To Live)
+    if (Date.now() - data.timestamp > CACHE_TTL) {  // ← CACHE_TTL = 300000 (5 minute)
       localStorage.removeItem(`cache_${key}`);
       return null;
     }
@@ -90,28 +91,19 @@ function App() {
   const [schoolPay, setSchoolPay] = useState('');
   const [transportPay, setTransportPay] = useState('');
 
-  // ============================================================
-  // ✅ STEP 2: SARE FUNCTIONS
-  // ============================================================
-  const generateCaptcha = () => {
-    setNum1(Math.floor(Math.random() * 10) + 1);
-    setNum2(Math.floor(Math.random() * 10) + 1);
-    setCaptchaInput('');
-  };
+// ✅ STEP 2: SARE FUNCTIONS
+// ============================================================
+const generateCaptcha = () => {
+  setNum1(Math.floor(Math.random() * 10) + 1);
+  setNum2(Math.floor(Math.random() * 10) + 1);
+  setCaptchaInput('');
+};
 
-  const fetchSettings = async () => {
+const fetchSettings = async () => {
   try {
-    // 1. Cache check
-    const cached = getCachedData('settings');
-    if (cached) {
-      setSchoolData(prev => ({ ...prev, ...cached }));
-      return;
-    }
-
-    // 2. Fresh API call
+    // ✅ Direct backend se fetch (No cache)
     const res = await axios.get(`${BASE_URL}/api/settings`);
     
-    // 3. Validation
     if (res && res.data) {
       const data = {
         ...res.data,
@@ -120,22 +112,21 @@ function App() {
         school_location_radius: res.data.school_location_radius || 100
       };
       
-      // State aur Cache update
       setSchoolData(prev => ({ ...prev, ...data }));
-      setCachedData('settings', data);
+      
+      // ✅ Agar cache use karna hai toh (optional)
+      // setCachedData('settings', data);
     }
   } catch (err) {
-    // ✅ DEBUGGING: Error pata chalega ki 500 error kyu aa raha hai
     console.error("Settings load failed:", err.response ? err.response.data : err.message);
     
-    // Optional: Agar error aaye toh ek baar purana cached data zaroor load karo
+    // ✅ Fallback: Agar backend down hai toh cached data load karo
     const cached = getCachedData('settings');
     if (cached) {
       setSchoolData(prev => ({ ...prev, ...cached }));
     }
   }
 };
-
   const loadDashboardData = async (forceRefresh = false) => {
     try {
       if (!forceRefresh) {
@@ -182,6 +173,10 @@ function App() {
         localStorage.setItem('role', response.data.role);
         setRole(response.data.role);
         setIsLoggedIn(true);
+        
+        // ✅ CRUCIAL FIX: Login hote hi turant database se fresh settings fetch karo
+        await fetchSettings();
+        
       } else {
         setError(response.data.message);
         generateCaptcha();
@@ -592,7 +587,7 @@ function App() {
             </nav>
 
             <div className="p-4 border-t border-slate-800 bg-slate-950/40">
-              <button onClick={() => { localStorage.clear(); setIsLoggedIn(false); }} className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 cursor-pointer"><LogOut className="w-4 h-4" /><span>Secure Logout</span></button>
+              <button onClick={() => { localStorage.removeItem('token');  localStorage.removeItem('role'); setIsLoggedIn(false); }} className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 cursor-pointer"><LogOut className="w-4 h-4" /><span>Secure Logout</span></button>
             </div>
           </aside>
 
