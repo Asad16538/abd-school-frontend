@@ -344,33 +344,24 @@ const IDCardStudio = () => {
     useEffect(() => {
         const loadInitialBranding = async () => {
             try {
-                // 1. Pehle localStorage se check karo taaki instant load ho bina flash ke
-                const cachedSettings = localStorage.getItem('school_branding_cache');
-                if (cachedSettings) {
-                    setSchoolSettings(JSON.parse(cachedSettings));
-                }
-
-                // 2. Phir server se latest fetch karo
+                // ✅ Direct server se latest fresh settings fetch karo taaki logout/login par gayab na ho
                 const res = await axios.get(`${BASE_URL}/api/settings`);
                 if (res.data) {
-                    const freshData = {
-                        school_name: res.data.school_name || 'Smart School ERP',
-                        logo_url: res.data.school_logo || 'https://via.placeholder.com/80',
-                        address: res.data.school_address || 'Madhya Pradesh, India',
-                        contact: res.data.school_mobile || '9893260067',
-                        principal_signature_url: res.data.school_signature || 'https://via.placeholder.com/100x40?text=Signature'
-                    };
-                    
-                    setSchoolSettings(freshData);
-                    // LocalStorage mein securely save karlo taaki logout/login ya refresh par gayab na ho
-                    localStorage.setItem('school_branding_cache', JSON.stringify(freshData));
+                    setSchoolSettings(prev => ({
+                        ...prev,
+                        school_name: res.data.school_name || prev.school_name,
+                        logo_url: res.data.school_logo || prev.logo_url,
+                        address: res.data.school_address || prev.address,
+                        contact: res.data.school_mobile || prev.contact,
+                        principal_signature_url: res.data.school_signature || prev.principal_signature_url
+                    }));
                 }
             } catch (err) {
                 console.log("Branding metadata loop controlled safely", err);
             }
         };
         loadInitialBranding();
-    }, []);
+    }, [activeSubTab]); // 🎯 Yahan [activeSubTab] lagane se jab bhi aap tab switch karoge, ye database se naya data khinch lega!
 
     useEffect(() => {
         if (activeSubTab === 'master-timetable') {
