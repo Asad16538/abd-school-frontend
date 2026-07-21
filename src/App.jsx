@@ -318,6 +318,7 @@ const handleSignatureChange = (e) => {
       'aapschool.in', 
       'www.aapschool.in', 
       'ab-digital-work.vercel.app', 
+      'abd-school-frontend.vercel.app', // <--- Yeh wala domain add kar do (apna exact Vercel URL yahan likh dena)
       'vercel.app', 
       'localhost', 
       '127.0.0.1'
