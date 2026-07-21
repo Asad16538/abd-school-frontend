@@ -159,6 +159,7 @@ const fetchSettings = async () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    console.log("handleLogin triggered successfully!");
     setError('');
     
     // Captcha validation check
