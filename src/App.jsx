@@ -101,9 +101,7 @@ const generateCaptcha = () => {
 
 const fetchSettings = async () => {
   try {
-    // ✅ Direct backend se fetch (No cache)
     const res = await axios.get(`${BASE_URL}/api/settings`);
-    
     if (res && res.data) {
       const data = {
         ...res.data,
@@ -111,190 +109,164 @@ const fetchSettings = async () => {
         school_longitude: res.data.school_longitude || 77.4126,
         school_location_radius: res.data.school_location_radius || 100
       };
-      
       setSchoolData(prev => ({ ...prev, ...data }));
-      
-      // ✅ Agar cache use karna hai toh (optional)
-      // setCachedData('settings', data);
     }
   } catch (err) {
     console.error("Settings load failed:", err.response ? err.response.data : err.message);
-    
-    // ✅ Fallback: Agar backend down hai toh cached data load karo
     const cached = getCachedData('settings');
     if (cached) {
       setSchoolData(prev => ({ ...prev, ...cached }));
     }
   }
 };
-  const loadDashboardData = async (forceRefresh = false) => {
-    try {
-      if (!forceRefresh) {
-        const cached = getCachedData('dashboard');
-        if (cached) {
-          setStats(cached.stats);
-          setPendingStudents(cached.pending);
-          return;
-        }
+
+const loadDashboardData = async (forceRefresh = false) => {
+  try {
+    if (!forceRefresh) {
+      const cached = getCachedData('dashboard');
+      if (cached) {
+        setStats(cached.stats);
+        setPendingStudents(cached.pending);
+        return;
       }
-      
-      const [statsRes, listRes, staffRes] = await Promise.all([
-        axios.get(`${BASE_URL}/api/dashboard-stats`),
-        axios.get(`${BASE_URL}/api/pending-students`),
-        axios.get(`${BASE_URL}/api/staff`)
-      ]);
-      const statsData = statsRes.data;
-      statsData.total_staff = staffRes.data.length;
-      setStats(statsData);
-      setPendingStudents(listRes.data);
-      
-      setCachedData('dashboard', {
-        stats: statsData,
-        pending: listRes.data
-      });
-    } catch (err) {
-      console.log("Dashboard data fetch error");
     }
-  };
+    const [statsRes, listRes, staffRes] = await Promise.all([
+      axios.get(`${BASE_URL}/api/dashboard-stats`),
+      axios.get(`${BASE_URL}/api/pending-students`),
+      axios.get(`${BASE_URL}/api/staff`)
+    ]);
+    const statsData = statsRes.data;
+    statsData.total_staff = staffRes.data.length;
+    setStats(statsData);
+    setPendingStudents(listRes.data);
+    setCachedData('dashboard', {
+      stats: statsData,
+      pending: listRes.data
+    });
+  } catch (err) {
+    console.log("Dashboard data fetch error");
+  }
+};
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    console.log("handleLogin triggered successfully!");
-    setError('');
-    
-    // Captcha validation check
-    if (parseInt(captchaInput) !== (num1 + num2)) {
-      setError(`❌ Galat Captcha Code! Sahi jawab dein.`);
-      generateCaptcha();
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      // ✅ Explicit headers ke sath login request bheji
-      const handleLogin = async (e) => {
-    e.preventDefault();
-    console.log("handleLogin triggered successfully!");
+const handleLogin = async (e) => {
+  e.preventDefault();
+  console.log("handleLogin triggered successfully!");
 
-    setError('');
-    if (parseInt(captchaInput) !== (num1 + num2)) {
-      setError(`❌ Galat Captcha Code! Sahi jawab dein.`);
-      generateCaptcha();
-      return;
-    }
+  setError('');
+  if (parseInt(captchaInput) !== (num1 + num2)) {
+    setError(`❌ Galat Captcha Code! Sahi jawab dein.`);
+    generateCaptcha();
+    return;
+  }
+  
+  setLoading(true);
+  try {
+    const response = await axios.post(`${BASE_URL}/api/login`, { 
+      username: username.trim(), 
+      password: password 
+    }, {
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 10000
+    });
     
-    setLoading(true);
-    try {
-      // ✅ Explicit headers ke sath login request bheji
-      const response = await axios.post(`${BASE_URL}/api/login`, { 
-        username: username.trim(), 
-        password: password 
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        timeout: 10000 // 10 seconds timeout safety
-      });
-      
-      if (response && response.data && response.data.success) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('role', response.data.role);
-        setRole(response.data.role);
-        setIsLoggedIn(true);
-        
-        // Settings fetch karo
-        await fetchSettings();
-      } else {
-        setError(response.data?.message || "Login fail ho gaya!");
+    if (response && response.data && response.data.success) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('role', response.data.role);
+      setRole(response.data.role);
+      setIsLoggedIn(true);
+      await fetchSettings();
+    } else {
+      setError(response.data?.message || "Login fail ho gaya!");
+      generateCaptcha();
+    }
+  } catch (err) {
+    console.error("Asli Backend Error:", err.response || err);
+    setError('Backend server se connection fail: ' + (err.response?.data?.message || err.message));
+    generateCaptcha();
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleRequestOTP = async (e) => {
+  e.preventDefault();
+  setError('');
+  setSuccessMsg('');
+  setLoading(true);
+  try {
+    const response = await axios.post('https://erp-api.aapschool.in/api/send-verification', { username });
+    if (response.data.success) {
+      setSuccessMsg(response.data.message);
+      setFormMode('forgot_verify');
+    } else {
+      setError(response.data.message);
+    }
+  } catch (err) {
+    setError('Server error!');
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleVerifyAndReset = async (e) => {
+  e.preventDefault();
+  setError('');
+  setSuccessMsg('');
+  setLoading(true);
+  try {
+    const response = await axios.post('https://erp-api.aapschool.in/api/verify-and-reset', {
+      username,
+      otp: otpCode,
+      new_password: newPassword
+    });
+    if (response.data.success) {
+      setSuccessMsg(response.data.message);
+      setTimeout(() => {
+        setFormMode('login');
+        setPassword('');
         generateCaptcha();
-      }
-    } catch (err) {
-      console.error("Asli Backend Error:", err.response || err);
-      setError('Backend server se connection fail: ' + (err.response?.data?.message || err.message));
-      generateCaptcha();
-    } finally {
-      setLoading(false);
+      }, 2500);
+    } else {
+      setError(response.data.message);
     }
-  };
+  } catch (err) {
+    setError('Verification failed!');
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleRequestOTP = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-    setLoading(true);
-    try {
-      const response = await axios.post('https://erp-api.aapschool.in/api/send-verification', { username });
-      if (response.data.success) {
-        setSuccessMsg(response.data.message);
-        setFormMode('forgot_verify');
-      } else {
-        setError(response.data.message);
-      }
-    } catch (err) {
-      setError('Server error!');
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleSaveSettings = async (e) => {
+  e.preventDefault();
+  try {
+    const response = await axios.post(`${BASE_URL}/api/settings`, schoolData);
+    alert(response.data.message);
+    setCachedData('settings', schoolData);
+  } catch (err) {
+    console.error("Settings save error:", err);
+    alert('Settings save nahi ho payi. Network ya Server Error!');
+  }
+};
 
-  const handleVerifyAndReset = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-    setLoading(true);
-    try {
-      const response = await axios.post('https://erp-api.aapschool.in/api/verify-and-reset', {
-        username,
-        otp: otpCode,
-        new_password: newPassword
-      });
-      if (response.data.success) {
-        setSuccessMsg(response.data.message);
-        setTimeout(() => {
-          setFormMode('login');
-          setPassword('');
-          generateCaptcha();
-        }, 2500);
-      } else {
-        setError(response.data.message);
-      }
-    } catch (err) {
-      setError('Verification failed!');
-    } finally {
-      setLoading(false);
-    }
-  };
+const handleLogoChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onloadend = () => setSchoolData({ ...schoolData, school_logo: reader.result });
+    reader.readAsDataURL(file);
+  }
+};
 
-  const handleSaveSettings = async (e) => {
-    e.preventDefault();
-    try {
-      // ✅ Hardcoded URL hata kar BASE_URL variable lagayein
-      const response = await axios.post(`${BASE_URL}/api/settings`, schoolData);
-      alert(response.data.message);
-      setCachedData('settings', schoolData);
-    } catch (err) {
-      console.error("Settings save error:", err);
-      alert('Settings save nahi ho payi. Network ya Server Error!');
-    }
-  };
-
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setSchoolData({ ...schoolData, school_logo: reader.result });
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleSignatureChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setSchoolData({ ...schoolData, school_signature: reader.result });
-      reader.readAsDataURL(file);
-    }
-  };
+const handleSignatureChange = (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onloadend = () => setSchoolData({ ...schoolData, school_signature: reader.result });
+    reader.readAsDataURL(file);
+  }
+};
 
   const handleFeeSubmit = async (e) => {
     e.preventDefault();
