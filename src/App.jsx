@@ -160,29 +160,43 @@ const fetchSettings = async () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+    
+    // Captcha validation check
     if (parseInt(captchaInput) !== (num1 + num2)) {
       setError(`❌ Galat Captcha Code! Sahi jawab dein.`);
       generateCaptcha();
       return;
     }
+    
     setLoading(true);
     try {
-      const response = await axios.post(`${BASE_URL}/api/login`, { username, password });
-      if (response.data.success) {
+      // ✅ Explicit headers ke sath login request bheji
+      const response = await axios.post(`${BASE_URL}/api/login`, { 
+        username: username.trim(), 
+        password: password 
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        timeout: 10000 // 10 seconds timeout safety
+      });
+      
+      if (response && response.data && response.data.success) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('role', response.data.role);
         setRole(response.data.role);
         setIsLoggedIn(true);
         
-        // ✅ CRUCIAL FIX: Login hote hi turant database se fresh settings fetch karo
+        // Settings fetch karo
         await fetchSettings();
-        
       } else {
-        setError(response.data.message);
+        setError(response.data?.message || "Login fail ho gaya!");
         generateCaptcha();
       }
     } catch (err) {
-      setError('Backend server se connection fail!');
+      console.error("Login Network Error:", err);
+      setError('Backend server se connection fail ho gaya! Server check karein.');
+      generateCaptcha();
     } finally {
       setLoading(false);
     }
