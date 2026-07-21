@@ -172,6 +172,20 @@ const fetchSettings = async () => {
     setLoading(true);
     try {
       // ✅ Explicit headers ke sath login request bheji
+      const handleLogin = async (e) => {
+    e.preventDefault();
+    console.log("handleLogin triggered successfully!");
+
+    setError('');
+    if (parseInt(captchaInput) !== (num1 + num2)) {
+      setError(`❌ Galat Captcha Code! Sahi jawab dein.`);
+      generateCaptcha();
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      // ✅ Explicit headers ke sath login request bheji
       const response = await axios.post(`${BASE_URL}/api/login`, { 
         username: username.trim(), 
         password: password 
@@ -195,8 +209,8 @@ const fetchSettings = async () => {
         generateCaptcha();
       }
     } catch (err) {
-      console.error("Login Network Error:", err);
-      setError('Backend server se connection fail ho gaya! Server check karein.');
+      console.error("Asli Backend Error:", err.response || err);
+      setError('Backend server se connection fail: ' + (err.response?.data?.message || err.message));
       generateCaptcha();
     } finally {
       setLoading(false);
