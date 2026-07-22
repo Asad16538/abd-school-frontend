@@ -250,21 +250,45 @@ const handleSaveSettings = async (e) => {
   }
 };
 
-const handleLogoChange = (e) => {
+const handleLogoChange = async (e) => {
   const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onloadend = () => setSchoolData({ ...schoolData, school_logo: reader.result });
-    reader.readAsDataURL(file);
+  if (!file) return;
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('type', 'logo');
+
+  try {
+    const res = await axios.post(`${BASE_URL}/api/upload-logo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    if (res.data.success) {
+      setSchoolData(prev => ({ ...prev, school_logo: res.data.url }));
+      alert("✅ Logo uploaded & saved successfully!");
+    }
+  } catch (err) {
+    alert("❌ Logo upload fail ho gaya!");
   }
 };
 
-const handleSignatureChange = (e) => {
+const handleSignatureChange = async (e) => {
   const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onloadend = () => setSchoolData({ ...schoolData, school_signature: reader.result });
-    reader.readAsDataURL(file);
+  if (!file) return;
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('type', 'signature');
+
+  try {
+    const res = await axios.post(`${BASE_URL}/api/upload-logo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    if (res.data.success) {
+      setSchoolData(prev => ({ ...prev, school_signature: res.data.url }));
+      alert("✅ Signature uploaded & saved successfully!");
+    }
+  } catch (err) {
+    alert("❌ Signature upload fail ho gaya!");
   }
 };
 
