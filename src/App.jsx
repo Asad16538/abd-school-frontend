@@ -199,14 +199,14 @@ const handleRequestOTP = async (e) => {
   setSuccessMsg('');
   setLoading(true);
 
-  // Dynamic Endpoint Selector based on user type
+  // ✅ Role ke hisab se dynamic endpoint choose hoga
   let endpoint = `${BASE_URL}/api/send-verification`; // Admin default
   let payload = { username };
 
-  if (loginRoleType === 'staff') {
+  if (loginRole === 'Teacher') {
     endpoint = `${BASE_URL}/api/staff/send-verification`;
     payload = { mobile: username }; // Staff ke liye mobile number use hoga
-  } else if (loginRoleType === 'parent') {
+  } else if (loginRole === 'Parent') {
     endpoint = `${BASE_URL}/api/parent/send-verification`;
     payload = { mobile: username }; // Parent ke liye mobile number use hoga
   }
@@ -231,12 +231,33 @@ const handleVerifyAndReset = async (e) => {
   setError('');
   setSuccessMsg('');
   setLoading(true);
-  try {
-    const response = await axios.post('https://erp-api.aapschool.in/api/verify-and-reset', {
-      username,
+
+  // ✅ Role ke hisab se verify & reset endpoint select hoga
+  let endpoint = `${BASE_URL}/api/verify-and-reset`; // Admin default
+  let payload = {
+    username,
+    otp: otpCode,
+    new_password: newPassword
+  };
+
+  if (loginRole === 'Teacher') {
+    endpoint = `${BASE_URL}/api/staff/verify-and-reset`;
+    payload = {
+      mobile: username, // Staff ke liye mobile number pass hoga
       otp: otpCode,
       new_password: newPassword
-    });
+    };
+  } else if (loginRole === 'Parent') {
+    endpoint = `${BASE_URL}/api/parent/reset-password`; // Parent ke liye backend route
+    payload = {
+      mobile: username, // Parent ke liye mobile number pass hoga
+      otp: otpCode,
+      new_password: newPassword
+    };
+  }
+
+  try {
+    const response = await axios.post(endpoint, payload);
     if (response.data.success) {
       setSuccessMsg(response.data.message);
       setTimeout(() => {
@@ -248,7 +269,7 @@ const handleVerifyAndReset = async (e) => {
       setError(response.data.message);
     }
   } catch (err) {
-    setError('Verification failed!');
+    setError(err.response?.data?.message || 'Verification failed!');
   } finally {
     setLoading(false);
   }
@@ -481,39 +502,13 @@ const handleSignatureChange = async (e) => {
 
               {formMode === 'login' && (
   <form onSubmit={handleLogin} className="space-y-4">
-    
-    {/* ✅ YAHAN ROLE SELECTOR DROPDOWN ADD KARO */}
     <div>
-      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Select Login Role</label>
-      <select 
-        value={loginRole} 
-        onChange={(e) => setLoginRole(e.target.value)} 
-        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-indigo-600 outline-none"
-      >
-        <option value="Admin">👑 Admin / Principal Login</option>
-        <option value="Teacher">👨‍🏫 Teacher / Staff Login</option>
-        <option value="Parent">👨‍👩‍👦 Parent Login</option>
-      </select>
-    </div>
-    {/* ✅ YAHAN TAK */}
-
-    <div>
-      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
-        {loginRole === 'Parent' ? 'Registered Mobile Number' : loginRole === 'Teacher' ? 'Staff Mobile / Username' : 'Admin Username'}
-      </label>
+      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Username</label>
       <div className="relative">
-        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-450"><User className="w-4 h-4" /></span>
-        <input 
-          type="text" 
-          required 
-          value={username} 
-          onChange={(e) => setUsername(e.target.value)} 
-          placeholder={loginRole === 'Parent' ? 'Enter Mobile Number' : 'Enter Username/Mobile'} 
-          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" 
-        />
+        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><User className="w-4 h-4" /></span>
+        <input type="text" required value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" />
       </div>
     </div>
-
     <div>
       <div className="flex justify-between items-center mb-1">
         <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider">Password</label>
@@ -524,7 +519,6 @@ const handleSignatureChange = async (e) => {
         <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" />
       </div>
     </div>
-
     <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-2">
       <span className="text-[11px] font-black text-indigo-900 tracking-wide flex items-center justify-between">📦 Security Captcha <RefreshCw className="w-3 h-3 text-indigo-600 cursor-pointer" onClick={generateCaptcha} /></span>
       <div className="flex items-center gap-2">
@@ -532,7 +526,6 @@ const handleSignatureChange = async (e) => {
         <input type="number" required placeholder="Answer" value={captchaInput} onChange={(e) => setCaptchaInput(e.target.value)} className="flex-grow px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-center" />
       </div>
     </div>
-
     <button type="submit" disabled={loading} className="w-full py-3 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md cursor-pointer">Login System ⚡</button>
   </form>
 )}
