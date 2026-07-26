@@ -21,6 +21,7 @@ const ExamManagement = () => {
   const [selectedExam, setSelectedExam] = useState(null);
   const [marksData, setMarksData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   // 🎯 Dynamic Activity Dropdown State
   const [practicalType, setPracticalType] = useState('20 Marks Practical');
   const activityOptions = ['20 Marks Practical', 'Project', 'N.B. (Notebook)', 'S.E. (Internal)', 'Oral Test', 'Internal Assessment'];
