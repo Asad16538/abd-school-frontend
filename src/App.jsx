@@ -741,37 +741,57 @@ const handleSignatureChange = async (e) => {
               }>
 
                 {activeTab === 'role_management' && (
-  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm max-w-4xl">
     <h3 className="text-base font-black text-gray-800 border-b border-gray-100 pb-3 mb-4">👑 User Role & Permission Control Hub</h3>
-    <p className="text-xs text-gray-500 mb-4 font-semibold">Yahan se aap system ke alag-alag roles (Principal, Accountant, Teacher, Parent) ke permissions aur access control ko manage kar sakte hain.</p>
+    <p className="text-xs text-gray-500 mb-6 font-semibold">Yahan se aap system ke alag-alag users aur unke roles ko manage aur permissions assign kar sakte hain.</p>
     
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="space-y-4">
       {/* 1. Principal / Admin Role */}
-      <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
-        <h4 className="font-black text-indigo-900 text-sm mb-1">👑 Principal / Super Admin</h4>
-        <p className="text-[11px] text-gray-600 mb-3">Poore system ka full access (Fees, Settings, Staff, Expenses, ID Cards).</p>
-        <span className="px-2.5 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg">Full Permissions (Default)</span>
+      <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-xl flex items-center justify-between">
+        <div>
+          <h4 className="font-black text-indigo-900 text-sm mb-1">👑 Principal / Super Admin</h4>
+          <p className="text-[11px] text-gray-600">Poore system ka full access (Fees, Settings, Staff, Expenses, ID Cards).</p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold">
+          <input type="checkbox" defaultChecked disabled className="w-4 h-4 accent-indigo-600 cursor-pointer" />
+          <span>Active (Default)</span>
+        </label>
       </div>
 
       {/* 2. Accountant Role */}
-      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
-        <h4 className="font-black text-emerald-900 text-sm mb-1">💼 Accountant / Fee Manager</h4>
-        <p className="text-[11px] text-gray-600 mb-3">Sirf Fee Collection, Search & Pay, aur Fee Reports ka access.</p>
-        <span className="px-2.5 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg">Financial Access Only</span>
+      <div className="p-4 bg-emerald-50/60 border border-emerald-100 rounded-xl flex items-center justify-between">
+        <div>
+          <h4 className="font-black text-emerald-900 text-sm mb-1">💼 Accountant / Fee Manager</h4>
+          <p className="text-[11px] text-gray-600">Sirf Fee Collection, Search & Pay, aur Fee Reports ka access.</p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer bg-white border border-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 shadow-sm">
+          <input type="checkbox" onChange={(e) => alert(e.target.checked ? "Accountant Role Enabled!" : "Accountant Role Disabled!")} className="w-4 h-4 accent-emerald-600 cursor-pointer" />
+          <span>Enable Role</span>
+        </label>
       </div>
 
       {/* 3. Teacher Role */}
-      <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
-        <h4 className="font-black text-blue-900 text-sm mb-1">👨‍🏫 Teacher / Staff</h4>
-        <p className="text-[11px] text-gray-600 mb-3">Student Attendance, Exam Management, aur khud ki Geo-Payroll attendance.</p>
-        <span className="px-2.5 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg">Staff App Access</span>
+      <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-xl flex items-center justify-between">
+        <div>
+          <h4 className="font-black text-blue-900 text-sm mb-1">👨‍🏫 Teacher / Staff Access</h4>
+          <p className="text-[11px] text-gray-600">Student Attendance, Exam Management, aur khud ki Geo-Payroll attendance.</p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer bg-white border border-blue-300 px-3 py-1.5 rounded-xl text-xs font-bold text-blue-800 shadow-sm">
+          <input type="checkbox" defaultChecked onChange={(e) => alert(e.target.checked ? "Teacher Access Enabled!" : "Teacher Access Disabled!")} className="w-4 h-4 accent-blue-600 cursor-pointer" />
+          <span>Enable Role</span>
+        </label>
       </div>
 
       {/* 4. Parent Role */}
-      <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
-        <h4 className="font-black text-amber-900 text-sm mb-1">👨‍👩‍👦 Parents / Guardians</h4>
-        <p className="text-[11px] text-gray-600 mb-3">Sirf apne bache ki fee status, report card aur attendance dekhne ka access.</p>
-        <span className="px-2.5 py-1 bg-amber-600 text-white text-[10px] font-black uppercase rounded-lg">Parent Portal Only</span>
+      <div className="p-4 bg-amber-50/60 border border-amber-100 rounded-xl flex items-center justify-between">
+        <div>
+          <h4 className="font-black text-amber-900 text-sm mb-1">👨‍👩‍👦 Parent Portal Access</h4>
+          <p className="text-[11px] text-gray-600">Sirf apne bache ki fee status, report card aur attendance dekhne ka access.</p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer bg-white border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-800 shadow-sm">
+          <input type="checkbox" defaultChecked onChange={(e) => alert(e.target.checked ? "Parent Portal Enabled!" : "Parent Portal Disabled!")} className="w-4 h-4 accent-amber-600 cursor-pointer" />
+          <span>Enable Role</span>
+        </label>
       </div>
     </div>
   </div>
