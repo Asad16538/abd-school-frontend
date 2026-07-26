@@ -705,6 +705,15 @@ const handleSignatureChange = async (e) => {
                 <span>📊 Income & Expenses</span>
               </button>
 
+              {/* 🛡️ Role Management Hub Button */}
+<button 
+  onClick={() => setActiveTab('role_management')} 
+  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'role_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
+>
+  <Users className="w-4 h-4 text-amber-300" />
+  <span>🛡️ Role Management Hub</span>
+</button>
+
               {/* 10th Position: Settings */}
               <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'settings' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                 <Settings className={`w-4 h-4 ${activeTab === 'settings' ? 'text-amber-300' : 'text-slate-400'}`} />
@@ -730,6 +739,44 @@ const handleSignatureChange = async (e) => {
                   <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                 </div>
               }>
+
+                {activeTab === 'role_management' && (
+  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+    <h3 className="text-base font-black text-gray-800 border-b border-gray-100 pb-3 mb-4">👑 User Role & Permission Control Hub</h3>
+    <p className="text-xs text-gray-500 mb-4 font-semibold">Yahan se aap system ke alag-alag roles (Principal, Accountant, Teacher, Parent) ke permissions aur access control ko manage kar sakte hain.</p>
+    
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* 1. Principal / Admin Role */}
+      <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-xl">
+        <h4 className="font-black text-indigo-900 text-sm mb-1">👑 Principal / Super Admin</h4>
+        <p className="text-[11px] text-gray-600 mb-3">Poore system ka full access (Fees, Settings, Staff, Expenses, ID Cards).</p>
+        <span className="px-2.5 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg">Full Permissions (Default)</span>
+      </div>
+
+      {/* 2. Accountant Role */}
+      <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl">
+        <h4 className="font-black text-emerald-900 text-sm mb-1">💼 Accountant / Fee Manager</h4>
+        <p className="text-[11px] text-gray-600 mb-3">Sirf Fee Collection, Search & Pay, aur Fee Reports ka access.</p>
+        <span className="px-2.5 py-1 bg-emerald-600 text-white text-[10px] font-black uppercase rounded-lg">Financial Access Only</span>
+      </div>
+
+      {/* 3. Teacher Role */}
+      <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+        <h4 className="font-black text-blue-900 text-sm mb-1">👨‍🏫 Teacher / Staff</h4>
+        <p className="text-[11px] text-gray-600 mb-3">Student Attendance, Exam Management, aur khud ki Geo-Payroll attendance.</p>
+        <span className="px-2.5 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg">Staff App Access</span>
+      </div>
+
+      {/* 4. Parent Role */}
+      <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl">
+        <h4 className="font-black text-amber-900 text-sm mb-1">👨‍👩‍👦 Parents / Guardians</h4>
+        <p className="text-[11px] text-gray-600 mb-3">Sirf apne bache ki fee status, report card aur attendance dekhne ka access.</p>
+        <span className="px-2.5 py-1 bg-amber-600 text-white text-[10px] font-black uppercase rounded-lg">Parent Portal Only</span>
+      </div>
+    </div>
+  </div>
+)}
+
                 {activeTab === 'overview' && (
                   <>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
