@@ -149,47 +149,63 @@ const loadDashboardData = async (forceRefresh = false) => {
   }
 };
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  console.log("handleLogin triggered successfully!");
+// 🛡️ SECURE LOGIN HANDLER (ROLE-BASED ENDPOINT ROUTING)
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError('');
 
-  setError('');
-  if (parseInt(captchaInput) !== (num1 + num2)) {
-    setError(`❌ Galat Captcha Code! Sahi jawab dein.`);
-    generateCaptcha();
-    return;
-  }
-  
-  setLoading(true);
-  try {
-    const response = await axios.post(`${BASE_URL}/api/login`, { 
-      username: username.trim(), 
-      password: password 
-    }, {
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      timeout: 10000
-    });
-    
-    if (response && response.data && response.data.success) {
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('role', response.data.role);
-      setRole(response.data.role);
-      setIsLoggedIn(true);
-      await fetchSettings();
-    } else {
-      setError(response.data?.message || "Login fail ho gaya!");
+    if (parseInt(captchaInput) !== (num1 + num2)) {
+      setError(`❌ Galat Captcha Code! Sahi jawab dein.`);
       generateCaptcha();
+      return;
     }
-  } catch (err) {
-    console.error("Asli Backend Error:", err.response || err);
-    setError('Backend server se connection fail: ' + (err.response?.data?.message || err.message));
-    generateCaptcha();
-  } finally {
-    setLoading(false);
-  }
-};
+    
+    setLoading(true);
+    try {
+      let endpoint = `${BASE_URL}/api/login`; // Admin default
+      let payload = { username: username.trim(), password: password };
+
+      if (loginRole === 'Teacher') {
+        endpoint = `${BASE_URL}/api/staff/login`;
+        payload = { mobile: username.trim(), password: password };
+      } else if (loginRole === 'Parent') {
+        endpoint = `${BASE_URL}/api/parent/login`;
+        payload = { mobile: username.trim(), password: password };
+      }
+
+      const response = await axios.post(endpoint, payload, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000
+      });
+      
+      if (response && response.data && response.data.success) {
+        localStorage.setItem('token', response.data.token);
+        
+        // Agar Teacher ya Parent login hua hai, toh unhe unke panel par redirect kar do
+        if (loginRole === 'Teacher') {
+          window.location.href = '/staff';
+          return;
+        } else if (loginRole === 'Parent') {
+          window.location.href = '/parent';
+          return;
+        }
+
+        // Agar Admin hai toh dashboard khol do
+        localStorage.setItem('role', response.data.role || loginRole);
+        setRole(response.data.role || loginRole);
+        setIsLoggedIn(true);
+        await fetchSettings();
+      } else {
+        setError(response.data?.message || "Login fail ho gaya!");
+        generateCaptcha();
+      }
+    } catch (err) {
+      setError('Login failed: ' + (err.response?.data?.message || err.message));
+      generateCaptcha();
+    } finally {
+      setLoading(false);
+    }
+  };
 
 // Naya state add kar lena agar na ho: const [loginRoleType, setLoginRoleType] = useState('admin'); // 'admin', 'staff', ya 'parent'
 
