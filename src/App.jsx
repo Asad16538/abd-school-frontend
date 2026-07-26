@@ -57,6 +57,7 @@ function App() {
   // ============================================================
   // ✅ STEP 1: SARE HOOKS PEHLE (TOP LEVEL)
   // ============================================================
+  const [loginRole, setLoginRole] = useState('Admin'); // Default Admin rahega
   const [formMode, setFormMode] = useState('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -479,34 +480,62 @@ const handleSignatureChange = async (e) => {
               {successMsg && <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-500 text-green-700 text-xs font-bold rounded-r-xl flex items-center gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" /><span>{successMsg}</span></div>}
 
               {formMode === 'login' && (
-                <form onSubmit={handleLogin} className="space-y-4">
-                  <div>
-                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Username</label>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><User className="w-4 h-4" /></span>
-                      <input type="text" required value={username} onChange={(e) => setUsername(e.target.value)} placeholder="Username" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider">Password</label>
-                      <button type="button" onClick={() => { setFormMode('forgot_request'); setError(''); setSuccessMsg(''); }} className="text-[10px] font-bold text-indigo-600 hover:underline">Forgot Password?</button>
-                    </div>
-                    <div className="relative">
-                      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><Lock className="w-4 h-4" /></span>
-                      <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" />
-                    </div>
-                  </div>
-                  <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-2">
-                    <span className="text-[11px] font-black text-indigo-900 tracking-wide flex items-center justify-between">📦 Security Captcha <RefreshCw className="w-3 h-3 text-indigo-600 cursor-pointer" onClick={generateCaptcha} /></span>
-                    <div className="flex items-center gap-2">
-                      <div className="bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl text-sm font-black border border-slate-700 min-w-[70px] text-center">{num1} + {num2} =</div>
-                      <input type="number" required placeholder="Answer" value={captchaInput} onChange={(e) => setCaptchaInput(e.target.value)} className="flex-grow px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-center" />
-                    </div>
-                  </div>
-                  <button type="submit" disabled={loading} className="w-full py-3 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md cursor-pointer">Login System ⚡</button>
-                </form>
-              )}
+  <form onSubmit={handleLogin} className="space-y-4">
+    
+    {/* ✅ YAHAN ROLE SELECTOR DROPDOWN ADD KARO */}
+    <div>
+      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">Select Login Role</label>
+      <select 
+        value={loginRole} 
+        onChange={(e) => setLoginRole(e.target.value)} 
+        className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold text-indigo-600 outline-none"
+      >
+        <option value="Admin">👑 Admin / Principal Login</option>
+        <option value="Teacher">👨‍🏫 Teacher / Staff Login</option>
+        <option value="Parent">👨‍👩‍👦 Parent Login</option>
+      </select>
+    </div>
+    {/* ✅ YAHAN TAK */}
+
+    <div>
+      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+        {loginRole === 'Parent' ? 'Registered Mobile Number' : loginRole === 'Teacher' ? 'Staff Mobile / Username' : 'Admin Username'}
+      </label>
+      <div className="relative">
+        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-450"><User className="w-4 h-4" /></span>
+        <input 
+          type="text" 
+          required 
+          value={username} 
+          onChange={(e) => setUsername(e.target.value)} 
+          placeholder={loginRole === 'Parent' ? 'Enter Mobile Number' : 'Enter Username/Mobile'} 
+          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" 
+        />
+      </div>
+    </div>
+
+    <div>
+      <div className="flex justify-between items-center mb-1">
+        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider">Password</label>
+        <button type="button" onClick={() => { setFormMode('forgot_request'); setError(''); setSuccessMsg(''); }} className="text-[10px] font-bold text-indigo-600 hover:underline">Forgot Password?</button>
+      </div>
+      <div className="relative">
+        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><Lock className="w-4 h-4" /></span>
+        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" />
+      </div>
+    </div>
+
+    <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-2">
+      <span className="text-[11px] font-black text-indigo-900 tracking-wide flex items-center justify-between">📦 Security Captcha <RefreshCw className="w-3 h-3 text-indigo-600 cursor-pointer" onClick={generateCaptcha} /></span>
+      <div className="flex items-center gap-2">
+        <div className="bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl text-sm font-black border border-slate-700 min-w-[70px] text-center">{num1} + {num2} =</div>
+        <input type="number" required placeholder="Answer" value={captchaInput} onChange={(e) => setCaptchaInput(e.target.value)} className="flex-grow px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-center" />
+      </div>
+    </div>
+
+    <button type="submit" disabled={loading} className="w-full py-3 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md cursor-pointer">Login System ⚡</button>
+  </form>
+)}
 
               {formMode === 'forgot_request' && (
                 <form onSubmit={handleRequestOTP} className="space-y-4">
