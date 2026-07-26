@@ -33,7 +33,7 @@ const ExamManagement = () => {
 
   const classesList = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
   const sectionsList = ['A', 'B', 'C'];
-  const examTypes = ['Unit Test', 'Monthly Test', 'Mid-term', 'Final', 'Weekly Test'];
+  const examTypes = ['Unit Test - 1', 'Quarterly Examination', 'Unit Test - 2', 'Half Yearly Examination', 'Unit Test - 3', 'Annual Examination'];
   const subjectsList = [
     { name: 'Mathematics', code: 'MTH101' },
     { name: 'Science', code: 'SCI101' },
@@ -599,8 +599,8 @@ const ExamManagement = () => {
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
             <div>
-              <h3 className="text-base font-black text-gray-800">✏️ Subject Split Marks Entry Hub</h3>
-              <p className="text-xs text-gray-500">Theory aur Practical ke marks alag daalein. Total, Percentage aur Grade automatic calculate honge.</p>
+              <h3 className="text-base font-black text-gray-800">✏️ Dynamic Board Exam Marks Entry Hub</h3>
+              <p className="text-xs text-gray-500">Exam format ke mutabik fields automatic adjust honge (Unit Test = 20 Marks, Quarterly/Half Yearly = Split, Annual = Attendance included).</p>
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
@@ -609,25 +609,40 @@ const ExamManagement = () => {
                 className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50"
                 onChange={(e) => fetchStudentsForExam(e.target.value)}
               >
-                <option value="">-- Select Exam --</option>
+                <option value="">-- Select Exam Format --</option>
                 {exams.map(e => (
                   <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class} [{e.subject}]</option>
                 ))}
               </select>
 
-              {/* 🎯 Practical Type Dropdown */}
-              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
-                <span className="text-[10px] font-black text-amber-800 uppercase">Practical Type:</span>
-                <select 
-                  value={practicalType} 
-                  onChange={(e) => setPracticalType(e.target.value)} 
-                  className="bg-transparent text-xs font-bold text-amber-900 focus:outline-none cursor-pointer"
-                >
-                  {activityOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                </select>
-              </div>
+              {/* 🎯 Practical Type Dropdown (Sirf Quarterly/Half Yearly/Annual ke liye) */}
+              {selectedExam && !selectedExam.exam_name?.includes('Unit Test') && (
+                <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
+                  <span className="text-[10px] font-black text-amber-800 uppercase">Practical Type:</span>
+                  <select 
+                    value={practicalType} 
+                    onChange={(e) => setPracticalType(e.target.value)} 
+                    className="bg-transparent text-xs font-bold text-amber-900 focus:outline-none cursor-pointer"
+                  >
+                    {activityOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* 📅 Annual Exam ke liye Session Total Working Days field */}
+          {selectedExam && selectedExam.exam_name?.includes('Annual') && (
+            <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between">
+              <span className="text-xs font-black text-purple-900 uppercase">📅 Session Total Working Days (Annual Only):</span>
+              <input 
+                type="number" 
+                defaultValue="220" 
+                className="w-24 p-1.5 border border-purple-300 rounded-lg text-center text-xs font-bold bg-white text-purple-900" 
+                placeholder="e.g. 220"
+              />
+            </div>
+          )}
 
           {students.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
@@ -642,8 +657,22 @@ const ExamManagement = () => {
                     <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
                       <th className="p-3 w-16">Roll No</th>
                       <th className="p-3">Student Name</th>
-                      <th className="p-3 text-center">Theory Marks</th>
-                      <th className="p-3 text-center">{practicalType}</th>
+                      
+                      {/* Dynamic Headers based on Exam Type */}
+                      {selectedExam?.exam_name?.includes('Unit Test') ? (
+                        <th className="p-3 text-center">Marks (20 Max)</th>
+                      ) : (
+                        <>
+                          <th className="p-3 text-center">Theory Marks</th>
+                          <th className="p-3 text-center">{practicalType}</th>
+                        </>
+                      )}
+
+                      {/* Annual Exam ke liye Attendance Header */}
+                      {selectedExam?.exam_name?.includes('Annual') && (
+                        <th className="p-3 text-center text-purple-700">Days Attended</th>
+                      )}
+
                       <th className="p-3 text-center font-black text-purple-700">Total Marks</th>
                       <th className="p-3 text-center">Percentage</th>
                       <th className="p-3 text-center">Grade</th>
@@ -652,7 +681,8 @@ const ExamManagement = () => {
                   <tbody className="divide-y divide-gray-100">
                     {students.map((student) => {
                       const studentMark = marksData[student.id] || { theory: '', practical: '', total: 0 };
-                      const maxLimit = selectedExam?.max_marks || 100;
+                      const isUnit = selectedExam?.exam_name?.includes('Unit Test');
+                      const maxLimit = isUnit ? 20 : (selectedExam?.max_marks || 100);
                       const totalM = studentMark.total || 0;
                       const percentage = maxLimit > 0 ? (totalM / maxLimit) * 100 : 0;
                       const grade = getGrade(totalM, maxLimit);
@@ -662,35 +692,71 @@ const ExamManagement = () => {
                           <td className="p-3 font-bold">{student.roll_no || '-'}</td>
                           <td className="p-3 font-medium">{student.name}</td>
                           
-                          {/* Theory Field */}
-                          <td className="p-3 text-center">
-                            <input 
-                              type="number" 
-                              min="0"
-                              max={maxLimit}
-                              value={studentMark.theory}
-                              onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
-                              className="w-20 p-2 border border-blue-200 rounded-lg text-center text-xs font-bold bg-blue-50/30"
-                              placeholder="Theory"
-                            />
-                          </td>
+                          {/* Agar Unit Test hai toh sirf 20 marks ki single field */}
+                          {isUnit ? (
+                            <td className="p-3 text-center">
+                              <input 
+                                type="number" 
+                                min="0"
+                                max="20"
+                                value={studentMark.theory}
+                                onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
+                                className="w-24 p-2 border border-indigo-200 rounded-lg text-center text-xs font-bold bg-indigo-50/30"
+                                placeholder="Marks / 20"
+                              />
+                            </td>
+                          ) : (
+                            <>
+                              {/* Theory Field */}
+                              <td className="p-3 text-center">
+                                <input 
+                                  type="number" 
+                                  min="0"
+                                  max={maxLimit}
+                                  value={studentMark.theory}
+                                  onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
+                                  className="w-20 p-2 border border-blue-200 rounded-lg text-center text-xs font-bold bg-blue-50/30"
+                                  placeholder="Theory"
+                                />
+                              </td>
 
-                          {/* Practical Field */}
-                          <td className="p-3 text-center">
-                            <input 
-                              type="number" 
-                              min="0"
-                              max={maxLimit}
-                              value={studentMark.practical}
-                              onChange={(e) => handleMarkChange(student.id, 'practical', e.target.value)}
-                              className="w-20 p-2 border border-emerald-200 rounded-lg text-center text-xs font-bold bg-emerald-50/30"
-                              placeholder="Practical"
-                            />
-                          </td>
+                              {/* Practical Field */}
+                              <td className="p-3 text-center">
+                                <input 
+                                  type="number" 
+                                  min="0"
+                                  max={maxLimit}
+                                  value={studentMark.practical}
+                                  onChange={(e) => handleMarkChange(student.id, 'practical', e.target.value)}
+                                  className="w-20 p-2 border border-emerald-200 rounded-lg text-center text-xs font-bold bg-emerald-50/30"
+                                  placeholder="Practical"
+                                />
+                              </td>
+                            </>
+                          )}
+
+                          {/* Annual Exam ke liye Days Attended Field */}
+                          {selectedExam?.exam_name?.includes('Annual') && (
+                            <td className="p-3 text-center">
+                              <input 
+                                type="number" 
+                                min="0"
+                                value={studentMark.attendance || ''}
+                                onChange={(e) => {
+                                  setMarksData(prev => ({
+                                    ...prev,
+                                    [student.id]: { ...prev[student.id], attendance: e.target.value }
+                                  }));
+                                }}
+                                className="w-20 p-2 border border-purple-200 rounded-lg text-center text-xs font-bold bg-purple-50/30"
+                                placeholder="Days"
+                              />
+                            </td>
+                          )}
 
                           {/* Auto-Calculated Total */}
                           <td className="p-3 text-center font-black text-purple-700 text-sm">
-                            {totalM} / {maxLimit}
+                            {isUnit ? (studentMark.theory || 0) : totalM} / {maxLimit}
                           </td>
 
                           {/* Percentage */}
