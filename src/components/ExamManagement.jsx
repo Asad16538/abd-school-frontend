@@ -21,6 +21,9 @@ const ExamManagement = () => {
   const [selectedExam, setSelectedExam] = useState(null);
   const [marksData, setMarksData] = useState({});
   const [loading, setLoading] = useState(false);
+  // 🎯 Dynamic Activity Dropdown State
+  const [practicalType, setPracticalType] = useState('20 Marks Practical');
+  const activityOptions = ['20 Marks Practical', 'Project', 'N.B. (Notebook)', 'S.E. (Internal)', 'Oral Test', 'Internal Assessment'];
   const [message, setMessage] = useState({ type: '', text: '' });
   const [classFilter, setClassFilter] = useState('');
   const [boardFilter, setBoardFilter] = useState('CBSE');
@@ -593,30 +596,42 @@ const ExamManagement = () => {
       {/* TAB 3: MARKS */}
       {activeTab === 'marks' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-black text-gray-800">✏️ Enter Marks</h3>
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
+            <div>
+              <h3 className="text-base font-black text-gray-800">✏️ Subject Split Marks Entry Hub</h3>
+              <p className="text-xs text-gray-500">Theory aur Practical ke marks alag daalein. Total, Percentage aur Grade automatic calculate honge.</p>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Exam Selector */}
               <select 
-                className="p-2 border border-gray-200 rounded-xl text-xs font-bold"
+                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50"
                 onChange={(e) => fetchStudentsForExam(e.target.value)}
               >
-                <option value="">Select Exam</option>
+                <option value="">-- Select Exam --</option>
                 {exams.map(e => (
-                  <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class}</option>
+                  <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class} [{e.subject}]</option>
                 ))}
               </select>
-              {selectedExam && (
-                <span className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-bold">
-                  {selectedExam.subject} - Class {selectedExam.class}{selectedExam.section}
-                </span>
-              )}
+
+              {/* 🎯 Practical Type Dropdown */}
+              <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
+                <span className="text-[10px] font-black text-amber-800 uppercase">Practical Type:</span>
+                <select 
+                  value={practicalType} 
+                  onChange={(e) => setPracticalType(e.target.value)} 
+                  className="bg-transparent text-xs font-bold text-amber-900 focus:outline-none cursor-pointer"
+                >
+                  {activityOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                </select>
+              </div>
             </div>
           </div>
 
           {students.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="font-bold">Select an exam to enter marks</p>
+              <p className="font-bold">Select an exam from above dropdown to enter marks</p>
             </div>
           ) : (
             <>
@@ -626,39 +641,72 @@ const ExamManagement = () => {
                     <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
                       <th className="p-3 w-16">Roll No</th>
                       <th className="p-3">Student Name</th>
-                      <th className="p-3">Marks Obtained</th>
-                      <th className="p-3">Grade</th>
+                      <th className="p-3 text-center">Theory Marks</th>
+                      <th className="p-3 text-center">{practicalType}</th>
+                      <th className="p-3 text-center font-black text-purple-700">Total Marks</th>
+                      <th className="p-3 text-center">Percentage</th>
+                      <th className="p-3 text-center">Grade</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {students.map((student) => {
-                      const percentage = selectedExam?.max_marks ? (parseFloat(marksData[student.id]?.marks || 0) / selectedExam.max_marks) * 100 : 0;
-                      const grade = getGrade(percentage);
+                      const studentMark = marksData[student.id] || { theory: '', practical: '', total: 0 };
+                      const maxLimit = selectedExam?.max_marks || 100;
+                      const totalM = studentMark.total || 0;
+                      const percentage = maxLimit > 0 ? (totalM / maxLimit) * 100 : 0;
+                      const grade = getGrade(totalM, maxLimit);
+
                       return (
                         <tr key={student.id} className="hover:bg-gray-50">
                           <td className="p-3 font-bold">{student.roll_no || '-'}</td>
                           <td className="p-3 font-medium">{student.name}</td>
-                          <td className="p-3">
+                          
+                          {/* Theory Field */}
+                          <td className="p-3 text-center">
                             <input 
                               type="number" 
                               min="0"
-                              max={selectedExam?.max_marks || 100}
-                              value={marksData[student.id]?.marks || ''}
-                              onChange={(e) => handleMarkChange(student.id, e.target.value)}
-                              className="w-24 p-1.5 border border-gray-200 rounded-lg text-center text-sm font-bold"
-                              placeholder="0"
+                              max={maxLimit}
+                              value={studentMark.theory}
+                              onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
+                              className="w-20 p-2 border border-blue-200 rounded-lg text-center text-xs font-bold bg-blue-50/30"
+                              placeholder="Theory"
                             />
-                            <span className="text-xs text-gray-400 ml-1">/ {selectedExam?.max_marks || 100}</span>
                           </td>
-                          <td className="p-3">
-                            <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+
+                          {/* Practical Field */}
+                          <td className="p-3 text-center">
+                            <input 
+                              type="number" 
+                              min="0"
+                              max={maxLimit}
+                              value={studentMark.practical}
+                              onChange={(e) => handleMarkChange(student.id, 'practical', e.target.value)}
+                              className="w-20 p-2 border border-emerald-200 rounded-lg text-center text-xs font-bold bg-emerald-50/30"
+                              placeholder="Practical"
+                            />
+                          </td>
+
+                          {/* Auto-Calculated Total */}
+                          <td className="p-3 text-center font-black text-purple-700 text-sm">
+                            {totalM} / {maxLimit}
+                          </td>
+
+                          {/* Percentage */}
+                          <td className="p-3 text-center font-bold text-gray-600">
+                            {percentage.toFixed(1)}%
+                          </td>
+
+                          {/* Grade */}
+                          <td className="p-3 text-center">
+                            <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
                               grade === 'A+' || grade === 'A' ? 'bg-green-100 text-green-700' :
                               grade === 'B+' || grade === 'B' ? 'bg-blue-100 text-blue-700' :
                               grade === 'C' ? 'bg-yellow-100 text-yellow-700' :
                               grade === 'D' ? 'bg-orange-100 text-orange-700' :
                               'bg-red-100 text-red-700'
                             }`}>
-                              {grade || '-'}
+                              {grade}
                             </span>
                           </td>
                         </tr>
@@ -670,10 +718,10 @@ const ExamManagement = () => {
               <div className="mt-4 flex justify-end">
                 <button 
                   onClick={handleSaveMarks}
-                  disabled={loading}
-                  className="px-6 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-2"
+                  disabled={saving}
+                  className="px-6 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 cursor-pointer"
                 >
-                  {loading ? 'Saving...' : '💾 Save All Marks'}
+                  {saving ? 'Saving...' : '💾 Save All Marks'}
                 </button>
               </div>
             </>
