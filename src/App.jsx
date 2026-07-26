@@ -650,12 +650,15 @@ const handleSignatureChange = async (e) => {
             <nav className="flex-grow p-4 space-y-1.5">
               {/* 1st Position: Overview Panel */}
               <button
-                onClick={() => setActiveTab('overview')}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'overview' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
-              >
-                <LayoutDashboard className={`w-4 h-4 ${activeTab === 'overview' ? 'text-amber-300' : 'text-slate-400'}`} />
-                <span>Overview Panel</span>
-              </button>
+  onClick={() => {
+    setActiveTab('overview');
+    loadDashboardData(true); // 👈 Yeh true pass karne se data direct backend se fresh aayega
+  }}
+  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'overview' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
+>
+  <LayoutDashboard className="w-4 h-4 text-amber-300" />
+  <span>Overview Panel</span>
+</button>
 
               {/* 2nd Position: Student Register */}
               <button onClick={() => setActiveTab('registration')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'registration' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
