@@ -190,13 +190,28 @@ const handleLogin = async (e) => {
   }
 };
 
+// Naya state add kar lena agar na ho: const [loginRoleType, setLoginRoleType] = useState('admin'); // 'admin', 'staff', ya 'parent'
+
 const handleRequestOTP = async (e) => {
   e.preventDefault();
   setError('');
   setSuccessMsg('');
   setLoading(true);
+
+  // Dynamic Endpoint Selector based on user type
+  let endpoint = `${BASE_URL}/api/send-verification`; // Admin default
+  let payload = { username };
+
+  if (loginRoleType === 'staff') {
+    endpoint = `${BASE_URL}/api/staff/send-verification`;
+    payload = { mobile: username }; // Staff ke liye mobile number use hoga
+  } else if (loginRoleType === 'parent') {
+    endpoint = `${BASE_URL}/api/parent/send-verification`;
+    payload = { mobile: username }; // Parent ke liye mobile number use hoga
+  }
+
   try {
-    const response = await axios.post('https://erp-api.aapschool.in/api/send-verification', { username });
+    const response = await axios.post(endpoint, payload);
     if (response.data.success) {
       setSuccessMsg(response.data.message);
       setFormMode('forgot_verify');
@@ -204,7 +219,7 @@ const handleRequestOTP = async (e) => {
       setError(response.data.message);
     }
   } catch (err) {
-    setError('Server error!');
+    setError(err.response?.data?.message || 'Server error! Kripya dobara koshish karein.');
   } finally {
     setLoading(false);
   }
