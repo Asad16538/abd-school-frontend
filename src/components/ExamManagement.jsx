@@ -216,11 +216,23 @@ const ExamManagement = () => {
     }
   };
 
-  const handleMarkChange = (studentId, value) => {
-    setMarksData(prev => ({
-      ...prev,
-      [studentId]: { ...prev[studentId], marks: value }
-    }));
+  const handleMarkChange = (studentId, field, value) => {
+    setMarksData(prev => {
+      const student = prev[studentId] || { theory: '', practical: '', attendance: '', total: 0 };
+      const updatedStudent = { ...student, [field]: value };
+      
+      // Check karo ki exam single field wala hai ya split wala
+      const isSingleField = selectedExam?.exam_name?.includes('Unit Test') || selectedExam?.exam_name?.includes('Monthly');
+      const theoryVal = parseFloat(updatedStudent.theory) || 0;
+      const practicalVal = isSingleField ? 0 : (parseFloat(updatedStudent.practical) || 0);
+      
+      updatedStudent.total = theoryVal + practicalVal;
+
+      return {
+        ...prev,
+        [studentId]: updatedStudent
+      };
+    });
   };
 
   const handleDeleteExam = async (examId) => {
@@ -680,6 +692,7 @@ const ExamManagement = () => {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {students.map((student) => {
+                      const isSingleFieldExam = selectedExam?.exam_name?.includes('Unit Test') || selectedExam?.exam_name?.includes('Monthly');
                       const studentMark = marksData[student.id] || { theory: '', practical: '', total: 0 };
                       const isUnit = selectedExam?.exam_name?.includes('Unit Test');
                       const maxLimit = isUnit ? 20 : (selectedExam?.max_marks || 100);
@@ -691,6 +704,41 @@ const ExamManagement = () => {
                         <tr key={student.id} className="hover:bg-gray-50">
                           <td className="p-3 font-bold">{student.roll_no || '-'}</td>
                           <td className="p-3 font-medium">{student.name}</td>
+
+                          {isSingleFieldExam ? (
+  <td className="p-3 text-center">
+    <input 
+      type="number" 
+      min="0"
+      max={selectedExam?.max_marks || 20}
+      value={studentMark.theory}
+      onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
+      className="w-24 p-2 border border-indigo-200 rounded-lg text-center text-xs font-bold bg-indigo-50/30"
+      placeholder="Marks"
+    />
+  </td>
+) : (
+  <>
+    <td className="p-3 text-center">
+      <input 
+        type="number" 
+        value={studentMark.theory}
+        onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
+        className="w-20 p-2 border border-blue-200 rounded-lg text-center text-xs font-bold"
+        placeholder="Theory"
+      />
+    </td>
+    <td className="p-3 text-center">
+      <input 
+        type="number" 
+        value={studentMark.practical}
+        onChange={(e) => handleMarkChange(student.id, 'practical', e.target.value)}
+        className="w-20 p-2 border border-emerald-200 rounded-lg text-center text-xs font-bold"
+        placeholder="Practical"
+      />
+    </td>
+  </>
+)}
                           
                           {/* Agar Unit Test hai toh sirf 20 marks ki single field */}
                           {isUnit ? (
