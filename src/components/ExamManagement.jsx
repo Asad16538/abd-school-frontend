@@ -55,14 +55,12 @@ const ExamManagement = () => {
 
   // Exam Setup Form
   const [examForm, setExamForm] = useState({
-    exam_name: '',
-    exam_type: 'Unit Test',
+    exam_type: 'Unit Test - 1', // Default yhi rahega
     class: '',
     section: 'A',
     subject: '',
     max_marks: 100,
     passing_marks: 33,
-    weightage: 0,
     date: new Date().toISOString().split('T')[0]
   });
 
@@ -259,7 +257,8 @@ const ExamManagement = () => {
     }
   };
 
-  const getGrade = (percentage) => {
+  const getGrade = (totalMarks, maxMarks) => {
+    const percentage = maxMarks > 0 ? (totalMarks / maxMarks) * 100 : 0;
     for (let g of gradeSystem) {
       if (percentage >= g.min && percentage <= g.max) {
         return g.grade;
@@ -348,37 +347,28 @@ const ExamManagement = () => {
           <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="text-sm font-black text-gray-800 mb-4">📝 Create New Exam</h3>
             <form onSubmit={handleCreateExam} className="space-y-3">
+              {/* 🎯 Exam Type Dropdown (Ab yahi main naam ban jayega) */}
               <div>
-                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Exam Name</label>
-                <input 
-                  type="text" 
-                  required
-                  value={examForm.exam_name}
-                  onChange={(e) => setExamForm({...examForm, exam_name: e.target.value})}
-                  className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
-                  placeholder="e.g. Mathematics Unit Test 1"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Exam Type</label>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Exam Type / Format</label>
                 <select 
                   value={examForm.exam_type}
                   onChange={(e) => setExamForm({...examForm, exam_type: e.target.value})}
-                  className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
+                  className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold bg-white"
                 >
                   {examTypes.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Class</label>
                   <select 
                     value={examForm.class}
                     onChange={(e) => setExamForm({...examForm, class: e.target.value})}
-                    className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
+                    className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold bg-white"
                     required
                   >
-                    <option value="">--</option>
+                    <option value="">-- Select --</option>
                     {classesList.map(c => <option key={c} value={c}>Class {c}</option>)}
                   </select>
                 </div>
@@ -387,24 +377,26 @@ const ExamManagement = () => {
                   <select 
                     value={examForm.section}
                     onChange={(e) => setExamForm({...examForm, section: e.target.value})}
-                    className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
+                    className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold bg-white"
                   >
                     {sectionsList.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
               </div>
+
               <div>
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Subject</label>
                 <select 
                   value={examForm.subject}
                   onChange={(e) => setExamForm({...examForm, subject: e.target.value})}
-                  className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
+                  className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold bg-white"
                   required
                 >
-                  <option value="">-- Select --</option>
+                  <option value="">-- Select Subject --</option>
                   {subjectsList.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
                 </select>
               </div>
+
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Max Marks</label>
@@ -425,37 +417,26 @@ const ExamManagement = () => {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Weightage %</label>
-                  <input 
-                    type="number" 
-                    value={examForm.weightage}
-                    onChange={(e) => setExamForm({...examForm, weightage: parseInt(e.target.value)})}
-                    className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
-                    placeholder="e.g. 20"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Date</label>
-                  <input 
-                    type="date" 
-                    value={examForm.date}
-                    onChange={(e) => setExamForm({...examForm, date: e.target.value})}
-                    className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
-                    required
-                  />
-                </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Date</label>
+                <input 
+                  type="date" 
+                  value={examForm.date}
+                  onChange={(e) => setExamForm({...examForm, date: e.target.value})}
+                  className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
+                  required
+                />
               </div>
+
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition"
+                className="w-full py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition cursor-pointer"
               >
                 {loading ? 'Creating...' : '📚 Create Exam'}
               </button>
             </form>
-          </div>
 
           <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="text-sm font-black text-gray-800 mb-4 flex items-center justify-between">
@@ -885,13 +866,25 @@ const ExamManagement = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs font-medium">
               <thead className="bg-gray-50">
-                <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-                  <th className="p-3">Grade</th>
-                  <th className="p-3">Min %</th>
-                  <th className="p-3">Max %</th>
-                  <th className="p-3">Description</th>
-                </tr>
-              </thead>
+                    <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
+                      <th className="p-3 w-16">Roll No</th>
+                      <th className="p-3">Student Name</th>
+                      
+                      {/* 🎯 Yahan Header ko condition ke mutabik set karo */}
+                      {isSingleFieldExam ? (
+                        <th className="p-3 text-center">Marks (Max 20)</th>
+                      ) : (
+                        <>
+                          <th className="p-3 text-center">Theory Marks</th>
+                          <th className="p-3 text-center">{practicalType}</th>
+                        </>
+                      )}
+
+                      <th className="p-3 text-center font-black text-purple-700">Total Marks</th>
+                      <th className="p-3 text-center">Percentage</th>
+                      <th className="p-3 text-center">Grade</th>
+                    </tr>
+                  </thead>
               <tbody className="divide-y divide-gray-100">
                 {gradeSystem.map((g, i) => (
                   <tr key={i} className="hover:bg-gray-50">
