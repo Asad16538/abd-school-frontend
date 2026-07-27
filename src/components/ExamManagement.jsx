@@ -185,15 +185,27 @@ const ExamManagement = () => {
   const handleSaveMarks = async () => {
     setLoading(true);
     try {
+      const isAnnualExam = selectedExam?.exam_name?.includes('Annual');
+      
       const payload = {
         exam_id: selectedExam.id,
         practical_category: practicalType,
-        marks: Object.keys(marksData).map(studentId => ({
-          student_id: parseInt(studentId),
-          theory_marks: parseFloat(marksData[studentId].theory) || 0,
-          practical_marks: parseFloat(marksData[studentId].practical) || 0,
-          marks_obtained: parseFloat(marksData[studentId].total) || 0
-        }))
+        marks: Object.keys(marksData).map(studentId => {
+          const studentMark = marksData[studentId];
+          const dataObj = {
+            student_id: parseInt(studentId),
+            theory_marks: parseFloat(studentMark.theory) || 0,
+            practical_marks: parseFloat(studentMark.practical) || 0,
+            marks_obtained: parseFloat(studentMark.total) || 0
+          };
+          
+          // 🎯 Sirf Annual Exam ke time hi attendance bhejo, baaki me nahi
+          if (isAnnualExam) {
+            dataObj.attendance = parseFloat(studentMark.attendance) || 0;
+          }
+          
+          return dataObj;
+        })
       };
       
       const res = await axios.post(`${BASE_URL}/api/exams/save-marks`, payload);
