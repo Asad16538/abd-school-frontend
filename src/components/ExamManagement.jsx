@@ -55,7 +55,7 @@ const ExamManagement = () => {
 
   // Exam Setup Form
   const [examForm, setExamForm] = useState({
-    exam_type: 'Unit Test - 1', // Default yhi rahega
+    exam_type: 'Unit Test - 1',
     class: '',
     section: 'A',
     subject: '',
@@ -135,7 +135,10 @@ const ExamManagement = () => {
       const marks = {};
       res.data.students.forEach(s => {
         marks[s.id] = { 
-          marks: s.marks_obtained !== null ? s.marks_obtained : '', 
+          theory: s.theory_marks !== undefined ? s.theory_marks : (s.marks_obtained !== null ? s.marks_obtained : ''), 
+          practical: s.practical_marks !== undefined ? s.practical_marks : '',
+          attendance: s.attendance !== undefined ? s.attendance : '',
+          total: s.marks_obtained !== null ? s.marks_obtained : 0,
           grade: s.grade || '' 
         };
       });
@@ -154,18 +157,20 @@ const ExamManagement = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await axios.post(`${BASE_URL}/api/exams/create`, examForm);
+      const payload = {
+        ...examForm,
+        exam_name: examForm.exam_type
+      };
+      const res = await axios.post(`${BASE_URL}/api/exams/create`, payload);
       if (res.data.success) {
         setMessage({ type: 'success', text: '✅ Exam created successfully!' });
         setExamForm({
-          exam_name: '',
-          exam_type: 'Unit Test',
+          exam_type: 'Unit Test - 1',
           class: '',
           section: 'A',
           subject: '',
           max_marks: 100,
           passing_marks: 33,
-          weightage: 0,
           date: new Date().toISOString().split('T')[0]
         });
         fetchExams();
@@ -182,9 +187,12 @@ const ExamManagement = () => {
     try {
       const payload = {
         exam_id: selectedExam.id,
+        practical_category: practicalType,
         marks: Object.keys(marksData).map(studentId => ({
           student_id: parseInt(studentId),
-          marks_obtained: parseFloat(marksData[studentId].marks) || 0
+          theory_marks: parseFloat(marksData[studentId].theory) || 0,
+          practical_marks: parseFloat(marksData[studentId].practical) || 0,
+          marks_obtained: parseFloat(marksData[studentId].total) || 0
         }))
       };
       
@@ -219,7 +227,6 @@ const ExamManagement = () => {
       const student = prev[studentId] || { theory: '', practical: '', attendance: '', total: 0 };
       const updatedStudent = { ...student, [field]: value };
       
-      // Check karo ki exam single field wala hai ya split wala
       const isSingleField = selectedExam?.exam_name?.includes('Unit Test') || selectedExam?.exam_name?.includes('Monthly');
       const theoryVal = parseFloat(updatedStudent.theory) || 0;
       const practicalVal = isSingleField ? 0 : (parseFloat(updatedStudent.practical) || 0);
@@ -264,7 +271,7 @@ const ExamManagement = () => {
         return g.grade;
       }
     }
-    return 'F';
+    return percentage >= 40 ? 'D' : 'F';
   };
 
   // ==============================
@@ -347,7 +354,6 @@ const ExamManagement = () => {
           <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="text-sm font-black text-gray-800 mb-4">📝 Create New Exam</h3>
             <form onSubmit={handleCreateExam} className="space-y-3">
-              {/* 🎯 Exam Type Dropdown (Ab yahi main naam ban jayega) */}
               <div>
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Exam Type / Format</label>
                 <select 
@@ -437,6 +443,7 @@ const ExamManagement = () => {
                 {loading ? 'Creating...' : '📚 Create Exam'}
               </button>
             </form>
+          </div>
 
           <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
             <h3 className="text-sm font-black text-gray-800 mb-4 flex items-center justify-between">
@@ -593,7 +600,7 @@ const ExamManagement = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
             <div>
               <h3 className="text-base font-black text-gray-800">✏️ Dynamic Board Exam Marks Entry Hub</h3>
-              <p className="text-xs text-gray-500">Exam format ke mutabik fields automatic adjust honge (Unit Test = 20 Marks, Quarterly/Half Yearly = Split, Annual = Attendance included).</p>
+              <p className="text-xs text-gray-500">Exam format ke mutabik fields automatic adjust honge (Unit Test/Monthly = 20 Marks, Quarterly/Half Yearly = Split, Annual = Attendance included).</p>
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
@@ -609,7 +616,7 @@ const ExamManagement = () => {
               </select>
 
               {/* 🎯 Practical Type Dropdown (Sirf Quarterly/Half Yearly/Annual ke liye) */}
-              {selectedExam && !selectedExam.exam_name?.includes('Unit Test') && (
+              {selectedExam && !selectedExam.exam_name?.includes('Unit Test') && !selectedExam.exam_name?.includes('Monthly') && (
                 <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
                   <span className="text-[10px] font-black text-amber-800 uppercase">Practical Type:</span>
                   <select 
@@ -644,173 +651,132 @@ const ExamManagement = () => {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-medium">
-                  <thead className="bg-gray-50">
-                    <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-                      <th className="p-3 w-16">Roll No</th>
-                      <th className="p-3">Student Name</th>
-                      
-                      {/* Dynamic Headers based on Exam Type */}
-                      {selectedExam?.exam_name?.includes('Unit Test') ? (
-                        <th className="p-3 text-center">Marks (20 Max)</th>
-                      ) : (
-                        <>
-                          <th className="p-3 text-center">Theory Marks</th>
-                          <th className="p-3 text-center">{practicalType}</th>
-                        </>
-                      )}
-
-                      {/* Annual Exam ke liye Attendance Header */}
-                      {selectedExam?.exam_name?.includes('Annual') && (
-                        <th className="p-3 text-center text-purple-700">Days Attended</th>
-                      )}
-
-                      <th className="p-3 text-center font-black text-purple-700">Total Marks</th>
-                      <th className="p-3 text-center">Percentage</th>
-                      <th className="p-3 text-center">Grade</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {students.map((student) => {
-                      const isSingleFieldExam = selectedExam?.exam_name?.includes('Unit Test') || selectedExam?.exam_name?.includes('Monthly');
-                      const studentMark = marksData[student.id] || { theory: '', practical: '', total: 0 };
-                      const isUnit = selectedExam?.exam_name?.includes('Unit Test');
-                      const maxLimit = isUnit ? 20 : (selectedExam?.max_marks || 100);
-                      const totalM = studentMark.total || 0;
-                      const percentage = maxLimit > 0 ? (totalM / maxLimit) * 100 : 0;
-                      const grade = getGrade(totalM, maxLimit);
-
-                      return (
-                        <tr key={student.id} className="hover:bg-gray-50">
-                          <td className="p-3 font-bold">{student.roll_no || '-'}</td>
-                          <td className="p-3 font-medium">{student.name}</td>
-
-                          {isSingleFieldExam ? (
-  <td className="p-3 text-center">
-    <input 
-      type="number" 
-      min="0"
-      max={selectedExam?.max_marks || 20}
-      value={studentMark.theory}
-      onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
-      className="w-24 p-2 border border-indigo-200 rounded-lg text-center text-xs font-bold bg-indigo-50/30"
-      placeholder="Marks"
-    />
-  </td>
-) : (
-  <>
-    <td className="p-3 text-center">
-      <input 
-        type="number" 
-        value={studentMark.theory}
-        onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
-        className="w-20 p-2 border border-blue-200 rounded-lg text-center text-xs font-bold"
-        placeholder="Theory"
-      />
-    </td>
-    <td className="p-3 text-center">
-      <input 
-        type="number" 
-        value={studentMark.practical}
-        onChange={(e) => handleMarkChange(student.id, 'practical', e.target.value)}
-        className="w-20 p-2 border border-emerald-200 rounded-lg text-center text-xs font-bold"
-        placeholder="Practical"
-      />
-    </td>
-  </>
-)}
+              {(() => {
+                const isSingleFieldExam = selectedExam?.exam_name?.includes('Unit Test') || selectedExam?.exam_name?.includes('Monthly');
+                return (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-medium">
+                      <thead className="bg-gray-50">
+                        <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
+                          <th className="p-3 w-16">Roll No</th>
+                          <th className="p-3">Student Name</th>
                           
-                          {/* Agar Unit Test hai toh sirf 20 marks ki single field */}
-                          {isUnit ? (
-                            <td className="p-3 text-center">
-                              <input 
-                                type="number" 
-                                min="0"
-                                max="20"
-                                value={studentMark.theory}
-                                onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
-                                className="w-24 p-2 border border-indigo-200 rounded-lg text-center text-xs font-bold bg-indigo-50/30"
-                                placeholder="Marks / 20"
-                              />
-                            </td>
+                          {isSingleFieldExam ? (
+                            <th className="p-3 text-center">Marks (Max 20)</th>
                           ) : (
                             <>
-                              {/* Theory Field */}
-                              <td className="p-3 text-center">
-                                <input 
-                                  type="number" 
-                                  min="0"
-                                  max={maxLimit}
-                                  value={studentMark.theory}
-                                  onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
-                                  className="w-20 p-2 border border-blue-200 rounded-lg text-center text-xs font-bold bg-blue-50/30"
-                                  placeholder="Theory"
-                                />
-                              </td>
-
-                              {/* Practical Field */}
-                              <td className="p-3 text-center">
-                                <input 
-                                  type="number" 
-                                  min="0"
-                                  max={maxLimit}
-                                  value={studentMark.practical}
-                                  onChange={(e) => handleMarkChange(student.id, 'practical', e.target.value)}
-                                  className="w-20 p-2 border border-emerald-200 rounded-lg text-center text-xs font-bold bg-emerald-50/30"
-                                  placeholder="Practical"
-                                />
-                              </td>
+                              <th className="p-3 text-center">Theory Marks</th>
+                              <th className="p-3 text-center">{practicalType}</th>
                             </>
                           )}
 
-                          {/* Annual Exam ke liye Days Attended Field */}
                           {selectedExam?.exam_name?.includes('Annual') && (
-                            <td className="p-3 text-center">
-                              <input 
-                                type="number" 
-                                min="0"
-                                value={studentMark.attendance || ''}
-                                onChange={(e) => {
-                                  setMarksData(prev => ({
-                                    ...prev,
-                                    [student.id]: { ...prev[student.id], attendance: e.target.value }
-                                  }));
-                                }}
-                                className="w-20 p-2 border border-purple-200 rounded-lg text-center text-xs font-bold bg-purple-50/30"
-                                placeholder="Days"
-                              />
-                            </td>
+                            <th className="p-3 text-center text-purple-700">Days Attended</th>
                           )}
 
-                          {/* Auto-Calculated Total */}
-                          <td className="p-3 text-center font-black text-purple-700 text-sm">
-                            {isUnit ? (studentMark.theory || 0) : totalM} / {maxLimit}
-                          </td>
-
-                          {/* Percentage */}
-                          <td className="p-3 text-center font-bold text-gray-600">
-                            {percentage.toFixed(1)}%
-                          </td>
-
-                          {/* Grade */}
-                          <td className="p-3 text-center">
-                            <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
-                              grade === 'A+' || grade === 'A' ? 'bg-green-100 text-green-700' :
-                              grade === 'B+' || grade === 'B' ? 'bg-blue-100 text-blue-700' :
-                              grade === 'C' ? 'bg-yellow-100 text-yellow-700' :
-                              grade === 'D' ? 'bg-orange-100 text-orange-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {grade}
-                            </span>
-                          </td>
+                          <th className="p-3 text-center font-black text-purple-700">Total Marks</th>
+                          <th className="p-3 text-center">Percentage</th>
+                          <th className="p-3 text-center">Grade</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {students.map((student) => {
+                          const studentMark = marksData[student.id] || { theory: '', practical: '', total: 0 };
+                          const maxLimit = isSingleFieldExam ? 20 : (selectedExam?.max_marks || 100);
+                          const totalM = studentMark.total || 0;
+                          const percentage = maxLimit > 0 ? (totalM / maxLimit) * 100 : 0;
+                          const grade = getGrade(totalM, maxLimit);
+
+                          return (
+                            <tr key={student.id} className="hover:bg-gray-50">
+                              <td className="p-3 font-bold">{student.roll_no || '-'}</td>
+                              <td className="p-3 font-medium">{student.name}</td>
+
+                              {isSingleFieldExam ? (
+                                <td className="p-3 text-center">
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    max="20"
+                                    value={studentMark.theory}
+                                    onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
+                                    className="w-24 p-2 border border-indigo-200 rounded-lg text-center text-xs font-bold bg-indigo-50/30"
+                                    placeholder="Marks"
+                                  />
+                                </td>
+                              ) : (
+                                <>
+                                  <td className="p-3 text-center">
+                                    <input 
+                                      type="number" 
+                                      min="0"
+                                      max={maxLimit}
+                                      value={studentMark.theory}
+                                      onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
+                                      className="w-20 p-2 border border-blue-200 rounded-lg text-center text-xs font-bold bg-blue-50/30"
+                                      placeholder="Theory"
+                                    />
+                                  </td>
+                                  <td className="p-3 text-center">
+                                    <input 
+                                      type="number" 
+                                      min="0"
+                                      max={maxLimit}
+                                      value={studentMark.practical}
+                                      onChange={(e) => handleMarkChange(student.id, 'practical', e.target.value)}
+                                      className="w-20 p-2 border border-emerald-200 rounded-lg text-center text-xs font-bold bg-emerald-50/30"
+                                      placeholder="Practical"
+                                    />
+                                  </td>
+                                </>
+                              )}
+
+                              {selectedExam?.exam_name?.includes('Annual') && (
+                                <td className="p-3 text-center">
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    value={studentMark.attendance || ''}
+                                    onChange={(e) => {
+                                      setMarksData(prev => ({
+                                        ...prev,
+                                        [student.id]: { ...prev[student.id], attendance: e.target.value }
+                                      }));
+                                    }}
+                                    className="w-20 p-2 border border-purple-200 rounded-lg text-center text-xs font-bold bg-purple-50/30"
+                                    placeholder="Days"
+                                  />
+                                </td>
+                              )}
+
+                              <td className="p-3 text-center font-black text-purple-700 text-sm">
+                                {isSingleFieldExam ? (studentMark.theory || 0) : totalM} / {maxLimit}
+                              </td>
+
+                              <td className="p-3 text-center font-bold text-gray-600">
+                                {percentage.toFixed(1)}%
+                              </td>
+
+                              <td className="p-3 text-center">
+                                <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
+                                  grade === 'A+' || grade === 'A' ? 'bg-green-100 text-green-700' :
+                                  grade === 'B+' || grade === 'B' ? 'bg-blue-100 text-blue-700' :
+                                  grade === 'C' ? 'bg-yellow-100 text-yellow-700' :
+                                  grade === 'D' ? 'bg-orange-100 text-orange-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {grade}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
+
               <div className="mt-4 flex justify-end">
                 <button 
                   onClick={handleSaveMarks}
@@ -866,25 +832,13 @@ const ExamManagement = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs font-medium">
               <thead className="bg-gray-50">
-                    <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-                      <th className="p-3 w-16">Roll No</th>
-                      <th className="p-3">Student Name</th>
-                      
-                      {/* 🎯 Yahan Header ko condition ke mutabik set karo */}
-                      {isSingleFieldExam ? (
-                        <th className="p-3 text-center">Marks (Max 20)</th>
-                      ) : (
-                        <>
-                          <th className="p-3 text-center">Theory Marks</th>
-                          <th className="p-3 text-center">{practicalType}</th>
-                        </>
-                      )}
-
-                      <th className="p-3 text-center font-black text-purple-700">Total Marks</th>
-                      <th className="p-3 text-center">Percentage</th>
-                      <th className="p-3 text-center">Grade</th>
-                    </tr>
-                  </thead>
+                <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
+                  <th className="p-3">Grade</th>
+                  <th className="p-3">Min %</th>
+                  <th className="p-3">Max %</th>
+                  <th className="p-3">Description</th>
+                </tr>
+              </thead>
               <tbody className="divide-y divide-gray-100">
                 {gradeSystem.map((g, i) => (
                   <tr key={i} className="hover:bg-gray-50">
