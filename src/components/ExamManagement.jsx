@@ -184,27 +184,23 @@ const ExamManagement = () => {
 
   const handleSaveMarks = async () => {
     setLoading(true);
+    setSaving(true);
     try {
-      const isAnnualExam = selectedExam?.exam_name?.includes('Annual');
-      
       const payload = {
         exam_id: selectedExam.id,
         practical_category: practicalType,
         marks: Object.keys(marksData).map(studentId => {
           const studentMark = marksData[studentId];
-          const dataObj = {
+          const isSingleField = selectedExam?.exam_name?.includes('Unit Test') || selectedExam?.exam_name?.includes('Monthly');
+          const theoryVal = parseFloat(studentMark.theory) || 0;
+          const practicalVal = isSingleField ? 0 : (parseFloat(studentMark.practical) || 0);
+          
+          return {
             student_id: parseInt(studentId),
-            theory_marks: parseFloat(studentMark.theory) || 0,
-            practical_marks: parseFloat(studentMark.practical) || 0,
-            marks_obtained: parseFloat(studentMark.total) || 0
+            theory_marks: theoryVal,
+            practical_marks: practicalVal,
+            marks_obtained: theoryVal + practicalVal
           };
-          
-          // 🎯 Sirf Annual Exam ke time hi attendance bhejo, baaki me nahi
-          if (isAnnualExam) {
-            dataObj.attendance = parseFloat(studentMark.attendance) || 0;
-          }
-          
-          return dataObj;
         })
       };
       
@@ -213,9 +209,11 @@ const ExamManagement = () => {
         setMessage({ type: 'success', text: '✅ Marks saved successfully!' });
       }
     } catch (err) {
+      console.error("Save Marks Error:", err.response?.data || err.message);
       setMessage({ type: 'error', text: err.response?.data?.error || 'Marks save failed' });
     } finally {
       setLoading(false);
+      setSaving(false);
     }
   };
 
