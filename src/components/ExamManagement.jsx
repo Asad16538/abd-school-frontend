@@ -186,6 +186,8 @@ const ExamManagement = () => {
     setLoading(true);
     setSaving(true);
     try {
+      const isAnnualExam = selectedExam?.exam_name?.includes('Annual');
+
       const payload = {
         exam_id: selectedExam.id,
         practical_category: practicalType,
@@ -195,12 +197,19 @@ const ExamManagement = () => {
           const theoryVal = parseFloat(studentMark.theory) || 0;
           const practicalVal = isSingleField ? 0 : (parseFloat(studentMark.practical) || 0);
           
-          return {
+          const dataObj = {
             student_id: parseInt(studentId),
             theory_marks: theoryVal,
             practical_marks: practicalVal,
             marks_obtained: theoryVal + practicalVal
           };
+
+          // 🎯 Sirf Annual Exam ke time hi attendance bhejo
+          if (isAnnualExam) {
+            dataObj.attendance = parseFloat(studentMark.attendance) || 0;
+          }
+
+          return dataObj;
         })
       };
       
