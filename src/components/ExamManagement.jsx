@@ -299,6 +299,32 @@ const ExamManagement = () => {
     }
   };
 
+  // 📥 Excel Download Function (CSV format)
+  const downloadExcel = () => {
+    if (results.length === 0) {
+      alert("Export karne ke liye koi result nahi hai!");
+      return;
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8,Roll No,Student Name,Marks Obtained,Percentage,Grade\n";
+    results.forEach(r => {
+      csvContent += `${r.roll_no || ''},"${r.name}",${r.obtained_marks},${r.percentage}%,${r.grade}\n`;
+    });
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `exam_result_${selectedResultExam}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // 🖨️ PDF / Print Function
+  const downloadPDF = () => {
+    window.print();
+  };
+
   const getGrade = (totalMarks, maxMarks) => {
     const percentage = maxMarks > 0 ? (totalMarks / maxMarks) * 100 : 0;
     for (let g of gradeSystem) {
@@ -831,19 +857,42 @@ const ExamManagement = () => {
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
             <h3 className="text-sm font-black text-gray-800">📊 Exam Results & Scorecard</h3>
-            <select 
-              value={selectedResultExam}
-              onChange={(e) => {
-                setSelectedResultExam(e.target.value);
-                fetchResultsForExam(e.target.value);
-              }}
-              className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50"
-            >
-              <option value="">-- Select Exam to View Result --</option>
-              {exams.map(e => (
-                <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class} [{e.subject}]</option>
-              ))}
-            </select>
+            
+            <div className="flex flex-wrap items-center gap-2">
+              <select 
+                value={selectedResultExam}
+                onChange={(e) => {
+                  setSelectedResultExam(e.target.value);
+                  fetchResultsForExam(e.target.value);
+                }}
+                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50"
+              >
+                <option value="">-- Select Exam to View Result --</option>
+                {exams.map(e => (
+                  <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class} [{e.subject}]</option>
+                ))}
+              </select>
+
+              {/* 📥 Excel & PDF Download Buttons */}
+              {results.length > 0 && (
+                <>
+                  <button 
+                    onClick={downloadExcel}
+                    className="px-3 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-1 cursor-pointer"
+                    title="Download Excel"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" /> Excel
+                  </button>
+                  <button 
+                    onClick={downloadPDF}
+                    className="px-3 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-700 transition flex items-center gap-1 cursor-pointer"
+                    title="Print / Save PDF"
+                  >
+                    <Printer className="w-4 h-4" /> PDF/Print
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
           {results.length === 0 ? (
