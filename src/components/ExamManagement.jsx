@@ -17,6 +17,8 @@ const ExamManagement = () => {
   const [activeTab, setActiveTab] = useState('setup');
   const [board, setBoard] = useState('CBSE');
   const [exams, setExams] = useState([]);
+  const [results, setResults] = useState([]);
+  const [selectedResultExam, setSelectedResultExam] = useState('');
   const [students, setStudents] = useState([]);
   const [selectedExam, setSelectedExam] = useState(null);
   const [marksData, setMarksData] = useState({});
@@ -145,6 +147,20 @@ const ExamManagement = () => {
       setMarksData(marks);
     } catch (err) {
       setMessage({ type: 'error', text: 'Students fetch error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchResultsForExam = async (examId) => {
+    if (!examId) return;
+    setLoading(true);
+    try {
+      const res = await axios.get(`${BASE_URL}/api/exams/results-list/${examId}`);
+      setResults(res.data.results || []);
+    } catch (err) {
+      console.log("Results fetch error");
+      setResults([]);
     } finally {
       setLoading(false);
     }
@@ -813,12 +829,59 @@ const ExamManagement = () => {
       {/* TAB 4: RESULTS */}
       {activeTab === 'results' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-black text-gray-800 mb-4">📊 Exam Results</h3>
-          <div className="text-center py-12 text-gray-400">
-            <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p className="font-bold">Results will appear here after generation</p>
-            <p className="text-xs">Click "Generate Result" from exam list</p>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
+            <h3 className="text-sm font-black text-gray-800">📊 Exam Results & Scorecard</h3>
+            <select 
+              value={selectedResultExam}
+              onChange={(e) => {
+                setSelectedResultExam(e.target.value);
+                fetchResultsForExam(e.target.value);
+              }}
+              className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50"
+            >
+              <option value="">-- Select Exam to View Result --</option>
+              {exams.map(e => (
+                <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class} [{e.subject}]</option>
+              ))}
+            </select>
           </div>
+
+          {results.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p className="font-bold">No results found or result not generated yet</p>
+              <p className="text-xs">First click "Generate Result" (📊) from the Setup Exam list</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs font-medium">
+                <thead className="bg-gray-50">
+                  <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
+                    <th className="p-3">Roll No</th>
+                    <th className="p-3">Student Name</th>
+                    <th className="p-3 text-center">Marks Obtained</th>
+                    <th className="p-3 text-center">Percentage</th>
+                    <th className="p-3 text-center">Grade</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {results.map((res, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="p-3 font-bold">{res.roll_no || '-'}</td>
+                      <td className="p-3 font-medium">{res.name}</td>
+                      <td className="p-3 text-center font-bold text-indigo-600">{res.obtained_marks}</td>
+                      <td className="p-3 text-center font-bold">{res.percentage}%</td>
+                      <td className="p-3 text-center">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-green-100 text-green-700">
+                          {res.grade}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
 
