@@ -33,19 +33,22 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
   // FETCH FUNCTIONS
   // ==============================
   useEffect(() => {
-    fetchAssignedExams();
-  }, []);
+    if (staffData?.id) {
+      fetchAssignedExamsAndSubjects();
+    }
+  }, [staffData]);
 
-  const fetchAssignedExams = async () => {
+  const fetchAssignedExamsAndSubjects = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/staff/exams/${staffData.id}`);
       setExams(res.data.exams || []);
       
-      const uniqueClasses = [...new Set((res.data.exams || []).map(e => e.class))];
-      setClasses(uniqueClasses);
+      // 🎯 Yeh naya API call add karo jo teacher ke assigned subjects layega
+      const subRes = await axios.get(`${BASE_URL}/api/staff/assigned-subjects/${staffData.id}`);
+      setSubjects(subRes.data.assignments || []); // Yahan subjects state me assigned subjects set ho jayenge
     } catch (err) {
       console.log("Exam fetch error", err);
-      setMessage({ type: 'error', text: 'Failed to fetch exams' });
+      setMessage({ type: 'error', text: 'Failed to fetch assigned exams' });
     }
   };
 
@@ -56,10 +59,13 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     setMessage({ type: '', text: '' });
     
     try {
-      // Fetch students for this class
-      const studentsRes = await axios.get(`${BASE_URL}/api/students/class/${className}`);
-      const studentsList = studentsRes.data.students || [];
-      setStudents(studentsList);
+      // 🎯 Sirf wahi subjects filter karo jo is teacher ko assigned hain
+      const subRes = await axios.get(`${BASE_URL}/api/staff/assigned-subjects/${staffData.id}`);
+      const assignedList = subRes.data.assignments || [];
+      
+      // Class ke mutabik filter karo
+      const subjectsList = assignedList.filter(sub => sub.class_name === className);
+      setSubjects(subjectsList);
       
       // Fetch subjects for this class
       const subjectsRes = await axios.get(`${BASE_URL}/api/subjects/class/${className}`);
