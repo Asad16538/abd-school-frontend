@@ -59,17 +59,17 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     setMessage({ type: '', text: '' });
     
     try {
+      // Fetch students for this class
+      const studentsRes = await axios.get(`${BASE_URL}/api/students/class/${className}`);
+      const studentsList = studentsRes.data.students || [];
+      setStudents(studentsList);
+      
       // 🎯 Sirf wahi subjects filter karo jo is teacher ko assigned hain
       const subRes = await axios.get(`${BASE_URL}/api/staff/assigned-subjects/${staffData.id}`);
       const assignedList = subRes.data.assignments || [];
       
       // Class ke mutabik filter karo
       const subjectsList = assignedList.filter(sub => sub.class_name === className);
-      setSubjects(subjectsList);
-      
-      // Fetch subjects for this class
-      const subjectsRes = await axios.get(`${BASE_URL}/api/subjects/class/${className}`);
-      const subjectsList = subjectsRes.data.subjects || [];
       setSubjects(subjectsList);
       
       // Fetch existing marks for this exam
