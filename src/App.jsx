@@ -11,8 +11,6 @@ import axios from 'axios';
 import AttendanceForm from './components/AttendanceForm';
 import StaffSecureTerminal from './components/StaffSecureTerminal';
 import StaffAttendanceTerminal from './components/StaffAttendanceTerminal';
-import ParentApp from './ParentApp';
-import StaffApp from './StaffApp';
 import ExamManagement from './components/ExamManagement';
 
 // ✅ CACHE FUNCTIONS
@@ -149,7 +147,7 @@ const loadDashboardData = async (forceRefresh = false) => {
   }
 };
 
-// 🛡️ SECURE LOGIN HANDLER (ROLE-BASED ENDPOINT ROUTING)
+// 🛡️ SECURE LOGIN HANDLER (UNIFIED ROLE-BASED ERP ROUTING)
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
@@ -181,18 +179,10 @@ const loadDashboardData = async (forceRefresh = false) => {
       if (response && response.data && response.data.success) {
         localStorage.setItem('token', response.data.token);
         
-        // Agar Teacher ya Parent login hua hai, toh unhe unke panel par redirect kar do
-        if (loginRole === 'Teacher') {
-          window.location.href = '/staff';
-          return;
-        } else if (loginRole === 'Parent') {
-          window.location.href = '/parent';
-          return;
-        }
-
-        // Agar Admin hai toh dashboard khol do
-        localStorage.setItem('role', response.data.role || loginRole);
-        setRole(response.data.role || loginRole);
+        // 🎯 Redirection hata kar seedha unified ERP state set kar di gayi hai
+        const activeRole = response.data.role || loginRole;
+        localStorage.setItem('role', activeRole);
+        setRole(activeRole);
         setIsLoggedIn(true);
         await fetchSettings();
       } else {
@@ -443,16 +433,6 @@ const handleSignatureChange = async (e) => {
     return <StaffTelegramLink />;
   }
 
-  // PARENT APP ROUTE
-  if (window.location.pathname === '/parent' || window.location.pathname.startsWith('/parent/')) {
-    return <ParentApp />;
-  }
-
-  // STAFF APP ROUTE
-  if (window.location.pathname === '/staff' || window.location.pathname.startsWith('/staff/')) {
-    return <StaffApp />;
-  }
-
   // TELEGRAM LINKING ROUTE
   if (window.location.pathname === '/link-telegram') {
     return (
@@ -648,80 +628,102 @@ const handleSignatureChange = async (e) => {
             </div>
 
             <nav className="flex-grow p-4 space-y-1.5">
-              {/* 1st Position: Overview Panel */}
-              <button
-  onClick={() => {
-    setActiveTab('overview');
-    loadDashboardData(true); // 👈 Yeh true pass karne se data direct backend se fresh aayega
-  }}
-  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'overview' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
->
-  <LayoutDashboard className="w-4 h-4 text-amber-300" />
-  <span>Overview Panel</span>
-</button>
+              {/* 1st Position: Overview Panel - Admin aur Teacher ke liye */}
+              {role !== 'Parent' && (
+                <button
+                  onClick={() => {
+                    setActiveTab('overview');
+                    loadDashboardData(true);
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'overview' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
+                >
+                  <LayoutDashboard className="w-4 h-4 text-amber-300" />
+                  <span>Overview Panel</span>
+                </button>
+              )}
 
-              {/* 2nd Position: Student Register */}
-              <button onClick={() => setActiveTab('registration')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'registration' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                <Users className={`w-4 h-4 ${activeTab === 'registration' ? 'text-amber-300' : 'text-slate-400'}`} />
-                <span>Student Register</span>
-              </button>
+              {/* 2nd Position: Student Register - Sirf Admin ke liye */}
+              {role === 'Admin' && (
+                <button onClick={() => setActiveTab('registration')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'registration' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <Users className={`w-4 h-4 ${activeTab === 'registration' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>Student Register</span>
+                </button>
+              )}
 
-              {/* 3rd Position: Search & Pay Fees */}
-              <button onClick={() => setActiveTab('search_pay')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'search_pay' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                <Search className={`w-4 h-4 ${activeTab === 'search_pay' ? 'text-amber-300' : 'text-slate-400'}`} />
-                <span>🔍 Search & Pay Fees</span>
-              </button>
+              {/* 3rd Position: Search & Pay Fees - Sirf Admin ke liye */}
+              {role === 'Admin' && (
+                <button onClick={() => setActiveTab('search_pay')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'search_pay' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <Search className={`w-4 h-4 ${activeTab === 'search_pay' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>🔍 Search & Pay Fees</span>
+                </button>
+              )}
 
-              {/* 🎯 4th Position: Class & ID Card Management */}
-              <button onClick={() => setActiveTab('class_management')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'class_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                <IdCard className={`w-4 h-4 ${activeTab === 'class_management' ? 'text-amber-300' : 'text-slate-400'}`} />
-                <span>🏫 Class Management</span>
-              </button>
+              {/* 4th Position: Class & ID Card Management - Sirf Admin ke liye */}
+              {role === 'Admin' && (
+                <button onClick={() => setActiveTab('class_management')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'class_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <IdCard className={`w-4 h-4 ${activeTab === 'class_management' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>🏫 Class Management</span>
+                </button>
+              )}
 
-              {/* 5th Position: Student Attendance */}
-              <button onClick={() => setActiveTab('student_attendance')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'student_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                <CheckCircle2 className={`w-4 h-4 ${activeTab === 'student_attendance' ? 'text-amber-300' : 'text-slate-400'}`} />
-                <span>📋 Student Attendance</span>
-              </button>
+              {/* 5th Position: Student Attendance - Admin aur Teacher ke liye */}
+              {(role === 'Admin' || role === 'Teacher') && (
+                <button onClick={() => setActiveTab('student_attendance')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'student_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <CheckCircle2 className={`w-4 h-4 ${activeTab === 'student_attendance' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>📋 Student Attendance</span>
+                </button>
+              )}
 
-              {/* 6th Position: Exam Management */}
-              <button onClick={() => setActiveTab('exam_management')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'exam_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                <FileText className={`w-4 h-4 ${activeTab === 'exam_management' ? 'text-amber-300' : 'text-slate-400'}`} />
-                <span>📝 Exam Management</span>
-              </button>
+              {/* 6th Position: Exam Management - Admin aur Teacher ke liye */}
+              {(role === 'Admin' || role === 'Teacher') && (
+                <button onClick={() => setActiveTab('exam_management')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'exam_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <FileText className={`w-4 h-4 ${activeTab === 'exam_management' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>📝 Exam Management</span>
+                </button>
+              )}
 
-              {/* 7th Position: Staff & Geo-Payroll */}
-              <button onClick={() => setActiveTab('payroll_attendance')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'payroll_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                <Users className={`w-4 h-4 ${activeTab === 'payroll_attendance' ? 'text-amber-300' : 'text-slate-400'}`} />
-                <span>📅 Staff & Geo-Payroll</span>
-              </button>
+              {/* 7th Position: Staff & Geo-Payroll - Sirf Admin ke liye */}
+              {role === 'Admin' && (
+                <button onClick={() => setActiveTab('payroll_attendance')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'payroll_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <Users className={`w-4 h-4 ${activeTab === 'payroll_attendance' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>📅 Staff & Geo-Payroll</span>
+                </button>
+              )}
 
-              {/* 8th Position: Fee Report Center */}
-              <button onClick={() => setActiveTab('fee_report_center')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'fee_report_center' ? 'text-white bg-emerald-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                <Coins className={`w-4 h-4 ${activeTab === 'fee_report_center' ? 'text-amber-300' : 'text-slate-400'}`} />
-                <span>🚀 Fee Report Center</span>
-              </button>
+              {/* 8th Position: Fee Report Center - Sirf Admin ke liye */}
+              {role === 'Admin' && (
+                <button onClick={() => setActiveTab('fee_report_center')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'fee_report_center' ? 'text-white bg-emerald-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <Coins className={`w-4 h-4 ${activeTab === 'fee_report_center' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>🚀 Fee Report Center</span>
+                </button>
+              )}
 
-              {/* 9th Position: Income & Expenses */}
-              <button onClick={() => setActiveTab('expense_tracker')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'expense_tracker' ? 'text-white bg-rose-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                <Coins className={`w-4 h-4 ${activeTab === 'expense_tracker' ? 'text-amber-300' : 'text-slate-400'}`} />
-                <span>📊 Income & Expenses</span>
-              </button>
+              {/* 9th Position: Income & Expenses - Sirf Admin ke liye */}
+              {role === 'Admin' && (
+                <button onClick={() => setActiveTab('expense_tracker')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'expense_tracker' ? 'text-white bg-rose-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <Coins className={`w-4 h-4 ${activeTab === 'expense_tracker' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>📊 Income & Expenses</span>
+                </button>
+              )}
 
-              {/* 🛡️ Role Management Hub Button */}
-<button 
-  onClick={() => setActiveTab('role_management')} 
-  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'role_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
->
-  <Users className="w-4 h-4 text-amber-300" />
-  <span>🛡️ Role Management Hub</span>
-</button>
+              {/* 🛡️ Role Management Hub Button - Sirf Admin ke liye */}
+              {role === 'Admin' && (
+                <button 
+                  onClick={() => setActiveTab('role_management')} 
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'role_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
+                >
+                  <Users className="w-4 h-4 text-amber-300" />
+                  <span>🛡️ Role Management Hub</span>
+                </button>
+              )}
 
-              {/* 10th Position: Settings */}
-              <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'settings' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                <Settings className={`w-4 h-4 ${activeTab === 'settings' ? 'text-amber-300' : 'text-slate-400'}`} />
-                <span>Settings</span>
-              </button>
+              {/* 10th Position: Settings - Sirf Admin ke liye */}
+              {role === 'Admin' && (
+                <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'settings' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <Settings className={`w-4 h-4 ${activeTab === 'settings' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>Settings</span>
+                </button>
+              )}
             </nav>
 
             <div className="p-4 border-t border-slate-800 bg-slate-950/40">
