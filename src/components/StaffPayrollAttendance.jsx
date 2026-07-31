@@ -7,6 +7,9 @@ import * as XLSX from 'xlsx';
 const BASE_URL = 'https://erp-api.aapschool.in';
 const StaffPayrollAttendance = () => {
   // Edit modal states
+  const [showTelegramModal, setShowTelegramModal] = useState(false);
+  const [selectedStaffMobile, setSelectedStaffMobile] = useState('');
+  const [telegramIdInput, setTelegramIdInput] = useState('');
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
   const [editFormData, setEditFormData] = useState({
@@ -499,6 +502,37 @@ useEffect(() => {
     }
 };
 
+const handleOpenTelegramModal = (mobile) => {
+    setSelectedStaffMobile(mobile);
+    setTelegramIdInput('');
+    setShowTelegramModal(true);
+  };
+
+  const handleSaveTelegramLink = async () => {
+    if (!telegramIdInput.trim()) {
+      alert("Kripya valid Telegram ID daalein!");
+      return;
+    }
+    
+    try {
+      const response = await fetch('https://erp-api.aapschool.in/api/staff/link-telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mobile: selectedStaffMobile, telegram_id: telegramIdInput.trim() })
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        alert("✅ " + data.message);
+        setShowTelegramModal(false);
+      } else {
+        alert("❌ " + data.error);
+      }
+    } catch (err) {
+      alert("❌ Server connection failed!");
+    }
+  };
+
   // 🎯 STAFF REMOVAL PROCESS ENGINE (SOFT DELETE CALL)
   const handleDeleteStaff = async (staffId, staffName) => {
     const confirmDelete = window.confirm(`⚠️ Kya aap sach me Mr. ${staffName} ko roster se hatana chahte hain?`);
@@ -846,45 +880,23 @@ const handleEditSubmit = async (e) => {
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '95px' }}>
-                      <button onClick={() => handleOpenAdvanceModal(s)} style={{ ...rowActionBtnStyle, backgroundColor: '#fff3e0', color: '#e65100', borderColor: '#ffe0b2' }}><DollarSign size={11}/> + Advance</button>
-                      <button onClick={() => fetchIndividualPaySlip(s?.id)} style={{ ...rowActionBtnStyle, backgroundColor: '#4f46e5', color: '#fff', borderColor: '#4f46e5' }}><FileText size={11}/> Pay Slip</button>
-                      
-                      {/* ✅ YAHAN LINK TELEGRAM BUTTON - ANDAR SHIFT KARO */}
-                      <button 
-    onClick={async () => {
-        const mobile = s.mobile || '';
-        const telegramId = prompt("📱 Apna Telegram ID daalein (jo aapne Telegram app mein 'Settings' ke andar hai):");
-        
-        if (!telegramId) return;
-        
-        try {
-            const response = await fetch('https://erp-api.aapschool.in/api/staff/link-telegram', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ mobile: mobile, telegram_id: telegramId })
-            });
-            const data = await response.json();
-            
-            if (data.success) {
-                alert("✅ " + data.message);
-            } else {
-                alert("❌ " + data.error);
-            }
-        } catch (err) {
-            alert("❌ Server connection failed!");
-        }
-    }}
-    style={{ 
-        ...rowActionBtnStyle, 
-        backgroundColor: '#25D366', 
-        color: 'white', 
-        borderColor: '#25D366',
-        fontSize: '10px',
-        padding: '4px 8px'
-    }}
->
-    📱 Link Telegram
-</button>
+    <button onClick={() => handleOpenAdvanceModal(s)} style={{ ...rowActionBtnStyle, backgroundColor: '#fff3e0', color: '#e65100', borderColor: '#ffe0b2' }}><DollarSign size={11}/> + Advance</button>
+    <button onClick={() => fetchIndividualPaySlip(s?.id)} style={{ ...rowActionBtnStyle, backgroundColor: '#4f46e5', color: '#fff', borderColor: '#4f46e5' }}><FileText size={11}/> Pay Slip</button>
+    
+    {/* 🎯 NAYA CLEAN CUSTOM MODAL LINK TELEGRAM BUTTON */}
+    <button 
+        onClick={() => handleOpenTelegramModal(s.mobile)}
+        style={{ 
+            ...rowActionBtnStyle, 
+            backgroundColor: '#25D366', 
+            color: 'white', 
+            borderColor: '#25D366',
+            fontSize: '10px',
+            padding: '4px 8px'
+        }}
+    >
+        📱 Link Telegram
+    </button>
 
                       {/* ✅ EDIT BUTTON - YAHAN ADD KARO */}
     <button 
@@ -1370,6 +1382,41 @@ const handleEditSubmit = async (e) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🎯 CUSTOM TELEGRAM LINK MODAL */}
+      {showTelegramModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 2000 }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '400px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>📱 Link Staff Telegram ID</h3>
+            <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#64748b' }}>
+              Apni Telegram ID enter karein (Aap ise Telegram par <b>@userinfobot</b> se nikal sakte hain):
+            </p>
+            
+            <input 
+              type="text" 
+              placeholder="e.g. 1989970458"
+              value={telegramIdInput}
+              onChange={(e) => setTelegramIdInput(e.target.value)}
+              style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '14px', fontWeight: 'bold', boxSizing: 'border-box', marginBottom: '16px' }}
+            />
+            
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button 
+                onClick={() => setShowTelegramModal(false)}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', color: '#334155' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveTelegramLink}
+                style={{ flex: 1, padding: '10px', backgroundColor: '#25D366', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
+              >
+                Link Account ⚡
+              </button>
+            </div>
           </div>
         </div>
       )}
