@@ -453,6 +453,11 @@ useEffect(() => {
     }
   };
 
+  // Purane ya type kiye hue extra prefixes ko clean karne ka helper
+  const cleanStaffName = (name) => {
+    return name.replace(/^(Mr\.|Mrs\.|Miss|Dr\.|Prof\.)\s*/gi, '').trim();
+  };
+
   const handleAddStaff = async (e) => {
     e.preventDefault();
     
@@ -465,8 +470,9 @@ useEffect(() => {
       return;
     }
     
-    // 🎯 Prefix aur Name ko combine karke full name banayein (e.g., "Mrs. Somya Yadav")
-    const fullStaffName = `${staffPrefix} ${staffName.trim()}`;
+    // 🎯 Pehle naam ko clean karo taaki double prefix (jaise Mr. Miss) na bane
+    const rawName = cleanStaffName(staffName);
+    const fullStaffName = `${staffPrefix} ${rawName}`;
     
     const payload = { 
       name: fullStaffName, 
