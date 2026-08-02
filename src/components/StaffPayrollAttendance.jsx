@@ -872,7 +872,7 @@ const handleEditSubmit = async (e) => {
     </div>
     
     <div>
-      <label style={labelStyle}>📱 WhatsApp Mobile Connection</label>
+      <label style={labelStyle}>📱 Telegram Mobile Connection</label>
       <input type="text" placeholder="e.g. 98932XXXXX" value={mobile || ''} onChange={(e) => setMobile(e.target.value)} style={{ ...inpStyle, color: '#16a34a' }} required />
     </div>
     
