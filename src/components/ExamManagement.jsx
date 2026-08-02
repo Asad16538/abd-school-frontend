@@ -942,6 +942,8 @@ const ExamManagement = () => {
               </table>
             </div>
           )}
+        </div>
+      )}
 
       {/* TAB 5: REPORT CARDS */}
       {activeTab === 'reports' && (
@@ -964,7 +966,7 @@ const ExamManagement = () => {
           </div>
         </div>
       )}
-
+      
       {/* TAB 6: GRADE SYSTEM */}
       {activeTab === 'grades' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
