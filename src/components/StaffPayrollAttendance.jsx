@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, Settings, QrCode, Download, Users, AlertTriangle, MapPin, Clock, Calendar, FileText, CheckCircle2, DollarSign, History } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import axios from 'axios';
 
 // 🎯 FIX: Ise component function ke strictly BAHAR aur UPAR rakhein taaki ReferenceError khatam ho!
 const BASE_URL = 'https://erp-api.aapschool.in';
