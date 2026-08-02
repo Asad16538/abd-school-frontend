@@ -857,7 +857,7 @@ const handleEditSubmit = async (e) => {
         
         <input 
           type="text" 
-          placeholder="e.g. Somya Yadav" 
+          placeholder="e.g. Alexa" 
           value={staffName || ''} 
           onChange={(e) => setStaffName(e.target.value)} 
           style={{ ...inpStyle, marginTop: '0', flex: 1 }} 
