@@ -33,7 +33,7 @@ const ExamManagement = () => {
   const [streamFilter, setStreamFilter] = useState('');
   const [showAddSubject, setShowAddSubject] = useState(false);
 
-  const classesList = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+  const classesList = ['Nursery', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
   const sectionsList = ['A', 'B', 'C'];
   const examTypes = ['Unit Test - 1', 'Quarterly Examination', 'Unit Test - 2', 'Half Yearly Examination', 'Unit Test - 3', 'Annual Examination'];
   const subjectsList = [
