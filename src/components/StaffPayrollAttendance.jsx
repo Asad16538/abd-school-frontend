@@ -852,7 +852,7 @@ const handleEditSubmit = async (e) => {
         >
           <option value="Mr.">Mr.</option>
           <option value="Mrs.">Mrs.</option>
-          <option value="Miss">Miss</option>
+          <option value="Miss">Miss.</option>
           <option value="Dr.">Dr.</option>
           <option value="Prof.">Prof.</option>
         </select>
@@ -901,7 +901,7 @@ const handleEditSubmit = async (e) => {
                 staffList.map((s) => (
                   <div key={s?.id || Math.random()} style={{ padding: '14px', border: '1px solid #e2e8f0', borderRadius: '10px', backgroundColor: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
                     <div style={{ flex: 1, marginRight: '10px' }}>
-                      <strong style={{ color: '#0f172a', fontSize: '14px' }}>Mr. {s?.name || 'Unknown'}</strong>
+                      <strong style={{ color: '#0f172a', fontSize: '14px' }}>{s?.name || 'Unknown'}</strong>
                       <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{s?.designation || 'N/A'} | Mob: {s?.mobile || 'N/A'}</div>
                       
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
