@@ -70,35 +70,36 @@ const SearchPayFees = () => {
   };
 
   // NEW: Fetch Fee History for a student
-const fetchFeeHistory = async (studentId) => {
-  setLoadingHistory(true);
-  try {
-    console.log("📡 Fetching history for student ID:", studentId);
-    const res = await fetch(`https://erp-api.aapschool.in/api/fee-history/${studentId}`);
-    
-    if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+  const fetchFeeHistory = async (studentId) => {
+    setLoadingHistory(true);
+    try {
+      console.log("📡 Fetching history for student ID:", studentId);
+      const res = await fetch(`https://erp-api.aapschool.in/api/fee-history/${studentId}`);
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log("📊 History response:", data);
+      
+      if (data.success && data.history) {
+        setFeeHistory(data.history);
+        setShowHistoryModal(true);
+      } else {
+        setFeeHistory([]);
+        setShowHistoryModal(true);
+        console.warn("No history found or invalid response format");
+      }
+    } catch (err) {
+      console.error("Error fetching fee history:", err);
+      // 🎯 Replaced alert with banner
+      setSuccessBanner("⚠️ Fee history fetch karne me error aaya: " + err.message);
+      setTimeout(() => setSuccessBanner(''), 4000);
+    } finally {
+      setLoadingHistory(false);
     }
-    
-    const data = await res.json();
-    console.log("📊 History response:", data);
-    
-    if (data.success && data.history) {
-      setFeeHistory(data.history);
-      setShowHistoryModal(true);
-    } else {
-      // Agar history empty hai toh bhi modal show karo with empty array
-      setFeeHistory([]);
-      setShowHistoryModal(true);
-      console.warn("No history found or invalid response format");
-    }
-  } catch (err) {
-    console.error("Error fetching fee history:", err);
-    alert("Fee history fetch karne me error aaya: " + err.message);
-  } finally {
-    setLoadingHistory(false);
-  }
-};
+  };
 
   // NEW: Print/Download Fee History
   const printFeeHistory = () => {
@@ -207,14 +208,15 @@ const fetchFeeHistory = async (studentId) => {
   }, [students]);
 
   const handleDeleteProfile = async (id) => {
-    if (!window.confirm("🚨 WARNING: Kya aap sach me is student profile ko hamesha ke liye delete karna chahte hain?")) return;
     try {
       await fetch(`https://erp-api.aapschool.in/api/students/delete/${id}`, { method: 'DELETE' });
       setSelectedStudent(null);
       fetchStudentsList();
-      alert("❌ Student Profile Deleted!");
+      setSuccessBanner("❌ Student Profile Deleted!");
+      setTimeout(() => setSuccessBanner(''), 3000);
     } catch (err) {
-      alert("Error deleting student profile.");
+      setSuccessBanner("❌ Error deleting student profile.");
+      setTimeout(() => setSuccessBanner(''), 4000);
     }
   };
 
@@ -235,13 +237,16 @@ const fetchFeeHistory = async (studentId) => {
         
         setTimeout(() => {
           setSuccessBanner('');
-          // 🔥 FIX: No more page reload - just clear banner
         }, 1500);
       } else {
-        alert(data.error || 'Update process me error hai');
+        // 🎯 Replaced alert with banner
+        setSuccessBanner(data.error || 'Update process me error hai');
+        setTimeout(() => setSuccessBanner(''), 4000);
       }
     } catch (err) {
-      alert("Error updating profile matrix system.");
+      // 🎯 Replaced alert with banner
+      setSuccessBanner("❌ Error updating profile matrix system.");
+      setTimeout(() => setSuccessBanner(''), 4000);
     }
   };
 
@@ -323,7 +328,9 @@ const fetchFeeHistory = async (studentId) => {
         fetchStudentsList();
       }
     } catch (err) {
-      alert("Network Error while processing payment.");
+      // 🎯 Replaced alert with banner
+      setSuccessBanner("❌ Network Error while processing payment.");
+      setTimeout(() => setSuccessBanner(''), 4000);
     }
   };
 
@@ -544,13 +551,7 @@ const fetchFeeHistory = async (studentId) => {
   {/* 🔥 FIXED BACK BUTTON - Sirf Dashboard/ChatList pe jayega */}
   <button 
     onClick={() => {
-      // Dashboard route pe bhejo (aapke routes ke according change karna)
-      // Agar aapka dashboard "/dashboard" hai toh:
       window.location.href = '/dashboard';
-      
-      // Agar aapka main page "/" ya "/chatlist" hai toh:
-      // window.location.href = '/';
-      // window.location.href = '/chatlist';
     }}
     style={{ 
       padding: '12px 20px', 
@@ -787,29 +788,24 @@ const fetchFeeHistory = async (studentId) => {
                     </form>
 
                     {successBanner && !isEditing && (
-  <div style={{ marginTop: '20px', textAlign: 'center', padding: '14px', border: '1px dashed #10b981', backgroundColor: '#f0fdf4', borderRadius: '8px' }}>
-    <p style={{ color: '#16a34a', fontWeight: 'bold', margin: '0 0 10px 0', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-      <CheckCircle size={16}/> {successBanner}
-    </p>
-    
-    {/* 🔥 FIXED PRINT BUTTON - Refresh hoga but same page pe rahega */}
-    <button 
-      onClick={() => {
-        // Print command
-        window.print();
-        
-        // 2 seconds baad page refresh hoga (print window close hone ke baad)
-        setTimeout(() => {
-          // Sirf refresh karo, kisi dusre page pe nahi bhejna
-          window.location.reload();
-        }, 2000);
-      }} 
-      style={{ padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
-    >
-      <FileText size={16}/> 🖨️ Print Double Invoice Slip
-    </button>
-  </div>
-)}
+                      <div style={{ marginTop: '20px', textAlign: 'center', padding: '14px', border: '1px dashed #10b981', backgroundColor: '#f0fdf4', borderRadius: '8px' }}>
+                        <p style={{ color: '#16a34a', fontWeight: 'bold', margin: '0 0 10px 0', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          <CheckCircle size={16}/> {successBanner}
+                        </p>
+                        
+                        <button 
+                          onClick={() => {
+                            window.print();
+                            setTimeout(() => {
+                              window.location.reload();
+                            }, 2000);
+                          }} 
+                          style={{ padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                        >
+                          <FileText size={16}/> 🖨️ Print Double Invoice Slip
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -822,7 +818,6 @@ const fetchFeeHistory = async (studentId) => {
         </div>
       </div>
 
-      {/* 🧾 HARD COPY DUAL COUNTERFOIL LAYOUT */}
       {printData && (
         <div className="print-receipt-sheet" style={{ display: 'block' }}>
           {[1, 2].map((copyId) => {
