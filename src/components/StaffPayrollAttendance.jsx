@@ -419,16 +419,16 @@ useEffect(() => {
     console.log("Advance submit response:", result);
     
     if (res.ok) {
-      alert("✅ Advance Payment logged successfully!");
+      setUiMessage("✅ Advance Payment logged successfully!");
       setAdvanceAmount('');
       setAdvanceReason('');
       await handleFetchAdvanceHistory(advanceModalStaff.id);
     } else {
-      alert("Failed: " + (result.error || "Unknown error"));
+      setUiMessage("Failed: " + (result.error || "Unknown error"));
     }
   } catch (err) {
     console.error("Submit advance error:", err);
-    alert("Error saving advance. Check backend logs.");
+    setUiMessage("Error saving advance. Check backend logs.");
   }
 };
 
@@ -448,7 +448,7 @@ useEffect(() => {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Download error:', error);
-      alert('Failed to download history');
+      setUiMessage('Failed to download history');
     }
   };
 
@@ -457,11 +457,11 @@ useEffect(() => {
     
     // ✅ VALIDATION - Pehle check karo
     if (!staffName || !staffName.trim()) {
-        alert("❌ Staff Name zaroori hai!");
+        setUiMessage("❌ Staff Name zaroori hai!");
         return;
     }
     if (!mobile || !mobile.trim()) {
-        alert("❌ Mobile Number zaroori hai!");
+        setUiMessage("❌ Mobile Number zaroori hai!");
         return;
     }
     
@@ -495,11 +495,11 @@ useEffect(() => {
             fetchStaff();
             setTimeout(() => setUiMessage(''), 3000);
         } else {
-            alert("❌ Error: " + (data.error || "Unknown error"));
+            setUiMessage("❌ Error: " + (data.error || "Unknown error"));
         }
     } catch (err) {
         console.error("❌ Network Error:", err);
-        alert("❌ Server connection failed!");
+        setUiMessage("❌ Server connection failed!");
     }
 };
 
@@ -511,7 +511,7 @@ const handleOpenTelegramModal = (mobile) => {
 
   const handleSaveTelegramLink = async () => {
     if (!telegramIdInput.trim()) {
-      alert("Kripya valid Telegram ID daalein!");
+      setUiMessage("Kripya valid Telegram ID daalein!");
       return;
     }
     
@@ -524,13 +524,13 @@ const handleOpenTelegramModal = (mobile) => {
       const data = await response.json();
       
       if (data.success) {
-        alert("✅ " + data.message);
+        setUiMessage("✅ " + data.message);
         setShowTelegramModal(false);
       } else {
-        alert("❌ " + data.error);
+        setUiMessage("❌ " + data.error);
       }
     } catch (err) {
-      alert("❌ Server connection failed!");
+      setUiMessage("❌ Server connection failed!");
     }
   };
 
@@ -550,18 +550,18 @@ const handleOpenTelegramModal = (mobile) => {
         fetchStaff(); // Fresh list load karega jisse wo turant screen se gayab ho jayein
         setTimeout(() => setUiMessage(''), 3000);
       } else {
-        alert("Error removing staff profile.");
+        setUiMessage("Error removing staff profile.");
       }
     } catch (err) {
       console.error("Failed connecting to deactivation pipeline:", err);
-      alert("Backend server connection failed.");
+      setUiMessage("Backend server connection failed.");
     }
   };
 
     // 📋 MANUAL ATTENDANCE FUNCTIONS
   const handleManualAttendanceSubmit = async () => {
     if (!manualStaffId || !manualDate || !manualCheckIn) {
-      alert("Staff, Date aur Check-In time zaroori hain!");
+      setUiMessage("Staff, Date aur Check-In time zaroori hain!");
       return;
     }
     
@@ -580,17 +580,17 @@ const handleOpenTelegramModal = (mobile) => {
       const data = await response.json();
       
       if (data.success) {
-        alert(data.message);
+        setUiMessage(data.message);
         fetchManualAttendanceList();
         setManualStaffId('');
         setManualCheckIn('09:00');
         setManualCheckOut('');
         setManualStatus('Present');
       } else {
-        alert("Error: " + data.error);
+        setUiMessage("Error: " + data.error);
       }
     } catch (err) {
-      alert("Server error: " + err.message);
+      setUiMessage("Server error: " + err.message);
     }
   };
 
@@ -626,11 +626,11 @@ const handleOpenTelegramModal = (mobile) => {
       });
       const data = await response.json();
       if (data.success) {
-        alert(data.message);
+        setUiMessage(data.message);
         fetchManualAttendanceList();
       }
     } catch (err) {
-      alert("Error: " + err.message);
+      setUiMessage("Error: " + err.message);
     }
   };
 
@@ -647,18 +647,20 @@ const handleEditClick = (staff) => {
     setShowEditModal(true);
 };
 
-// 💾 SAVE EDIT
+// 💾 SAVE EDIT (NATIVE ALERT HATA KAR UI MESSAGE LAGAYA GAYA HAI)
 const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
         const response = await axios.put(`${BASE_URL}/api/staff/${editingStaff.id}`, editFormData);
         if (response.data.success) {
-            alert("✅ Staff Updated Successfully!");
             setShowEditModal(false);
-            loadTeachersData(); // Refresh list
+            setUiMessage("✅ Staff Updated Successfully!");
+            fetchStaff();
+            setTimeout(() => setUiMessage(''), 3000);
         }
     } catch (err) {
-        alert("❌ Error updating staff: " + err.message);
+        setUiMessage("❌ Error updating staff: " + (err.response?.data?.error || err.message));
+        setTimeout(() => setUiMessage(''), 4000);
     }
 };
 
@@ -697,7 +699,7 @@ const handleEditSubmit = async (e) => {
         fetchRules();
       }
     } catch (err) {
-      alert("Error routing network variables.");
+      setUiMessage("Error routing network variables.");
     }
   };
 
@@ -707,7 +709,7 @@ const handleEditSubmit = async (e) => {
 
   const downloadExcelReport = () => {
     if (!Array.isArray(reportData) || reportData.length === 0) {
-      alert("No data available to download.");
+      setUiMessage("No data available to download.");
       return;
     }
     const excelRows = reportData.map(row => ({
@@ -729,7 +731,7 @@ const handleEditSubmit = async (e) => {
 
   const downloadManagementPayrollExcel = () => {
     if (!Array.isArray(managementSheetData) || managementSheetData.length === 0) {
-      alert("Management spreadsheet matrix data is currently empty.");
+      setUiMessage("Management spreadsheet matrix data is currently empty.");
       return;
     }
     const excelRows = managementSheetData.map(row => ({
