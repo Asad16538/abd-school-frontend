@@ -399,7 +399,7 @@ const handleManualSubmit = async (e) => {
             <input type="text" name="mother_name" autoComplete="off" value={formData.mother_name} onChange={handleChange} style={inputStyle} />
           </div>
           <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500', color: '#16a34a' }}>📱 WhatsApp Number *</label>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500', color: '#16a34a' }}>📱 Telegram Number *</label>
             <input type="text" name="whatsapp_no" autoComplete="off" required placeholder="For Auto Alerts" value={formData.whatsapp_no} onChange={handleChange} style={{ ...inputStyle, borderColor: '#22c55e' }} />
           </div>
           <div style={{ gridColumn: 'span 2' }}>
