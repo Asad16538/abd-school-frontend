@@ -285,11 +285,12 @@ const handleSaveSettings = async (e) => {
   e.preventDefault();
   try {
     const response = await axios.post(`${BASE_URL}/api/settings`, schoolData);
-    alert(response.data.message);
+    setSuccessMsg(response.data.message || "Settings saved successfully!");
     setCachedData('settings', schoolData);
+    setTimeout(() => setSuccessMsg(''), 3000);
   } catch (err) {
     console.error("Settings save error:", err);
-    alert('Settings save nahi ho payi. Network ya Server Error!');
+    setError('Settings save nahi ho payi. Network ya Server Error!');
   }
 };
 
@@ -307,10 +308,11 @@ const handleLogoChange = async (e) => {
     });
     if (res.data.success) {
       setSchoolData(prev => ({ ...prev, school_logo: res.data.url }));
-      alert("✅ Logo uploaded & saved successfully!");
+      setSuccessMsg("✅ Logo uploaded & saved successfully!");
+      setTimeout(() => setSuccessMsg(''), 3000);
     }
   } catch (err) {
-    alert("❌ Logo upload fail ho gaya!");
+    setError("❌ Logo upload fail ho gaya!");
   }
 };
 
@@ -328,10 +330,11 @@ const handleSignatureChange = async (e) => {
     });
     if (res.data.success) {
       setSchoolData(prev => ({ ...prev, school_signature: res.data.url }));
-      alert("✅ Signature uploaded & saved successfully!");
+      setSuccessMsg("✅ Signature uploaded & saved successfully!");
+      setTimeout(() => setSuccessMsg(''), 3000);
     }
   } catch (err) {
-    alert("❌ Signature upload fail ho gaya!");
+    setError("❌ Signature upload fail ho gaya!");
   }
 };
 
@@ -347,9 +350,10 @@ const handleSignatureChange = async (e) => {
       setSchoolPay('');
       setTransportPay('');
       loadDashboardData(true);
-      alert("🎉 Fees successfully recorded!");
+      setSuccessMsg("🎉 Fees successfully recorded!");
+      setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
-      alert("Error submitting fee");
+      setError("Error submitting fee");
     }
   };
 
@@ -361,14 +365,13 @@ const handleSignatureChange = async (e) => {
   };
 
   const sendFeeReminder = async (studentId) => {
-    const confirmAction = window.confirm("Kya aap sach mein student ko fee reminder bhejna chahte hain?");
-    if (!confirmAction) return;
     try {
       const res = await axios.post(`${BASE_URL}/api/fee-reminder`, { student_id: studentId });
-      alert(res.data.message);
+      setSuccessMsg(res.data.message);
+      setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
       console.error("Error:", err);
-      alert("Failed to send reminder. Check Backend!");
+      setError("Failed to send reminder. Check Backend!");
     }
   };
 
