@@ -38,6 +38,7 @@ const StaffPayrollAttendance = () => {
   const [advanceHistory, setAdvanceHistory] = useState([]);
 
   // New Staff Form States (Upgraded with PF Configuration support)
+  const [staffPrefix, setStaffPrefix] = useState('Mr.');
   const [staffName, setStaffName] = useState('');
   const [designation, setDesignation] = useState('');
   const [mobile, setMobile] = useState('');
@@ -455,53 +456,51 @@ useEffect(() => {
   const handleAddStaff = async (e) => {
     e.preventDefault();
     
-    // ✅ VALIDATION - Pehle check karo
     if (!staffName || !staffName.trim()) {
-        setUiMessage("❌ Staff Name zaroori hai!");
-        return;
+      setUiMessage("❌ Staff Name zaroori hai!");
+      return;
     }
     if (!mobile || !mobile.trim()) {
-        setUiMessage("❌ Mobile Number zaroori hai!");
-        return;
+      setUiMessage("❌ Mobile Number zaroori hai!");
+      return;
     }
+    
+    // 🎯 Prefix aur Name ko combine karke full name banayein (e.g., "Mrs. Somya Yadav")
+    const fullStaffName = `${staffPrefix} ${staffName.trim()}`;
     
     const payload = { 
-        name: staffName.trim(), 
-        designation: designation.trim() || 'Teacher', 
-        mobile: mobile.trim(), 
-        base_salary: parseFloat(baseSalary) || 0, 
-        pf_enabled: pfEnabled ? 1 : 0 
+      name: fullStaffName, 
+      designation: designation.trim() || 'Teacher', 
+      mobile: mobile.trim(), 
+      base_salary: parseFloat(baseSalary) || 0, 
+      pf_enabled: pfEnabled ? 1 : 0 
     };
     
-    console.log("📤 Sending payload:", payload); // 🔥 Debug ke liye
-    
     try {
-        const res = await fetch(`${BASE_URL}/api/staff`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-        
-        const data = await res.json();
-        console.log("📥 Response:", data); // 🔥 Debug ke liye
-        
-        if (res.ok && data.success) {
-            setUiMessage('🎉 New Staff Member Registered into Ledger!');
-            setStaffName('');
-            setDesignation('');
-            setMobile('');
-            setBaseSalary('');
-            setPfEnabled(0);
-            fetchStaff();
-            setTimeout(() => setUiMessage(''), 3000);
-        } else {
-            setUiMessage("❌ Error: " + (data.error || "Unknown error"));
-        }
+      const res = await fetch(`${BASE_URL}/api/staff`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        setUiMessage('🎉 New Staff Member Registered into Ledger!');
+        setStaffPrefix('Mr.'); // Reset to default
+        setStaffName('');
+        setDesignation('');
+        setMobile('');
+        setBaseSalary('');
+        setPfEnabled(0);
+        fetchStaff();
+        setTimeout(() => setUiMessage(''), 3000);
+      } else {
+        setUiMessage("❌ Error: " + (data.error || "Unknown error"));
+      }
     } catch (err) {
-        console.error("❌ Network Error:", err);
-        setUiMessage("❌ Server connection failed!");
+      setUiMessage("❌ Server connection failed!");
     }
-};
+  };
 
 const handleOpenTelegramModal = (mobile) => {
     setSelectedStaffMobile(mobile);
@@ -833,31 +832,59 @@ const handleEditSubmit = async (e) => {
       {activeTab === 'directory' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
           <div style={cardStyle}>
-            <h3 style={cardTitleStyle}><UserPlus size={18} color="#4f46e5"/> Register New Staff Matrix</h3>
-            <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div>
-                <label style={labelStyle}>Staff / Teacher Full Name</label>
-                <input type="text" placeholder="e.g. Rajesh Sharma" value={staffName || ''} onChange={(e) => setStaffName(e.target.value)} style={inpStyle} required />
-              </div>
-              <div>
-                <label style={labelStyle}>Designation Post</label>
-                <input type="text" placeholder="e.g. Senior Math Teacher" value={designation || ''} onChange={(e) => setDesignation(e.target.value)} style={inpStyle} required />
-              </div>
-              <div>
-                <label style={labelStyle}>📱 WhatsApp Mobile Connection</label>
-                <input type="text" placeholder="e.g. 98932XXXXX" value={mobile || ''} onChange={(e) => setMobile(e.target.value)} style={{ ...inpStyle, color: '#16a34a' }} required />
-              </div>
-              <div>
-                <label style={labelStyle}>Basic Monthly Salary Structure (₹)</label>
-                <input type="number" placeholder="e.g. 25000" value={baseSalary || ''} onChange={(e) => setBaseSalary(e.target.value)} style={inpStyle} required />
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
-                <input type="checkbox" id="pf_check" checked={pfEnabled === 1} onChange={(e) => setPfEnabled(e.target.checked ? 1 : 0)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
-                <label htmlFor="pf_check" style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b', cursor: 'pointer' }}>Enable Standard EPF Deduction (12%)</label>
-              </div>
-              <button type="submit" style={submitBtnStyle}>Save Structural Variables ⚡</button>
-            </form>
-          </div>
+  <h3 style={cardTitleStyle}><UserPlus size={18} color="#4f46e5"/> Register New Staff Matrix</h3>
+  <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    
+    {/* 🎯 NAYA PREFIX DROPDOWN + NAME INPUT ROW */}
+    <div>
+      <label style={labelStyle}>Staff / Teacher Full Name</label>
+      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+        <select 
+          value={staffPrefix} 
+          onChange={(e) => setStaffPrefix(e.target.value)}
+          style={{ width: '90px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '14px', fontWeight: 'bold', backgroundColor: '#fff' }}
+        >
+          <option value="Mr.">Mr.</option>
+          <option value="Mrs.">Mrs.</option>
+          <option value="Miss">Miss</option>
+          <option value="Dr.">Dr.</option>
+          <option value="Prof.">Prof.</option>
+        </select>
+        
+        <input 
+          type="text" 
+          placeholder="e.g. Somya Yadav" 
+          value={staffName || ''} 
+          onChange={(e) => setStaffName(e.target.value)} 
+          style={{ ...inpStyle, marginTop: '0', flex: 1 }} 
+          required 
+        />
+      </div>
+    </div>
+
+    <div>
+      <label style={labelStyle}>Designation Post</label>
+      <input type="text" placeholder="e.g. Co-Ordinator" value={designation || ''} onChange={(e) => setDesignation(e.target.value)} style={inpStyle} required />
+    </div>
+    
+    <div>
+      <label style={labelStyle}>📱 WhatsApp Mobile Connection</label>
+      <input type="text" placeholder="e.g. 98932XXXXX" value={mobile || ''} onChange={(e) => setMobile(e.target.value)} style={{ ...inpStyle, color: '#16a34a' }} required />
+    </div>
+    
+    <div>
+      <label style={labelStyle}>Basic Monthly Salary Structure (₹)</label>
+      <input type="number" placeholder="e.g. 25000" value={baseSalary || ''} onChange={(e) => setBaseSalary(e.target.value)} style={inpStyle} required />
+    </div>
+    
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
+      <input type="checkbox" id="pf_check" checked={pfEnabled === 1} onChange={(e) => setPfEnabled(e.target.checked ? 1 : 0)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+      <label htmlFor="pf_check" style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b', cursor: 'pointer' }}>Enable Standard EPF Deduction (12%)</label>
+    </div>
+    
+    <button type="submit" style={submitBtnStyle}>Save Staff ⚡</button>
+  </form>
+</div>
 
           <div style={cardStyle}>
             <h3 style={cardTitleStyle}><Users size={18} color="#4f46e5"/> Registered Staff Registry ({(staffList || []).length})</h3>
