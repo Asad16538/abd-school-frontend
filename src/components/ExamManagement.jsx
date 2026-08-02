@@ -276,15 +276,15 @@ const ExamManagement = () => {
   };
 
   const handleDeleteExam = async (examId) => {
-    if (!window.confirm('Are you sure you want to delete this exam?')) return;
+    // 🎯 window.confirm hata kar seedha API call ya state trigger karein
     try {
       const res = await axios.delete(`${BASE_URL}/api/exams/${examId}`);
       if (res.data.success) {
-        setMessage({ type: 'success', text: '✅ Exam deleted successfully!' });
+        // Success message ya list refresh ka code
         fetchExams();
       }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Delete failed' });
+      console.error("Delete error:", err);
     }
   };
 
@@ -302,7 +302,8 @@ const ExamManagement = () => {
   // 📥 Excel Download Function (CSV format)
   const downloadExcel = () => {
     if (results.length === 0) {
-      alert("Export karne ke liye koi result nahi hai!");
+      setMessage({ type: 'error', text: 'Export karne ke liye koi result nahi hai!' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
       return;
     }
     
@@ -907,7 +908,7 @@ const ExamManagement = () => {
                 <thead className="bg-gray-50">
                   <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
                     <th className="p-3">Roll No</th>
-                    <th className="p-3">Student Name</th>
+                    <th className="p-3">Student Name & Father's Name</th> {/* 🎯 Updated Header */}
                     <th className="p-3 text-center">Marks Obtained</th>
                     <th className="p-3 text-center">Percentage</th>
                     <th className="p-3 text-center">Grade</th>
@@ -917,8 +918,18 @@ const ExamManagement = () => {
                   {results.map((res, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="p-3 font-bold">{res.roll_no || '-'}</td>
-                      <td className="p-3 font-medium">{res.name}</td>
-                      <td className="p-3 text-center font-bold text-indigo-600">{res.obtained_marks}</td>
+                      
+                      {/* 🎯 Student Name ke sath Father's Name */}
+                      <td className="p-3">
+                        <div className="font-bold text-gray-900">{res.name}</div>
+                        <div className="text-[10px] text-gray-500">Father: {res.father_name || 'N/A'}</div>
+                      </td>
+
+                      {/* 🎯 Max Marks ke sath Display */}
+                      <td className="p-3 text-center font-bold text-indigo-600">
+                        {res.obtained_marks} / {res.max_marks || 20}
+                      </td>
+
                       <td className="p-3 text-center font-bold">{res.percentage}%</td>
                       <td className="p-3 text-center">
                         <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-green-100 text-green-700">
@@ -931,8 +942,6 @@ const ExamManagement = () => {
               </table>
             </div>
           )}
-        </div>
-      )}
 
       {/* TAB 5: REPORT CARDS */}
       {activeTab === 'reports' && (
