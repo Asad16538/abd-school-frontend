@@ -541,9 +541,7 @@ const handleOpenTelegramModal = (mobile) => {
 
   // 🎯 STAFF REMOVAL PROCESS ENGINE (SOFT DELETE CALL)
   const handleDeleteStaff = async (staffId, staffName) => {
-    const confirmDelete = window.confirm(`⚠️ Kya aap sach me Mr. ${staffName} ko roster se hatana chahte hain?`);
-    if (!confirmDelete) return;
-
+    // 🎯 window.confirm hata kar seedha API call ya custom state use karein
     try {
       const res = await fetch(`${BASE_URL}/api/staff/delete/${staffId}`, {
         method: 'POST',
@@ -551,8 +549,8 @@ const handleOpenTelegramModal = (mobile) => {
       });
 
       if (res.ok) {
-        setUiMessage(`❌ Mr. ${staffName} removed from active roster successfully!`);
-        fetchStaff(); // Fresh list load karega jisse wo turant screen se gayab ho jayein
+        setUiMessage(`❌ ${staffName} removed successfully!`);
+        fetchStaff(); 
         setTimeout(() => setUiMessage(''), 3000);
       } else {
         setUiMessage("Error removing staff profile.");
