@@ -42,6 +42,8 @@ const setCachedData = (key, data) => {
 // ✅ LAZY LOAD COMPONENTS
 const StudentRegistration = lazy(() => import('./components/StudentRegistration'));
 const SearchPayFees = lazy(() => import('./components/SearchPayFees'));
+// App.jsx ke top par lazy load list mein:
+const QuickFeePanel = lazy(() => import('./components/QuickFeePanel'));
 const StaffPayrollAttendance = lazy(() => import('./components/StaffPayrollAttendance'));
 const StudentFeeReport = lazy(() => import('./components/StudentFeeReport'));
 const ExpenseTracker = lazy(() => import('./components/ExpenseTracker'));
@@ -661,6 +663,14 @@ const handleSignatureChange = async (e) => {
                 </button>
               )}
 
+              {/* Quick Fee Panel  - Sirf Admin ke liye */}
+              {role === 'Admin' && (
+                <button onClick={() => setActiveTab('quick_fee_panel')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'quick_fee_panel' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <CreditCard className={`w-4 h-4 ${activeTab === 'quick_fee_panel' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>⚡ Quick Fee Panel</span>
+                </button>
+              )}
+
               {/* 4th Position: Class & ID Card Management - Sirf Admin ke liye */}
               {role === 'Admin' && (
                 <button onClick={() => setActiveTab('class_management')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'class_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
@@ -747,6 +757,8 @@ const handleSignatureChange = async (e) => {
                   <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
                 </div>
               }>
+              
+              {activeTab === 'quick_fee_panel' && <QuickFeePanel />}
 
                 {activeTab === 'role_management' && (
   <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm max-w-4xl">
