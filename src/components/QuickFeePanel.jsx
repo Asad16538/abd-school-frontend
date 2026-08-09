@@ -12,6 +12,7 @@ const QuickFeePanel = () => {
     father_name: '',
     class: '',
     section: 'A',
+    mobile: '',
     fee_cycle: 'Monthly',
     original_fee: '',
     payable_fee: '',
@@ -20,17 +21,17 @@ const QuickFeePanel = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Exact requested columns instruction for Excel hover
   const excelInstructions = `
 📋 QUICK FEE EXCEL FORMAT:
 1. Student Name (छात्र का नाम)
 2. Father Name (पिता का नाम)
 3. Class (कक्षा)
 4. Section (वर्ग - A/B/C)
-5. Fee Cycle (Monthly/Quarterly/Annual)
-6. Original Fee (मूल फीस)
-7. Payable Fee (देय फीस)
-8. Vehicle Fee (वाहन फीस)
+5. Mobile (मोबाइल नंबर)
+6. Fee Cycle (Monthly/Quarterly/Annual)
+7. Original Fee (मूल फीस)
+8. Payable Fee (देय फीस)
+9. Vehicle Fee (वाहन फीस)
   `;
 
   useEffect(() => {
@@ -39,14 +40,12 @@ const QuickFeePanel = () => {
 
   const fetchQuickFeeData = async () => {
     try {
-      const res = await fetch('https://erp-api.aapschool.in/api/students');
+      const res = await fetch('https://erp-api.aapschool.in/api/quick-fee/list');
       const data = await res.json();
-      // Filter only active students who have fee structure
-      const totalStudents = data.length;
-      const totalFee = data.reduce((sum, s) => sum + parseFloat(s.school_fee_total || 0) + parseFloat(s.transport_fee_total || 0), 0);
-      
-      setFeeRecords(data);
-      setStats({ total_students: totalStudents, total_fee: totalFee });
+      if (data.success) {
+        setFeeRecords(data.records);
+        setStats({ total_students: data.total_students, total_fee: data.total_fee });
+      }
     } catch (err) {
       console.error("Error loading students", err);
     }
@@ -67,7 +66,7 @@ const QuickFeePanel = () => {
       if (data.success) {
         setSuccessMsg(data.message);
         setForm({
-          student_name: '', father_name: '', class: '', section: 'A',
+          student_name: '', father_name: '', class: '', section: 'A', mobile: '',
           fee_cycle: 'Monthly', original_fee: '', payable_fee: '', vehicle_fee: ''
         });
         fetchQuickFeeData();
@@ -97,19 +96,29 @@ const QuickFeePanel = () => {
           return;
         }
 
-        const response = await fetch('https://erp-api.aapschool.in/api/quick-fee/bulk-import', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ records: jsonData })
-        });
-        const resData = await response.json();
-        
-        if (response.ok) {
-          setSuccessMsg(resData.message);
-          fetchQuickFeeData();
-        } else {
-          setErrorMsg(resData.error);
+        // Map excel rows to backend expected format
+        const formattedRecords = jsonData.map(row => ({
+          student_name: row['Student Name'] || row['student_name'] || '',
+          father_name: row['Father Name'] || row['father_name'] || '',
+          class: row['Class'] || row['class'] || '',
+          section: row['Section'] || row['section'] || 'A',
+          mobile: row['Mobile'] || row['mobile'] || '0000000000',
+          fee_cycle: row['Fee Cycle'] || row['fee_cycle'] || 'Monthly',
+          original_fee: row['Original Fee'] || row['original_fee'] || 0,
+          payable_fee: row['Payable Fee'] || row['payable_fee'] || 0,
+          vehicle_fee: row['Vehicle Fee'] || row['vehicle_fee'] || 0
+        }));
+
+        for (const rec of formattedRecords) {
+          await fetch('https://erp-api.aapschool.in/api/quick-fee/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(rec)
+          });
         }
+
+        setSuccessMsg('🚀 Excel fee records successfully imported and synced!');
+        fetchQuickFeeData();
       } catch (error) {
         setErrorMsg('Excel read karne mein error aayi!');
       }
@@ -190,6 +199,11 @@ const QuickFeePanel = () => {
             </div>
 
             <div>
+              <label style={labelStyle}>Mobile Number</label>
+              <input type="text" placeholder="10 digit mobile number" value={form.mobile} onChange={(e) => setForm({...form, mobile: e.target.value})} style={inpStyle} />
+            </div>
+
+            <div>
               <label style={labelStyle}>Fee Cycle</label>
               <select value={form.fee_cycle} onChange={(e) => setForm({...form, fee_cycle: e.target.value})} style={inpStyle}>
                 <option value="Monthly">Monthly</option>
@@ -228,6 +242,7 @@ const QuickFeePanel = () => {
               <tr style={{ backgroundColor: '#f1f5f9', color: '#475569' }}>
                 <th style={{ padding: '10px' }}>Student Name</th>
                 <th style={{ padding: '10px' }}>Class/Sec</th>
+                <th style={{ padding: '10px' }}>Mobile</th>
                 <th style={{ padding: '10px' }}>Cycle</th>
                 <th style={{ padding: '10px' }}>Payable Fee</th>
                 <th style={{ padding: '10px' }}>Vehicle Fee</th>
@@ -235,15 +250,16 @@ const QuickFeePanel = () => {
             </thead>
             <tbody>
               {feeRecords.length === 0 ? (
-                <tr><td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>No records found.</td></tr>
+                <tr><td colSpan="6" style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>No records found.</td></tr>
               ) : (
                 feeRecords.map(r => (
                   <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '10px', fontWeight: 'bold' }}>{r.name}<div style={{ fontSize: '10px', color: '#64748b' }}>F: {r.father_name || 'N/A'}</div></td>
+                    <td style={{ padding: '10px', fontWeight: 'bold' }}>{r.student_name || r.name}<div style={{ fontSize: '10px', color: '#64748b' }}>F: {r.father_name || 'N/A'}</div></td>
                     <td style={{ padding: '10px' }}>{r.class} - {r.section}</td>
+                    <td style={{ padding: '10px' }}>{r.mobile || 'N/A'}</td>
                     <td style={{ padding: '10px' }}>{r.fee_cycle || 'Monthly'}</td>
-                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#16a34a' }}>₹{r.school_fee_total}</td>
-                    <td style={{ padding: '10px' }}>₹{r.transport_fee_total}</td>
+                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#16a34a' }}>₹{r.payable_fee || r.school_fee_total}</td>
+                    <td style={{ padding: '10px' }}>₹{r.vehicle_fee || r.transport_fee_total}</td>
                   </tr>
                 ))
               )}
