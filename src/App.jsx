@@ -49,6 +49,7 @@ const StudentFeeReport = lazy(() => import('./components/StudentFeeReport'));
 const ExpenseTracker = lazy(() => import('./components/ExpenseTracker'));
 const IDCardStudio = lazy(() => import('./components/IDCardStudio'));
 const ClassAttendance = lazy(() => import('./components/ClassAttendance'));
+const PromotionPanel = lazy(() => import('./components/PromotionPanel'));
 
 // ✅ YEH CHANGE KARO
 const BASE_URL = "https://erp-api.aapschool.in";
@@ -737,6 +738,14 @@ const handleSignatureChange = async (e) => {
                   <span>Settings</span>
                 </button>
               )}
+
+              {role === 'Admin' && (
+                <button onClick={() => setActiveTab('promotion_panel')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'promotion_panel' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <Sparkles className={`w-4 h-4 ${activeTab === 'promotion_panel' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>🚀 Session Promotion</span>
+                </button>
+              )}
+
             </nav>
 
             <div className="p-4 border-t border-slate-800 bg-slate-950/40">
@@ -759,6 +768,8 @@ const handleSignatureChange = async (e) => {
               }>
               
               {activeTab === 'quick_fee_panel' && <QuickFeePanel />}
+              {activeTab === 'quick_fee_panel' && <QuickFeePanel />}
+              {activeTab === 'promotion_panel' && <PromotionPanel />}
 
                 {activeTab === 'role_management' && (
   <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm max-w-4xl">
