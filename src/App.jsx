@@ -768,7 +768,6 @@ const handleSignatureChange = async (e) => {
               }>
               
               {activeTab === 'quick_fee_panel' && <QuickFeePanel />}
-              {activeTab === 'quick_fee_panel' && <QuickFeePanel />}
               {activeTab === 'promotion_panel' && <PromotionPanel />}
 
                 {activeTab === 'role_management' && (
