@@ -332,8 +332,10 @@ function App() {
   };
 
   const sendFeeReminder = (student) => {
-    if (!student.parent_mobile || student.parent_mobile === '0000000000') {
-      alert("❌ Is student ka valid mobile number registered nahi hai!");
+    // 1. Agar mobile number valid nahi hai, toh alert ki jagah error state set karein
+    if (!student.parent_mobile || student.parent_mobile === '0000000000' || student.parent_mobile.trim() === '') {
+      setError("❌ Is student ka valid mobile number registered nahi hai!");
+      setTimeout(() => setError(''), 4000); // 4 second baad error auto-hide ho jayegi
       return;
     }
 
@@ -344,11 +346,11 @@ function App() {
     const totalDue = pendingSchool + pendingTrans;
 
     if (totalDue <= 0) {
-      alert("✅ Is student ki fee pehle hi clear ho chuki hai!");
+      setError("✅ Is student ki fee pehle hi clear ho chuki hai!");
+      setTimeout(() => setError(''), 4000);
       return;
     }
 
-    // 🛠️ YAHAN FIX KIYA HAI: ₹ ke baad $ sign lagaya hai taaki amount show ho
     const message = 
       `🔔 *[FEE REMINDER - ${schoolName.toUpperCase()}]*\n\n` +
       `Namaste,\n\n` +
