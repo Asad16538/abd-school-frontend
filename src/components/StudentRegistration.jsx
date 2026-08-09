@@ -7,15 +7,14 @@ const StudentRegistration = () => {
     admission_no: '', roll_no: '', name: '', student_class: '', section: 'A', stream: '',
     dob: '', gender: 'Male', category: 'General', aadhaar_no: '', samagra_id: '',
     father_name: '', mother_name: '', whatsapp_no: '', address: '',
-    fee_cycle: 'Monthly', cycle_fee_amount: '', school_fee_total: '', transport_fee_total: '',
     bank_name: '', account_no: '', ifsc_code: ''
   });
 
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  // Excel Instructions
+  // Streamlined Excel Instructions (Fee columns removed)
   const excelInstructions = `
-📋 EXCEL COLUMN FORMAT:
+📋 EXCEL COLUMN FORMAT (Student Profile Only):
 1. Admission No (दाखिला संख्या - Unique)
 2. Roll No (रोल नंबर)
 3. Student Name (छात्र का नाम)
@@ -25,26 +24,22 @@ const StudentRegistration = () => {
 7. DOB (जन्म तिथि - YYYY-MM-DD)
 8. Gender (Male/Female)
 9. Category (General/OBC/SC/ST)
-10. Aadhaar_no (12 Digit)
+10. Aadhaar No (12 Digit)
 11. Samagra ID (समग्र आईडी - 9 digit)
 12. Father Name (पिता का नाम)
 13. Mother Name (माता का नाम)
 14. WhatsApp No (10 digit Mobile)
 15. Address (पता)
-16. Fee Cycle (Monthly/Quarterly/Annual)
-17. Total Fee (कुल तय की गई साल की फीस)
-18. Transport Fee (वार्षिक वाहन फीस)
-19. Bank Name (बैंक का नाम)
-20. Account No (बैंक खाता संख्या)
-21. IFSC Code (आईएफएससी कोड)
-
+16. Bank Name (बैंक का नाम)
+17. Account No (बैंक खाता संख्या)
+18. IFSC Code (आईएफएससी कोड)
   `;
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-    // 📦 ZIP UPLOAD HANDLER
+  // 📦 ZIP UPLOAD HANDLER
   const handleZipUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -71,76 +66,67 @@ const StudentRegistration = () => {
       setMessage({ type: 'error', text: 'Server connection fail!' });
     }
     
-    // Reset input
     e.target.value = '';
   };
 
-  // Manual Form Submit Engine (WITH PHOTO)
-const handleManualSubmit = async (e) => {
-  e.preventDefault();
-  
-  // 🎯 FormData use karo (photo file bhejne ke liye)
-  const formDataToSend = new FormData();
-  formDataToSend.append('admission_no', formData.admission_no);
-  formDataToSend.append('roll_no', formData.roll_no);
-  formDataToSend.append('name', formData.name);
-  formDataToSend.append('class', formData.student_class);
-  formDataToSend.append('section', formData.section);
-  formDataToSend.append('stream', (formData.student_class === '11' || formData.student_class === '12') ? (formData.stream || 'Science') : '');
-  formDataToSend.append('dob', formData.dob);
-  formDataToSend.append('gender', formData.gender);
-  formDataToSend.append('category', formData.category);
-  formDataToSend.append('aadhaar_no', formData.aadhaar_no);
-  formDataToSend.append('samagra_id', formData.samagra_id);
-  formDataToSend.append('father_name', formData.father_name);
-  formDataToSend.append('mother_name', formData.mother_name);
-  formDataToSend.append('whatsapp_no', formData.whatsapp_no);
-  formDataToSend.append('address', formData.address);
-  formDataToSend.append('fee_cycle', formData.fee_cycle);
-  formDataToSend.append('cycle_fee_amount', formData.cycle_fee_amount || '0');
-  formDataToSend.append('school_fee_total', formData.school_fee_total || '0');
-  formDataToSend.append('transport_fee_total', formData.transport_fee_total || '0');
-  formDataToSend.append('bank_name', formData.bank_name);
-  formDataToSend.append('account_no', formData.account_no);
-  formDataToSend.append('ifsc_code', formData.ifsc_code);
-  
-  // ✅ PHOTO APPEND KARO
-  const photoInput = document.querySelector('input[name="student_photo"]');
-  if (photoInput && photoInput.files && photoInput.files[0]) {
-    formDataToSend.append('student_photo', photoInput.files[0]);
-  }
-
-  try {
-    const response = await fetch('https://erp-api.aapschool.in/api/students/register-manual', {
-      method: 'POST',
-      body: formDataToSend  // ✅ Content-Type HEADER MAT DALO - Browser auto set karega
-    });
-    const data = await response.json();
+  // Manual Form Submit Engine (Without Fee Fields)
+  const handleManualSubmit = async (e) => {
+    e.preventDefault();
     
-    if (response.ok) {
-      setMessage({ type: 'success', text: '🎉 Student Profile Successfully Registered!' });
-      
-      setFormData({
-        admission_no: '', roll_no: '', name: '', student_class: '', section: 'A', stream: '',
-        dob: '', gender: 'Male', category: 'General', aadhaar_no: '', samagra_id: '',
-        father_name: '', mother_name: '', whatsapp_no: '', address: '',
-        fee_cycle: 'Monthly', cycle_fee_amount: '', school_fee_total: '', transport_fee_total: '',
-        bank_name: '', account_no: '', ifsc_code: ''
-      });
-
-      // ✅ Photo input reset karo
-      if (photoInput) photoInput.value = '';
-
-      setTimeout(() => {
-        window.location.reload(); 
-      }, 1500); 
-    } else {
-      setMessage({ type: 'error', text: data.error || 'Server mein dikkat hai' });
+    const formDataToSend = new FormData();
+    formDataToSend.append('admission_no', formData.admission_no);
+    formDataToSend.append('roll_no', formData.roll_no);
+    formDataToSend.append('name', formData.name);
+    formDataToSend.append('class', formData.student_class);
+    formDataToSend.append('section', formData.section);
+    formDataToSend.append('stream', (formData.student_class === '11' || formData.student_class === '12') ? (formData.stream || 'Science') : '');
+    formDataToSend.append('dob', formData.dob);
+    formDataToSend.append('gender', formData.gender);
+    formDataToSend.append('category', formData.category);
+    formDataToSend.append('aadhaar_no', formData.aadhaar_no);
+    formDataToSend.append('samagra_id', formData.samagra_id);
+    formDataToSend.append('father_name', formData.father_name);
+    formDataToSend.append('mother_name', formData.mother_name);
+    formDataToSend.append('whatsapp_no', formData.whatsapp_no);
+    formDataToSend.append('address', formData.address);
+    formDataToSend.append('bank_name', formData.bank_name);
+    formDataToSend.append('account_no', formData.account_no);
+    formDataToSend.append('ifsc_code', formData.ifsc_code);
+    
+    const photoInput = document.querySelector('input[name="student_photo"]');
+    if (photoInput && photoInput.files && photoInput.files[0]) {
+      formDataToSend.append('student_photo', photoInput.files[0]);
     }
-  } catch (err) {
-    setMessage({ type: 'error', text: 'Backend se connection fail!' });
-  }
-};
+
+    try {
+      const response = await fetch('https://erp-api.aapschool.in/api/students/register-manual', {
+        method: 'POST',
+        body: formDataToSend
+      });
+      const data = await response.json();
+      
+      if (response.ok) {
+        setMessage({ type: 'success', text: '🎉 Student Profile Successfully Registered!' });
+        
+        setFormData({
+          admission_no: '', roll_no: '', name: '', student_class: '', section: 'A', stream: '',
+          dob: '', gender: 'Male', category: 'General', aadhaar_no: '', samagra_id: '',
+          father_name: '', mother_name: '', whatsapp_no: '', address: '',
+          bank_name: '', account_no: '', ifsc_code: ''
+        });
+
+        if (photoInput) photoInput.value = '';
+
+        setTimeout(() => {
+          window.location.reload(); 
+        }, 1500); 
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Server mein dikkat hai' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Backend se connection fail!' });
+    }
+  };
 
   // Excel File Import Handler
   const handleExcelImport = (e) => {
@@ -186,11 +172,10 @@ const handleManualSubmit = async (e) => {
   return (
     <div style={{ padding: '24px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
       
-      {/* Top Header Row with Bulk Import */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '15px' }}>
         <div>
           <h2 style={{ margin: 0, color: '#1e293b' }}>🎒 Student Registration Panel</h2>
-          <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '14px' }}>Naye bacho ka dakhila karein ya ek sath Excel sheet upload karein</p>
+          <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '14px' }}>Naye bacho ka dakhila karein (Fee details alag Quick Fee Menu se managed hain)</p>
         </div>
 
         <div style={{ position: 'relative', display: 'inline-block' }} className="excel-hover-container">
@@ -214,28 +199,15 @@ const handleManualSubmit = async (e) => {
         </div>
       </div>
 
-      {/* Bulk Import with Photos */}
-    <div style={{ marginTop: '12px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-      <label style={{
-        backgroundColor: '#8b5cf6',
-        color: 'white',
-        padding: '10px 20px',
-        borderRadius: '8px',
-        fontWeight: 'bold',
-        cursor: 'pointer',
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '8px'
-      }}>
-        📦 Excel + Photos ZIP Upload
-        <input
-          type="file"
-          accept=".zip"
-          onChange={handleZipUpload}
-          style={{ display: 'none' }}
-        />
-      </label>
-    </div>
+      <div style={{ marginTop: '12px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        <label style={{
+          backgroundColor: '#8b5cf6', color: 'white', padding: '10px 20px', borderRadius: '8px',
+          fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px'
+        }}>
+          📦 Excel + Photos ZIP Upload
+          <input type="file" accept=".zip" onChange={handleZipUpload} style={{ display: 'none' }} />
+        </label>
+      </div>
 
       {message.text && (
         <div style={{
@@ -248,7 +220,6 @@ const handleManualSubmit = async (e) => {
         </div>
       )}
 
-      {/* Manual Registration Form */}
       <form onSubmit={handleManualSubmit} autoComplete="off" style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
         
         {/* Section 1: Academic Info */}
@@ -303,49 +274,18 @@ const handleManualSubmit = async (e) => {
           )}
         </div>
 
-                {/* Section 5: Student Photo Upload */}
-        <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>
-          📸 Student Photo Upload
-        </h3>
+        {/* Section 2: Student Photo Upload */}
+        <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>📸 Student Photo Upload</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>
-              Upload Photo (JPG/PNG)
-            </label>
-            <input 
-              type="file" 
-              accept="image/*"
-              name="student_photo"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    console.log("📸 Photo selected:", file.name);
-                    // Photo preview ke liye state mein store karo (optional)
-                  };
-                  reader.readAsDataURL(file);
-                }
-              }}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '6px',
-                border: '1px solid #cbd5e1',
-                boxSizing: 'border-box',
-                fontSize: '14px',
-                backgroundColor: '#f8fafc'
-              }}
-            />
-            <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
-              ⚠️ Photo <strong>Roll No</strong> ke naam se save hogi (e.g., 10.jpg)
-            </p>
+            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Upload Photo (JPG/PNG)</label>
+            <input type="file" accept="image/*" name="student_photo" style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #cbd5e1', boxSizing: 'border-box', fontSize: '14px', backgroundColor: '#f8fafc' }} />
+            <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>⚠️ Photo <strong>Roll No</strong> ke naam se save hogi</p>
           </div>
         </div>
 
-        {/* Section 2: Personal Profile (Without Photo) */}
+        {/* Section 3: Personal Profile */}
         <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>2. Student Profile (व्यक्तिगत विवरण)</h3>
-        
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div style={{ gridColumn: 'span 2' }}>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Student Full Name *</label>
@@ -387,7 +327,7 @@ const handleManualSubmit = async (e) => {
           </div>
         </div>
 
-        {/* Section 3: Parents & Contact */}
+        {/* Section 4: Parents & Contact */}
         <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>3. Parents & WhatsApp Contact (अभिभावक विवरण)</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           <div>
@@ -408,32 +348,9 @@ const handleManualSubmit = async (e) => {
           </div>
         </div>
 
-        {/* Section 4: Fees & Bank Details */}
-        <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>4. Fees & Bank Account Details (फीस और बैंक खाता)</h3>
+        {/* Section 5: Bank Details */}
+        <h3 style={{ borderBottom: '2px solid #f1f5f9', paddingBottom: '8px', color: '#0f172a' }}>4. Bank Account Details (बैंक खाता)</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Fee Payment Cycle *</label>
-            <select name="fee_cycle" value={formData.fee_cycle} onChange={handleChange} style={inputStyle}>
-              <option value="Monthly">Monthly (मासिक फीस)</option>
-              <option value="Quarterly">Quarterly (त्रैमासिक - 3 महीने)</option>
-              <option value="Annual">Annual (वार्षिक फीस)</option>
-            </select>
-          </div>
-
-                  
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Cycle Fee Amount *</label>
-            <input type="number" name="cycle_fee_amount" autoComplete="off" required placeholder="e.g. 1500" value={formData.cycle_fee_amount || ''} onChange={handleChange} style={inputStyle} />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Total Applicable Fee *</label>
-            <input type="number" name="school_fee_total" autoComplete="off" required placeholder="Custom total e.g. 18000" value={formData.school_fee_total} onChange={handleChange} style={inputStyle} />
-          </div>
-          <div>
-            <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Transport / Van Fee</label>
-            <input type="number" name="transport_fee_total" autoComplete="off" placeholder="e.g. 5000" value={formData.transport_fee_total} onChange={handleChange} style={inputStyle} />
-          </div>
           <div>
             <label style={{ display: 'block', marginBottom: '6px', fontSize: '14px', fontWeight: '500' }}>Bank Name</label>
             <input type="text" name="bank_name" autoComplete="off" value={formData.bank_name} onChange={handleChange} style={inputStyle} />
