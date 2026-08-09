@@ -574,18 +574,19 @@ function App() {
         /* MAIN DASHBOARD PANEL */
         <motion.div key="dashboard-screen" className="min-h-screen flex flex-col md:flex-row w-full bg-[#f3f4f6] relative">
           
-          {/* 📱 MOBILE APP HEADER BAR */}
-          <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between no-print z-30 shadow-md">
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold uppercase shadow"
-              >
-                {isMobileMenuOpen ? '✕ Close' : '☰ Menu'}
-              </button>
-              <span className="font-black text-sm uppercase truncate">{schoolData.school_name}</span>
+          {/* 📱 MOBILE APP HEADER BAR (Menu shifted to right side to avoid overlap) */}
+          <div className="md:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between no-print z-30 shadow-md">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <span className="font-black text-xs uppercase tracking-wide truncate text-amber-300">{schoolData.school_name}</span>
+              <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded font-bold uppercase shrink-0">{role}</span>
             </div>
-            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">{role}</span>
+            
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold uppercase shadow tracking-wider shrink-0 cursor-pointer"
+            >
+              {isMobileMenuOpen ? '✕ CLOSE' : '☰ MENU'}
+            </button>
           </div>
 
           {/* 🛑 PRINT MEDIA KE WAQT PURA SIDEBAR PANEL AUTO-HIDE HONA CHAHIYE */}
