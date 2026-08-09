@@ -21,8 +21,7 @@ const getCachedData = (key) => {
   if (!cached) return null;
   try {
     const data = JSON.parse(cached);
-    // ✅ Check karo TTL (Time To Live)
-    if (Date.now() - data.timestamp > CACHE_TTL) {  // ← CACHE_TTL = 300000 (5 minute)
+    if (Date.now() - data.timestamp > CACHE_TTL) {  
       localStorage.removeItem(`cache_${key}`);
       return null;
     }
@@ -39,10 +38,9 @@ const setCachedData = (key, data) => {
   }));
 };
 
-// ✅ LAZY LOAD COMPONENTS
+// ✅ LAZY LOAD COMPONENTS (ALL 100% INCLUDED)
 const StudentRegistration = lazy(() => import('./components/StudentRegistration'));
 const SearchPayFees = lazy(() => import('./components/SearchPayFees'));
-// App.jsx ke top par lazy load list mein:
 const QuickFeePanel = lazy(() => import('./components/QuickFeePanel'));
 const StaffPayrollAttendance = lazy(() => import('./components/StaffPayrollAttendance'));
 const StudentFeeReport = lazy(() => import('./components/StudentFeeReport'));
@@ -50,17 +48,14 @@ const ExpenseTracker = lazy(() => import('./components/ExpenseTracker'));
 const IDCardStudio = lazy(() => import('./components/IDCardStudio'));
 const ClassAttendance = lazy(() => import('./components/ClassAttendance'));
 const PromotionPanel = lazy(() => import('./components/PromotionPanel'));
-// App.jsx ke hooks ke sath yeh state add karein:
-const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-// ✅ YEH CHANGE KARO
 const BASE_URL = "https://erp-api.aapschool.in";
 
 function App() {
   // ============================================================
   // ✅ STEP 1: SARE HOOKS PEHLE (TOP LEVEL)
   // ============================================================
-  const [loginRole, setLoginRole] = useState('Admin'); // Default Admin rahega
+  const [loginRole, setLoginRole] = useState('Admin');
   const [formMode, setFormMode] = useState('login');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -75,6 +70,10 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [role, setRole] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
+
+  // 📱 MOBILE APP DRAWER STATE
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
   const [schoolData, setSchoolData] = useState({
     school_name: 'Smart School ERP',
     school_address: 'India',
@@ -85,8 +84,8 @@ function App() {
     school_latitude: 0.0,
     school_longitude: 0.0,
     school_location_radius: 100,
-    telegram_admin_id: ''  // ✅ YEH ADD KARO
-});
+    telegram_admin_id: ''
+  });
   const [stats, setStats] = useState({
     total_students: 0, total_fees_target: 0, total_fees_paid: 0, today_fees_paid: 0, total_pending: 0, total_expenses: 0, total_income: 0
   });
@@ -95,64 +94,64 @@ function App() {
   const [schoolPay, setSchoolPay] = useState('');
   const [transportPay, setTransportPay] = useState('');
 
-// ✅ STEP 2: SARE FUNCTIONS
-// ============================================================
-const generateCaptcha = () => {
-  setNum1(Math.floor(Math.random() * 10) + 1);
-  setNum2(Math.floor(Math.random() * 10) + 1);
-  setCaptchaInput('');
-};
+  // ============================================================
+  // ✅ STEP 2: SARE FUNCTIONS
+  // ============================================================
+  const generateCaptcha = () => {
+    setNum1(Math.floor(Math.random() * 10) + 1);
+    setNum2(Math.floor(Math.random() * 10) + 1);
+    setCaptchaInput('');
+  };
 
-const fetchSettings = async () => {
-  try {
-    const res = await axios.get(`${BASE_URL}/api/settings`);
-    if (res && res.data) {
-      const data = {
-        ...res.data,
-        school_latitude: res.data.school_latitude || 23.2599,
-        school_longitude: res.data.school_longitude || 77.4126,
-        school_location_radius: res.data.school_location_radius || 100
-      };
-      setSchoolData(prev => ({ ...prev, ...data }));
-    }
-  } catch (err) {
-    console.error("Settings load failed:", err.response ? err.response.data : err.message);
-    const cached = getCachedData('settings');
-    if (cached) {
-      setSchoolData(prev => ({ ...prev, ...cached }));
-    }
-  }
-};
-
-const loadDashboardData = async (forceRefresh = false) => {
-  try {
-    if (!forceRefresh) {
-      const cached = getCachedData('dashboard');
+  const fetchSettings = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/settings`);
+      if (res && res.data) {
+        const data = {
+          ...res.data,
+          school_latitude: res.data.school_latitude || 23.2599,
+          school_longitude: res.data.school_longitude || 77.4126,
+          school_location_radius: res.data.school_location_radius || 100
+        };
+        setSchoolData(prev => ({ ...prev, ...data }));
+      }
+    } catch (err) {
+      console.error("Settings load failed:", err.response ? err.response.data : err.message);
+      const cached = getCachedData('settings');
       if (cached) {
-        setStats(cached.stats);
-        setPendingStudents(cached.pending);
-        return;
+        setSchoolData(prev => ({ ...prev, ...cached }));
       }
     }
-    const [statsRes, listRes, staffRes] = await Promise.all([
-      axios.get(`${BASE_URL}/api/dashboard-stats`),
-      axios.get(`${BASE_URL}/api/pending-students`),
-      axios.get(`${BASE_URL}/api/staff`)
-    ]);
-    const statsData = statsRes.data;
-    statsData.total_staff = staffRes.data.length;
-    setStats(statsData);
-    setPendingStudents(listRes.data);
-    setCachedData('dashboard', {
-      stats: statsData,
-      pending: listRes.data
-    });
-  } catch (err) {
-    console.log("Dashboard data fetch error");
-  }
-};
+  };
 
-// 🛡️ SECURE LOGIN HANDLER (UNIFIED ROLE-BASED ERP ROUTING)
+  const loadDashboardData = async (forceRefresh = false) => {
+    try {
+      if (!forceRefresh) {
+        const cached = getCachedData('dashboard');
+        if (cached) {
+          setStats(cached.stats);
+          setPendingStudents(cached.pending);
+          return;
+        }
+      }
+      const [statsRes, listRes, staffRes] = await Promise.all([
+        axios.get(`${BASE_URL}/api/dashboard-stats`),
+        axios.get(`${BASE_URL}/api/pending-students`),
+        axios.get(`${BASE_URL}/api/staff`)
+      ]);
+      const statsData = statsRes.data;
+      statsData.total_staff = staffRes.data.length;
+      setStats(statsData);
+      setPendingStudents(listRes.data);
+      setCachedData('dashboard', {
+        stats: statsData,
+        pending: listRes.data
+      });
+    } catch (err) {
+      console.log("Dashboard data fetch error");
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
@@ -165,7 +164,7 @@ const loadDashboardData = async (forceRefresh = false) => {
     
     setLoading(true);
     try {
-      let endpoint = `${BASE_URL}/api/login`; // Admin default
+      let endpoint = `${BASE_URL}/api/login`;
       let payload = { username: username.trim(), password: password };
 
       if (loginRole === 'Teacher') {
@@ -183,8 +182,6 @@ const loadDashboardData = async (forceRefresh = false) => {
       
       if (response && response.data && response.data.success) {
         localStorage.setItem('token', response.data.token);
-        
-        // 🎯 Redirection hata kar seedha unified ERP state set kar di gayi hai
         const activeRole = response.data.role || loginRole;
         localStorage.setItem('role', activeRole);
         setRole(activeRole);
@@ -202,163 +199,128 @@ const loadDashboardData = async (forceRefresh = false) => {
     }
   };
 
-// Naya state add kar lena agar na ho: const [loginRoleType, setLoginRoleType] = useState('admin'); // 'admin', 'staff', ya 'parent'
+  const handleRequestOTP = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+    setLoading(true);
 
-const handleRequestOTP = async (e) => {
-  e.preventDefault();
-  setError('');
-  setSuccessMsg('');
-  setLoading(true);
+    let endpoint = `${BASE_URL}/api/send-verification`;
+    let payload = { username };
 
-  // ✅ Role ke hisab se dynamic endpoint choose hoga
-  let endpoint = `${BASE_URL}/api/send-verification`; // Admin default
-  let payload = { username };
-
-  if (loginRole === 'Teacher') {
-    endpoint = `${BASE_URL}/api/staff/send-verification`;
-    payload = { mobile: username }; // Staff ke liye mobile number use hoga
-  } else if (loginRole === 'Parent') {
-    endpoint = `${BASE_URL}/api/parent/send-verification`;
-    payload = { mobile: username }; // Parent ke liye mobile number use hoga
-  }
-
-  try {
-    const response = await axios.post(endpoint, payload);
-    if (response.data.success) {
-      setSuccessMsg(response.data.message);
-      setFormMode('forgot_verify');
-    } else {
-      setError(response.data.message);
+    if (loginRole === 'Teacher') {
+      endpoint = `${BASE_URL}/api/staff/send-verification`;
+      payload = { mobile: username };
+    } else if (loginRole === 'Parent') {
+      endpoint = `${BASE_URL}/api/parent/send-verification`;
+      payload = { mobile: username };
     }
-  } catch (err) {
-    setError(err.response?.data?.message || 'Server error! Kripya dobara koshish karein.');
-  } finally {
-    setLoading(false);
-  }
-};
 
-const handleVerifyAndReset = async (e) => {
-  e.preventDefault();
-  setError('');
-  setSuccessMsg('');
-  setLoading(true);
-
-  // ✅ Role ke hisab se verify & reset endpoint select hoga
-  let endpoint = `${BASE_URL}/api/verify-and-reset`; // Admin default
-  let payload = {
-    username,
-    otp: otpCode,
-    new_password: newPassword
+    try {
+      const response = await axios.post(endpoint, payload);
+      if (response.data.success) {
+        setSuccessMsg(response.data.message);
+        setFormMode('forgot_verify');
+      } else {
+        setError(response.data.message);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Server error! Kripya dobara koshish karein.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (loginRole === 'Teacher') {
-    endpoint = `${BASE_URL}/api/staff/verify-and-reset`;
-    payload = {
-      mobile: username, // Staff ke liye mobile number pass hoga
-      otp: otpCode,
-      new_password: newPassword
-    };
-  } else if (loginRole === 'Parent') {
-    endpoint = `${BASE_URL}/api/parent/reset-password`; // Parent ke liye backend route
-    payload = {
-      mobile: username, // Parent ke liye mobile number pass hoga
-      otp: otpCode,
-      new_password: newPassword
-    };
-  }
+  const handleVerifyAndReset = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+    setLoading(true);
 
-  try {
-    const response = await axios.post(endpoint, payload);
-    if (response.data.success) {
-      setSuccessMsg(response.data.message);
-      setTimeout(() => {
-        setFormMode('login');
-        setPassword('');
-        generateCaptcha();
-      }, 2500);
-    } else {
-      setError(response.data.message);
+    let endpoint = `${BASE_URL}/api/verify-and-reset`;
+    let payload = { username, otp: otpCode, new_password: newPassword };
+
+    if (loginRole === 'Teacher') {
+      endpoint = `${BASE_URL}/api/staff/verify-and-reset`;
+      payload = { mobile: username, otp: otpCode, new_password: newPassword };
+    } else if (loginRole === 'Parent') {
+      endpoint = `${BASE_URL}/api/parent/reset-password`;
+      payload = { mobile: username, otp: otpCode, new_password: newPassword };
     }
-  } catch (err) {
-    setError(err.response?.data?.message || 'Verification failed!');
-  } finally {
-    setLoading(false);
-  }
-};
 
-const handleSaveSettings = async (e) => {
-  e.preventDefault();
-  try {
-    const response = await axios.post(`${BASE_URL}/api/settings`, schoolData);
-    setSuccessMsg(response.data.message || "Settings saved successfully!");
-    setCachedData('settings', schoolData);
-    setTimeout(() => setSuccessMsg(''), 3000);
-  } catch (err) {
-    console.error("Settings save error:", err);
-    setError('Settings save nahi ho payi. Network ya Server Error!');
-  }
-};
-
-const handleLogoChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('type', 'logo');
-
-  try {
-    const res = await axios.post(`${BASE_URL}/api/upload-logo`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    if (res.data.success) {
-      setSchoolData(prev => ({ ...prev, school_logo: res.data.url }));
-      setSuccessMsg("✅ Logo uploaded & saved successfully!");
-      setTimeout(() => setSuccessMsg(''), 3000);
+    try {
+      const response = await axios.post(endpoint, payload);
+      if (response.data.success) {
+        setSuccessMsg(response.data.message);
+        setTimeout(() => {
+          setFormMode('login');
+          setPassword('');
+          generateCaptcha();
+        }, 2500);
+      } else {
+        setError(response.data.message);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Verification failed!');
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    setError("❌ Logo upload fail ho gaya!");
-  }
-};
+  };
 
-const handleSignatureChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('type', 'signature');
-
-  try {
-    const res = await axios.post(`${BASE_URL}/api/upload-logo`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-    if (res.data.success) {
-      setSchoolData(prev => ({ ...prev, school_signature: res.data.url }));
-      setSuccessMsg("✅ Signature uploaded & saved successfully!");
-      setTimeout(() => setSuccessMsg(''), 3000);
-    }
-  } catch (err) {
-    setError("❌ Signature upload fail ho gaya!");
-  }
-};
-
-  const handleFeeSubmit = async (e) => {
+  const handleSaveSettings = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('https://erp-api.aapschool.in/api/submit-fee', {
-        student_id: selectedStudent.id,
-        school_pay: schoolPay || 0,
-        transport_pay: transportPay || 0
-      });
-      setSelectedStudent(null);
-      setSchoolPay('');
-      setTransportPay('');
-      loadDashboardData(true);
-      setSuccessMsg("🎉 Fees successfully recorded!");
+      const response = await axios.post(`${BASE_URL}/api/settings`, schoolData);
+      setSuccessMsg(response.data.message || "Settings saved successfully!");
+      setCachedData('settings', schoolData);
       setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
-      setError("Error submitting fee");
+      console.error("Settings save error:", err);
+      setError('Settings save nahi ho payi. Network ya Server Error!');
+    }
+  };
+
+  const handleLogoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', 'logo');
+
+    try {
+      const res = await axios.post(`${BASE_URL}/api/upload-logo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setSchoolData(prev => ({ ...prev, school_logo: res.data.url }));
+        setSuccessMsg("✅ Logo uploaded & saved successfully!");
+        setTimeout(() => setSuccessMsg(''), 3000);
+      }
+    } catch (err) {
+      setError("❌ Logo upload fail ho gaya!");
+    }
+  };
+
+  const handleSignatureChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', 'signature');
+
+    try {
+      const res = await axios.post(`${BASE_URL}/api/upload-logo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      if (res.data.success) {
+        setSchoolData(prev => ({ ...prev, school_signature: res.data.url }));
+        setSuccessMsg("✅ Signature uploaded & saved successfully!");
+        setTimeout(() => setSuccessMsg(''), 3000);
+      }
+    } catch (err) {
+      setError("❌ Signature upload fail ho gaya!");
     }
   };
 
@@ -384,16 +346,14 @@ const handleSignatureChange = async (e) => {
   // ✅ STEP 3: useEffect
   // ============================================================
   useEffect(() => {
-    // ✅ DOMAIN VERIFICATION ENGINE
     const hostname = window.location.hostname;
     const referer = document.referrer || '';
     
-    // Whitelist includes local workspace, main domain and your current live deployment platform
     const allowedDomains = [
       'aapschool.in', 
       'www.aapschool.in', 
       'ab-digital-work.vercel.app', 
-      'abd-school-frontend.vercel.app', // <--- Yeh wala domain add kar do (apna exact Vercel URL yahan likh dena)
+      'abd-school-frontend.vercel.app', 
       'vercel.app', 
       'localhost', 
       '127.0.0.1'
@@ -408,19 +368,15 @@ const handleSignatureChange = async (e) => {
       return;
     }
     
-    // Existing authentication initialization check
     const savedToken = localStorage.getItem('token');
     const savedRole = localStorage.getItem('role');
     
     if (savedToken && savedRole) {
       setIsLoggedIn(true);
       setRole(savedRole);
-      
-      // ✅ BULLETPROOF: Sirf logged in user ke liye hi data database se kheenchega
       loadDashboardData();
       fetchSettings(); 
     } else {
-      // ✅ SAFE BYPASS: Agar user log out ho chuka hai, toh public branding data fetch karega bina crash kiye
       fetchSettings();
     }
     
@@ -428,20 +384,16 @@ const handleSignatureChange = async (e) => {
   }, [isLoggedIn]);
 
   // ============================================================
-  // ✅ STEP 4: CONDITIONAL RETURNS (SAB KE BAAD)
+  // ✅ STEP 4: CONDITIONAL RETURNS
   // ============================================================
-  
-  // 🎯 WHITE-LABEL COMMERCIAL BYPASS
   if (window.location.href.includes('staff-attendance-terminal') || window.location.pathname === '/staff-attendance-terminal') {
     return <StaffAttendanceTerminal />;
   }
 
-  // STAFF TELEGRAM LINKING ROUTE
   if (window.location.pathname === '/staff-link-telegram') {
     return <StaffTelegramLink />;
   }
 
-  // TELEGRAM LINKING ROUTE
   if (window.location.pathname === '/link-telegram') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
@@ -465,7 +417,6 @@ const handleSignatureChange = async (e) => {
     );
   }
 
-  // ATTENDANCE FORM ROUTE
   if (window.location.pathname === '/attendance-form') {
     return <AttendanceForm />;
   }
@@ -505,81 +456,80 @@ const handleSignatureChange = async (e) => {
               {successMsg && <div className="mb-4 p-3 bg-green-50 border-l-4 border-green-500 text-green-700 text-xs font-bold rounded-r-xl flex items-center gap-2"><CheckCircle2 className="w-4 h-4 shrink-0" /><span>{successMsg}</span></div>}
 
               {formMode === 'login' && (
-  <div className="space-y-4">
-    {/* 🎯 Role Selection Tabs / Buttons */}
-    <div className="grid grid-cols-3 gap-1.5 p-1 bg-gray-100 rounded-xl mb-4">
-      <button
-        type="button"
-        onClick={() => setLoginRole('Admin')}
-        className={`py-2 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer ${
-          loginRole === 'Admin' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900'
-        }`}
-      >
-        👑 Admin
-      </button>
-      <button
-        type="button"
-        onClick={() => setLoginRole('Teacher')}
-        className={`py-2 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer ${
-          loginRole === 'Teacher' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900'
-        }`}
-      >
-        👨‍🏫 Teacher
-      </button>
-      <button
-        type="button"
-        onClick={() => setLoginRole('Parent')}
-        className={`py-2 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer ${
-          loginRole === 'Parent' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900'
-        }`}
-      >
-        👨‍👩‍👦 Parent
-      </button>
-    </div>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-1.5 p-1 bg-gray-100 rounded-xl mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setLoginRole('Admin')}
+                      className={`py-2 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer ${
+                        loginRole === 'Admin' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      👑 Admin
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoginRole('Teacher')}
+                      className={`py-2 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer ${
+                        loginRole === 'Teacher' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      👨‍🏫 Teacher
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setLoginRole('Parent')}
+                      className={`py-2 text-[10px] font-black uppercase rounded-lg transition-all cursor-pointer ${
+                        loginRole === 'Parent' ? 'bg-indigo-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      👨‍👩‍👦 Parent
+                    </button>
+                  </div>
 
-    <form onSubmit={handleLogin} className="space-y-4">
-      <div>
-        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
-          {loginRole === 'Parent' ? 'Parent Mobile Number' : loginRole === 'Teacher' ? 'Staff Mobile / Username' : 'Admin Username'}
-        </label>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><User className="w-4 h-4" /></span>
-          <input 
-            type="text" 
-            required 
-            value={username} 
-            onChange={(e) => setUsername(e.target.value)} 
-            placeholder={loginRole === 'Parent' ? 'Enter Mobile Number' : 'Enter Username'} 
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" 
-          />
-        </div>
-      </div>
+                  <form onSubmit={handleLogin} className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider mb-1">
+                        {loginRole === 'Parent' ? 'Parent Mobile Number' : loginRole === 'Teacher' ? 'Staff Mobile / Username' : 'Admin Username'}
+                      </label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><User className="w-4 h-4" /></span>
+                        <input 
+                          type="text" 
+                          required 
+                          value={username} 
+                          onChange={(e) => setUsername(e.target.value)} 
+                          placeholder={loginRole === 'Parent' ? 'Enter Mobile Number' : 'Enter Username'} 
+                          className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" 
+                        />
+                      </div>
+                    </div>
 
-      <div>
-        <div className="flex justify-between items-center mb-1">
-          <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider">Password</label>
-          <button type="button" onClick={() => { setFormMode('forgot_request'); setError(''); setSuccessMsg(''); }} className="text-[10px] font-bold text-indigo-600 hover:underline">Forgot Password?</button>
-        </div>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><Lock className="w-4 h-4" /></span>
-          <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" />
-        </div>
-      </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-wider">Password</label>
+                        <button type="button" onClick={() => { setFormMode('forgot_request'); setError(''); setSuccessMsg(''); }} className="text-[10px] font-bold text-indigo-600 hover:underline">Forgot Password?</button>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400"><Lock className="w-4 h-4" /></span>
+                        <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium" />
+                      </div>
+                    </div>
 
-      <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-2">
-        <span className="text-[11px] font-black text-indigo-900 tracking-wide flex items-center justify-between">📦 Security Captcha <RefreshCw className="w-3 h-3 text-indigo-600 cursor-pointer" onClick={generateCaptcha} /></span>
-        <div className="flex items-center gap-2">
-          <div className="bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl text-sm font-black border border-slate-700 min-w-[70px] text-center">{num1} + {num2} =</div>
-          <input type="number" required placeholder="Answer" value={captchaInput} onChange={(e) => setCaptchaInput(e.target.value)} className="flex-grow px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-center" />
-        </div>
-      </div>
+                    <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-2">
+                      <span className="text-[11px] font-black text-indigo-900 tracking-wide flex items-center justify-between">📦 Security Captcha <RefreshCw className="w-3 h-3 text-indigo-600 cursor-pointer" onClick={generateCaptcha} /></span>
+                      <div className="flex items-center gap-2">
+                        <div className="bg-slate-800 text-amber-400 px-3 py-1.5 rounded-xl text-sm font-black border border-slate-700 min-w-[70px] text-center">{num1} + {num2} =</div>
+                        <input type="number" required placeholder="Answer" value={captchaInput} onChange={(e) => setCaptchaInput(e.target.value)} className="flex-grow px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-sm font-bold text-center" />
+                      </div>
+                    </div>
 
-      <button type="submit" disabled={loading} className="w-full py-3 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md cursor-pointer">
-        Login as {loginRole} ⚡
-      </button>
-    </form>
-  </div>
-)}
+                    <button type="submit" disabled={loading} className="w-full py-3 bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md cursor-pointer">
+                      Login as {loginRole} ⚡
+                    </button>
+                  </form>
+                </div>
+              )}
 
               {formMode === 'forgot_request' && (
                 <form onSubmit={handleRequestOTP} className="space-y-4">
@@ -766,7 +716,6 @@ const handleSignatureChange = async (e) => {
 
           {/* MAIN CONTENT SPACE CONTAINER */}
           <div className="flex-grow flex flex-col min-w-0">
-            {/* 🛑 PRINT MEDIA KE WAQT MAIN HUB HEADER AUTOMATIC HIDE HONA CHAHIYE */}
             <header className="no-print bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
               <h2 className="text-lg font-black text-gray-800 capitalize tracking-tight">⚙️ {activeTab.replace('_', ' ')} Control Hub</h2>
             </header>
