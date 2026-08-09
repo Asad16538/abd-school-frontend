@@ -622,29 +622,9 @@ const handleSignatureChange = async (e) => {
         </motion.div>
       ) : (
         /* MAIN DASHBOARD PANEL */
-        <motion.div key="dashboard-screen" className="min-h-screen flex flex-col md:flex-row w-full bg-[#f3f4f6] relative">
-          
-          {/* 📱 MOBILE APP HEADER BAR */}
-          <div className="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between no-print z-30 shadow-md">
-            <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-bold uppercase shadow"
-              >
-                {isMobileMenuOpen ? '✕ Close' : '☰ Menu'}
-              </button>
-              <span className="font-black text-sm uppercase truncate">{schoolData.school_name}</span>
-            </div>
-            <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">{role}</span>
-          </div>
-
+        <motion.div key="dashboard-screen" className="min-h-screen flex flex-col md:flex-row w-full bg-[#f3f4f6]">
           {/* 🛑 PRINT MEDIA KE WAQT PURA SIDEBAR PANEL AUTO-HIDE HONA CHAHIYE */}
-          <aside className={`
-            no-print bg-slate-900 text-slate-300 flex flex-col z-20 shadow-xl border-r border-slate-800
-            fixed md:relative inset-y-0 left-0 transform transition-transform duration-300 ease-in-out
-            ${isMobileMenuOpen ? 'translate-x-0 w-64 pt-16 md:pt-0' : '-translate-x-full md:translate-x-0 w-64'}
-            ${isMobileMenuOpen ? 'flex' : 'hidden md:flex'}
-          `}>
+          <aside className="no-print w-full md:w-64 bg-slate-900 text-slate-300 flex flex-col z-20 shadow-xl border-r border-slate-800">
             <div className="p-5 border-b border-slate-800 flex items-center gap-3 bg-slate-950">
               <div className="w-10 h-10 bg-gradient-to-tr from-amber-400 to-orange-500 rounded-xl flex items-center justify-center overflow-hidden shrink-0">
                 {schoolData.school_logo ? <img src={schoolData.school_logo} alt="Logo" className="w-full h-full object-cover" /> : <Sparkles className="w-5 h-5 text-white" />}
@@ -655,13 +635,13 @@ const handleSignatureChange = async (e) => {
               </div>
             </div>
 
-            <nav className="flex-grow p-4 space-y-1.5 overflow-y-auto">
+            <nav className="flex-grow p-4 space-y-1.5">
+              {/* 1st Position: Overview Panel - Admin aur Teacher ke liye */}
               {role !== 'Parent' && (
                 <button
                   onClick={() => {
                     setActiveTab('overview');
                     loadDashboardData(true);
-                    setIsMobileMenuOpen(false);
                   }}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'overview' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
                 >
@@ -670,72 +650,82 @@ const handleSignatureChange = async (e) => {
                 </button>
               )}
 
+              {/* 2nd Position: Student Register - Sirf Admin ke liye */}
               {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('registration'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'registration' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('registration')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'registration' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Users className={`w-4 h-4 ${activeTab === 'registration' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>Student Register</span>
                 </button>
               )}
 
+              {/* 3rd Position: Search & Pay Fees - Sirf Admin ke liye */}
               {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('search_pay'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'search_pay' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('search_pay')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'search_pay' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Search className={`w-4 h-4 ${activeTab === 'search_pay' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>🔍 Search & Pay Fees</span>
                 </button>
               )}
 
+              {/* Quick Fee Panel  - Sirf Admin ke liye */}
               {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('quick_fee_panel'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'quick_fee_panel' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('quick_fee_panel')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'quick_fee_panel' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <CreditCard className={`w-4 h-4 ${activeTab === 'quick_fee_panel' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>⚡ Quick Fee Panel</span>
                 </button>
               )}
 
+              {/* 4th Position: Class & ID Card Management - Sirf Admin ke liye */}
               {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('class_management'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'class_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('class_management')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'class_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <IdCard className={`w-4 h-4 ${activeTab === 'class_management' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>🏫 Class Management</span>
                 </button>
               )}
 
+              {/* 5th Position: Student Attendance - Admin aur Teacher ke liye */}
               {(role === 'Admin' || role === 'Teacher') && (
-                <button onClick={() => { setActiveTab('student_attendance'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'student_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('student_attendance')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'student_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <CheckCircle2 className={`w-4 h-4 ${activeTab === 'student_attendance' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>📋 Student Attendance</span>
                 </button>
               )}
 
+              {/* 6th Position: Exam Management - Admin aur Teacher ke liye */}
               {(role === 'Admin' || role === 'Teacher') && (
-                <button onClick={() => { setActiveTab('exam_management'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'exam_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('exam_management')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'exam_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <FileText className={`w-4 h-4 ${activeTab === 'exam_management' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>📝 Exam Management</span>
                 </button>
               )}
 
+              {/* 7th Position: Staff & Geo-Payroll - Sirf Admin ke liye */}
               {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('payroll_attendance'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'payroll_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('payroll_attendance')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'payroll_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Users className={`w-4 h-4 ${activeTab === 'payroll_attendance' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>📅 Staff & Geo-Payroll</span>
                 </button>
               )}
 
+              {/* 8th Position: Fee Report Center - Sirf Admin ke liye */}
               {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('fee_report_center'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'fee_report_center' ? 'text-white bg-emerald-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('fee_report_center')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'fee_report_center' ? 'text-white bg-emerald-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Coins className={`w-4 h-4 ${activeTab === 'fee_report_center' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>🚀 Fee Report Center</span>
                 </button>
               )}
 
+              {/* 9th Position: Income & Expenses - Sirf Admin ke liye */}
               {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('expense_tracker'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'expense_tracker' ? 'text-white bg-rose-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('expense_tracker')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'expense_tracker' ? 'text-white bg-rose-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Coins className={`w-4 h-4 ${activeTab === 'expense_tracker' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>📊 Income & Expenses</span>
                 </button>
               )}
 
+              {/* 🛡️ Role Management Hub Button - Sirf Admin ke liye */}
               {role === 'Admin' && (
                 <button 
-                  onClick={() => { setActiveTab('role_management'); setIsMobileMenuOpen(false); }} 
+                  onClick={() => setActiveTab('role_management')} 
                   className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'role_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
                 >
                   <Users className="w-4 h-4 text-amber-300" />
@@ -743,15 +733,16 @@ const handleSignatureChange = async (e) => {
                 </button>
               )}
 
+              {/* 10th Position: Settings - Sirf Admin ke liye */}
               {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'settings' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('settings')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'settings' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Settings className={`w-4 h-4 ${activeTab === 'settings' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>Settings</span>
                 </button>
               )}
 
               {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('promotion_panel'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'promotion_panel' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                <button onClick={() => setActiveTab('promotion_panel')} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'promotion_panel' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Sparkles className={`w-4 h-4 ${activeTab === 'promotion_panel' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>🚀 Session Promotion</span>
                 </button>
@@ -782,57 +773,61 @@ const handleSignatureChange = async (e) => {
               {activeTab === 'promotion_panel' && <PromotionPanel />}
 
                 {activeTab === 'role_management' && (
-                  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm max-w-4xl">
-                    <h3 className="text-base font-black text-gray-800 border-b border-gray-100 pb-3 mb-4">👑 User Role & Permission Control Hub</h3>
-                    <p className="text-xs text-gray-500 mb-6 font-semibold">Yahan se aap system ke alag-alag users aur unke roles ko manage aur permissions assign kar sakte hain.</p>
-                    
-                    <div className="space-y-4">
-                      <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-xl flex items-center justify-between">
-                        <div>
-                          <h4 className="font-black text-indigo-900 text-sm mb-1">👑 Principal / Super Admin</h4>
-                          <p className="text-[11px] text-gray-600">Poore system ka full access (Fees, Settings, Staff, Expenses, ID Cards).</p>
-                        </div>
-                        <label className="flex items-center gap-2 cursor-pointer bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold">
-                          <input type="checkbox" defaultChecked disabled className="w-4 h-4 accent-indigo-600 cursor-pointer" />
-                          <span>Active (Default)</span>
-                        </label>
-                      </div>
+  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm max-w-4xl">
+    <h3 className="text-base font-black text-gray-800 border-b border-gray-100 pb-3 mb-4">👑 User Role & Permission Control Hub</h3>
+    <p className="text-xs text-gray-500 mb-6 font-semibold">Yahan se aap system ke alag-alag users aur unke roles ko manage aur permissions assign kar sakte hain.</p>
+    
+    <div className="space-y-4">
+      {/* 1. Principal / Admin Role */}
+      <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-xl flex items-center justify-between">
+        <div>
+          <h4 className="font-black text-indigo-900 text-sm mb-1">👑 Principal / Super Admin</h4>
+          <p className="text-[11px] text-gray-600">Poore system ka full access (Fees, Settings, Staff, Expenses, ID Cards).</p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer bg-indigo-600 text-white px-3 py-1.5 rounded-xl text-xs font-bold">
+          <input type="checkbox" defaultChecked disabled className="w-4 h-4 accent-indigo-600 cursor-pointer" />
+          <span>Active (Default)</span>
+        </label>
+      </div>
 
-                      <div className="p-4 bg-emerald-50/60 border border-emerald-100 rounded-xl flex items-center justify-between">
-                        <div>
-                          <h4 className="font-black text-emerald-900 text-sm mb-1">💼 Accountant / Fee Manager</h4>
-                          <p className="text-[11px] text-gray-600">Sirf Fee Collection, Search & Pay, aur Fee Reports ka access.</p>
-                        </div>
-                        <label className="flex items-center gap-2 cursor-pointer bg-white border border-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 shadow-sm">
-                          <input type="checkbox" onChange={(e) => alert(e.target.checked ? "Accountant Role Enabled!" : "Accountant Role Disabled!")} className="w-4 h-4 accent-emerald-600 cursor-pointer" />
-                          <span>Enable Role</span>
-                        </label>
-                      </div>
+      {/* 2. Accountant Role */}
+      <div className="p-4 bg-emerald-50/60 border border-emerald-100 rounded-xl flex items-center justify-between">
+        <div>
+          <h4 className="font-black text-emerald-900 text-sm mb-1">💼 Accountant / Fee Manager</h4>
+          <p className="text-[11px] text-gray-600">Sirf Fee Collection, Search & Pay, aur Fee Reports ka access.</p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer bg-white border border-emerald-300 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-800 shadow-sm">
+          <input type="checkbox" onChange={(e) => alert(e.target.checked ? "Accountant Role Enabled!" : "Accountant Role Disabled!")} className="w-4 h-4 accent-emerald-600 cursor-pointer" />
+          <span>Enable Role</span>
+        </label>
+      </div>
 
-                      <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-xl flex items-center justify-between">
-                        <div>
-                          <h4 className="font-black text-blue-900 text-sm mb-1">👨‍🏫 Teacher / Staff Access</h4>
-                          <p className="text-[11px] text-gray-600">Student Attendance, Exam Management, aur khud ki Geo-Payroll attendance.</p>
-                        </div>
-                        <label className="flex items-center gap-2 cursor-pointer bg-white border border-blue-300 px-3 py-1.5 rounded-xl text-xs font-bold text-blue-800 shadow-sm">
-                          <input type="checkbox" defaultChecked onChange={(e) => alert(e.target.checked ? "Teacher Access Enabled!" : "Teacher Access Disabled!")} className="w-4 h-4 accent-blue-600 cursor-pointer" />
-                          <span>Enable Role</span>
-                        </label>
-                      </div>
+      {/* 3. Teacher Role */}
+      <div className="p-4 bg-blue-50/60 border border-blue-100 rounded-xl flex items-center justify-between">
+        <div>
+          <h4 className="font-black text-blue-900 text-sm mb-1">👨‍🏫 Teacher / Staff Access</h4>
+          <p className="text-[11px] text-gray-600">Student Attendance, Exam Management, aur khud ki Geo-Payroll attendance.</p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer bg-white border border-blue-300 px-3 py-1.5 rounded-xl text-xs font-bold text-blue-800 shadow-sm">
+          <input type="checkbox" defaultChecked onChange={(e) => alert(e.target.checked ? "Teacher Access Enabled!" : "Teacher Access Disabled!")} className="w-4 h-4 accent-blue-600 cursor-pointer" />
+          <span>Enable Role</span>
+        </label>
+      </div>
 
-                      <div className="p-4 bg-amber-50/60 border border-amber-100 rounded-xl flex items-center justify-between">
-                        <div>
-                          <h4 className="font-black text-amber-900 text-sm mb-1">👨‍👩‍👦 Parent Portal Access</h4>
-                          <p className="text-[11px] text-gray-600">Sirf apne bache ki fee status, report card aur attendance dekhne ka access.</p>
-                        </div>
-                        <label className="flex items-center gap-2 cursor-pointer bg-white border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-800 shadow-sm">
-                          <input type="checkbox" defaultChecked onChange={(e) => alert(e.target.checked ? "Parent Portal Enabled!" : "Parent Portal Disabled!")} className="w-4 h-4 accent-amber-600 cursor-pointer" />
-                          <span>Enable Role</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                )}
+      {/* 4. Parent Role */}
+      <div className="p-4 bg-amber-50/60 border border-amber-100 rounded-xl flex items-center justify-between">
+        <div>
+          <h4 className="font-black text-amber-900 text-sm mb-1">👨‍👩‍👦 Parent Portal Access</h4>
+          <p className="text-[11px] text-gray-600">Sirf apne bache ki fee status, report card aur attendance dekhne ka access.</p>
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer bg-white border border-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold text-amber-800 shadow-sm">
+          <input type="checkbox" defaultChecked onChange={(e) => alert(e.target.checked ? "Parent Portal Enabled!" : "Parent Portal Disabled!")} className="w-4 h-4 accent-amber-600 cursor-pointer" />
+          <span>Enable Role</span>
+        </label>
+      </div>
+    </div>
+  </div>
+)}
 
                 {activeTab === 'overview' && (
                   <>
@@ -996,21 +991,23 @@ const handleSignatureChange = async (e) => {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-1 gap-4 pt-2 border-t border-gray-100">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">🤖 Admin Telegram ID</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., 1989970458"
-                            value={schoolData?.telegram_admin_id || ''}
-                            onChange={(e) => setSchoolData({...schoolData, telegram_admin_id: e.target.value})}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
-                          />
-                          <p className="text-[8px] text-gray-400 mt-1">
-                            ⚡ @userinfobot se apni Telegram ID nikalein. Saare admin notifications yahan aayenge.
-                          </p>
-                        </div>
-                      </div>
+                      {/* ✅ YAHAN TELEGRAM ADMIN ID FIELD ADD KARO */}
+      <div className="grid grid-cols-1 gap-4 pt-2 border-t border-gray-100">
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">🤖 Admin Telegram ID</label>
+          <input
+            type="text"
+            placeholder="e.g., 1989970458"
+            value={schoolData?.telegram_admin_id || ''}
+            onChange={(e) => setSchoolData({...schoolData, telegram_admin_id: e.target.value})}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
+          />
+          <p className="text-[8px] text-gray-400 mt-1">
+            ⚡ @userinfobot se apni Telegram ID nikalein. Saare admin notifications yahan aayenge.
+          </p>
+        </div>
+      </div>
+      {/* ✅ YAHAN TAK */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                         <div>
                           <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Upload System Brand Logo</label>
@@ -1049,6 +1046,7 @@ const handleSignatureChange = async (e) => {
               </Suspense>
             </main>
 
+            {/* 🛑 PRINT MEDIA KE WAQT FOOTER AUTO-HIDE HONA CHAHIYE */}
             <footer className="no-print w-full py-2.5 bg-white border-t border-gray-200 text-center text-[10px] font-black text-gray-400 tracking-wider uppercase">
               Developed & Maintained by <span className="text-gray-600 font-extrabold">A.B.Digital Work</span>
             </footer>
@@ -1059,7 +1057,6 @@ const handleSignatureChange = async (e) => {
   </div>
 );
 }
-
 const CircleCardIcon = ({ component: Component }) => (
   <Component className="w-8 h-8 opacity-20" />
 );
