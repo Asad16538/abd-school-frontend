@@ -331,15 +331,40 @@ function App() {
     window.open(whatsappUrl, '_blank');
   };
 
-  const sendFeeReminder = async (studentId) => {
-    try {
-      const res = await axios.post(`${BASE_URL}/api/fee-reminder`, { student_id: studentId });
-      setSuccessMsg(res.data.message);
-      setTimeout(() => setSuccessMsg(''), 3000);
-    } catch (err) {
-      console.error("Error:", err);
-      setError("Failed to send reminder. Check Backend!");
+  const sendFeeReminder = (student) => {
+    if (!student.parent_mobile || student.parent_mobile === '0000000000') {
+      alert("❌ Is student ka valid mobile number registered nahi hai!");
+      return;
     }
+
+    const schoolName = schoolData.school_name || "SMART SCHOOL ERP";
+    
+    const pendingSchool = parseFloat(student.school_fee_total || 0) - parseFloat(student.school_fee_paid || 0);
+    const pendingTrans = parseFloat(student.transport_fee_total || 0) - parseFloat(student.transport_fee_paid || 0);
+    const totalDue = pendingSchool + pendingTrans;
+
+    if (totalDue <= 0) {
+      alert("✅ Is student ki fee pehle hi clear ho chuki hai!");
+      return;
+    }
+
+    const message = 
+      `🔔 *[FEE REMINDER - ${schoolName.toUpperCase()}]*\n\n` +
+      `Namaste,\n\n` +
+      `👤 *Student Name:* ${student.name}\n` +
+      `🏫 *Pending School Fee:* ₹${pendingSchool}\n` +
+      `🚐 *Pending Van/Bus Fee:* ₹${pendingTrans}\n\n` +
+      `💰 *Total Outstanding Amount:* *₹{totalDue}*\n\n` +
+      `Kripya fee ka bhugtan samay par karein.\n\n` +
+      `_System Powered by A.B.Digital Work_`;
+
+    let phone = student.parent_mobile.trim();
+    if (phone.length === 10) {
+      phone = `91${phone}`;
+    }
+
+    const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   // ============================================================
