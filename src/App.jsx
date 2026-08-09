@@ -847,63 +847,65 @@ function App() {
                     </div>
 
                     <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-  <div className="flex items-center justify-between border-b pb-4 mb-4">
-    <div>
-      <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider">⚠️ Most Pending Fee Students</h3>
-      <p className="text-[11px] text-gray-400 font-bold">Bache jinki fees sabse zyada बकाया hai (Auto-sorting Enabled)</p>
-    </div>
-    <span className="px-2.5 py-1 bg-rose-50 text-rose-600 text-[10px] font-black uppercase rounded-lg">Defaulters Priority</span>
-  </div>
-  <div className="overflow-x-auto">
-    <table className="w-full text-left text-xs font-medium">
-      <thead>
-        <tr className="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] border-b">
-          <th className="p-3">Student & Class Details</th>
-          <th className="p-3">Break-down Fee Structure</th>
-          <th className="p-3">Total Pending</th>
-          <th className="p-3 text-center">Operations Channel</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-gray-100">
-        {pendingStudents.map((st) => (
-          <tr key={st.id} className="hover:bg-slate-50/60 transition-all">
-            <td className="p-3">
-              <div className="font-black text-gray-800 text-sm">{st.name}</div>
-              <div className="text-gray-400 font-bold text-[10px] uppercase mt-0.5">{st.class} - Sec {st.section} | 📱 {st.parent_mobile}</div>
-            </td>
-            <td className="p-3 space-y-1">
-              <div className="flex items-center gap-2"><span className="w-20 font-bold text-gray-400 uppercase text-[9px]">School Fee:</span><span className="font-bold text-gray-700">₹{st.school_fee_total - st.school_fee_paid} due</span></div>
-              <div className="flex items-center gap-2"><span className="w-20 font-bold text-gray-400 uppercase text-[9px]">Van/Bus Fee:</span><span className="font-bold text-gray-700">₹{st.transport_fee_total - st.transport_fee_paid} due</span></div>
-            </td>
-            <td className="p-3"><span className="px-2 py-1 bg-red-50 text-red-600 font-black text-sm rounded-lg">₹{st.total_pending}</span></td>
-            <td className="p-3">
-              <div className="flex items-center justify-center gap-2">
-                <button 
-                  type="button"
-                  onClick={() => { localStorage.setItem('redirect_student_id', st.id); setActiveTab('search_pay'); }} 
-                  className="px-3 py-2 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-indigo-700 transition-all"
-                >
-                  फीस जमा करे
-                </button>
-                
-                <button 
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    sendFeeReminder(st);
-                  }} 
-                  className="px-3 py-2 bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-amber-500 transition-all z-20 relative"
-                >
-                  🔔 याद दिलाएं (WhatsApp)
-                </button>
-              </div>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-</div>
+                      <div className="flex items-center justify-between border-b pb-4 mb-4">
+                        <div>
+                          <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider">⚠️ Most Pending Fee Students</h3>
+                          <p className="text-[11px] text-gray-400 font-bold">Bache jinki fees sabse zyada बकाया hai (Auto-sorting Enabled)</p>
+                        </div>
+                        <span className="px-2.5 py-1 bg-rose-50 text-rose-600 text-[10px] font-black uppercase rounded-lg">Defaulters Priority</span>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs font-medium">
+                          <thead>
+                            <tr className="bg-gray-50 text-gray-500 uppercase tracking-wider text-[10px] border-b">
+                              <th className="p-3">Student & Class Details</th>
+                              <th className="p-3">Break-down Fee Structure</th>
+                              <th className="p-3">Total Pending</th>
+                              <th className="p-3 text-center">Operations Channel</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-100">
+                            {pendingStudents.map((st) => (
+                              <tr key={st.id} className="hover:bg-slate-50/60 transition-all">
+                                <td className="p-3">
+                                  <div className="font-black text-gray-800 text-sm">{st.name}</div>
+                                  <div className="text-gray-400 font-bold text-[10px] uppercase mt-0.5">{st.class} - Sec {st.section} | 📱 {st.parent_mobile}</div>
+                                </td>
+                                <td className="p-3 space-y-1">
+                                  <div className="flex items-center gap-2"><span className="w-20 font-bold text-gray-400 uppercase text-[9px]">School Fee:</span><span className="font-bold text-gray-700">₹{st.school_fee_total - st.school_fee_paid} due</span></div>
+                                  <div className="flex items-center gap-2"><span className="w-20 font-bold text-gray-400 uppercase text-[9px]">Van/Bus Fee:</span><span className="font-bold text-gray-700">₹{st.transport_fee_total - st.transport_fee_paid} due</span></div>
+                                </td>
+                                <td className="p-3"><span className="px-2 py-1 bg-red-50 text-red-600 font-black text-sm rounded-lg">₹{st.total_pending}</span></td>
+                                <td className="p-3">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <button 
+                                      type="button"
+                                      onClick={() => { localStorage.setItem('redirect_student_id', st.id); setActiveTab('search_pay'); }} 
+                                      className="px-3 py-2 bg-indigo-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-indigo-700 transition-all"
+                                    >
+                                      फीस जमा करे
+                                    </button>
+                                    
+                                    <button 
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        sendFeeReminder(st);
+                                      }} 
+                                      className="px-3 py-2 bg-amber-400 text-black font-black text-[10px] uppercase tracking-wider rounded-xl shadow-sm cursor-pointer hover:bg-amber-500 transition-all z-20 relative"
+                                    >
+                                      🔔 याद दिलाएं (WhatsApp)
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {activeTab === 'settings' && (
                   <div className="max-w-2xl bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
