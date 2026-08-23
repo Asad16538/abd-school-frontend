@@ -14,6 +14,7 @@ const QuickFeePanel = () => {
     section: 'A',
     mobile: '',
     fee_cycle: 'Monthly',
+    installment_label: '', // ⚡ Nayi field state
     original_fee: '',
     payable_fee: '',
     vehicle_fee: ''
@@ -23,15 +24,16 @@ const QuickFeePanel = () => {
 
   const excelInstructions = `
 📋 QUICK FEE EXCEL FORMAT:
-1. Student Name (छात्र का नाम)
-2. Father Name (पिता का नाम)
-3. Class (कक्षा)
-4. Section (वर्ग - A/B/C)
-5. Mobile (मोबाइल नंबर)
-6. Fee Cycle (Monthly/Quarterly/Annual)
-7. Original Fee (मूल फीस)
-8. Payable Fee (देय फीस)
-9. Vehicle Fee (वाहन फीस)
+1. Student Name
+2. Father Name
+3. Class
+4. Section
+5. Mobile
+6. Fee Cycle
+7. Installment Label (e.g., March Installment)
+8. Original Fee
+9. Payable Fee
+10. Vehicle Fee
   `;
 
   useEffect(() => {
@@ -40,11 +42,13 @@ const QuickFeePanel = () => {
 
   const fetchQuickFeeData = async () => {
     try {
-      const res = await fetch('https://erp-api.aapschool.in/api/quick-fee/list');
+      const res = await fetch('https://erp-api.aapschool.in/api/students');
       const data = await res.json();
-      if (data.success) {
-        setFeeRecords(data.records);
-        setStats({ total_students: data.total_students, total_fee: data.total_fee });
+      if (Array.isArray(data)) {
+        const totalStu = data.length;
+        const totalTarget = data.reduce((acc, curr) => acc + parseFloat(curr.school_fee_total || 0) + parseFloat(curr.transport_fee_total || 0), 0);
+        setFeeRecords(data);
+        setStats({ total_students: totalStu, total_fee: totalTarget });
       }
     } catch (err) {
       console.error("Error loading students", err);
@@ -67,7 +71,7 @@ const QuickFeePanel = () => {
         setSuccessMsg(data.message);
         setForm({
           student_name: '', father_name: '', class: '', section: 'A', mobile: '',
-          fee_cycle: 'Monthly', original_fee: '', payable_fee: '', vehicle_fee: ''
+          fee_cycle: 'Monthly', installment_label: '', original_fee: '', payable_fee: '', vehicle_fee: ''
         });
         fetchQuickFeeData();
       } else {
@@ -96,7 +100,6 @@ const QuickFeePanel = () => {
           return;
         }
 
-        // Map excel rows to backend expected format
         const formattedRecords = jsonData.map(row => ({
           student_name: row['Student Name'] || row['student_name'] || '',
           father_name: row['Father Name'] || row['father_name'] || '',
@@ -104,6 +107,7 @@ const QuickFeePanel = () => {
           section: row['Section'] || row['section'] || 'A',
           mobile: row['Mobile'] || row['mobile'] || '0000000000',
           fee_cycle: row['Fee Cycle'] || row['fee_cycle'] || 'Monthly',
+          installment_label: row['Installment Label'] || row['installment_label'] || '',
           original_fee: row['Original Fee'] || row['original_fee'] || 0,
           payable_fee: row['Payable Fee'] || row['payable_fee'] || 0,
           vehicle_fee: row['Vehicle Fee'] || row['vehicle_fee'] || 0
@@ -134,7 +138,6 @@ const QuickFeePanel = () => {
           <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '14px' }}>Yahan fee dalte hi dashboard cards aur Search & Pay Fees mein student update ho jayega</p>
         </div>
 
-        {/* Dashboard Main Cards Sync & Excel Upload Button */}
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ backgroundColor: '#eef2ff', padding: '10px 16px', borderRadius: '8px', border: '1px solid #c7d2fe', display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Users color="#4f46e5" size={20} />
@@ -152,7 +155,6 @@ const QuickFeePanel = () => {
             </div>
           </div>
 
-          {/* Excel Hover Tooltip Container */}
           <div style={{ position: 'relative', display: 'inline-block' }} className="excel-hover-container">
             <label style={{ backgroundColor: '#10b981', color: 'white', padding: '10px 18px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
               <Upload size={16} /> Excel Se Fee Upload
@@ -212,6 +214,12 @@ const QuickFeePanel = () => {
               </select>
             </div>
 
+            {/* ⚡ NAYI FIELD: Installment / Month & Due Label */}
+            <div>
+              <label style={labelStyle}>Installment / Month & Due Label (किस्त / माह विवरण)</label>
+              <input type="text" placeholder="e.g. March Installment / First Term" value={form.installment_label} onChange={(e) => setForm({...form, installment_label: e.target.value})} style={inpStyle} />
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <div>
                 <label style={labelStyle}>Original Fee (₹)</label>
@@ -242,24 +250,22 @@ const QuickFeePanel = () => {
               <tr style={{ backgroundColor: '#f1f5f9', color: '#475569' }}>
                 <th style={{ padding: '10px' }}>Student Name</th>
                 <th style={{ padding: '10px' }}>Class/Sec</th>
-                <th style={{ padding: '10px' }}>Mobile</th>
-                <th style={{ padding: '10px' }}>Cycle</th>
+                <th style={{ padding: '10px' }}>Installment Label</th>
                 <th style={{ padding: '10px' }}>Payable Fee</th>
                 <th style={{ padding: '10px' }}>Vehicle Fee</th>
               </tr>
             </thead>
             <tbody>
               {feeRecords.length === 0 ? (
-                <tr><td colSpan="6" style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>No records found.</td></tr>
+                <tr><td colSpan="5" style={{ padding: '30px', textAlign: 'center', color: '#94a3b8' }}>No records found.</td></tr>
               ) : (
                 feeRecords.map(r => (
                   <tr key={r.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                    <td style={{ padding: '10px', fontWeight: 'bold' }}>{r.student_name || r.name}<div style={{ fontSize: '10px', color: '#64748b' }}>F: {r.father_name || 'N/A'}</div></td>
+                    <td style={{ padding: '10px', fontWeight: 'bold' }}>{r.name || r.student_name}<div style={{ fontSize: '10px', color: '#64748b' }}>F: {r.father_name || 'N/A'}</div></td>
                     <td style={{ padding: '10px' }}>{r.class} - {r.section}</td>
-                    <td style={{ padding: '10px' }}>{r.mobile || 'N/A'}</td>
-                    <td style={{ padding: '10px' }}>{r.fee_cycle || 'Monthly'}</td>
-                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#16a34a' }}>₹{r.payable_fee || r.school_fee_total}</td>
-                    <td style={{ padding: '10px' }}>₹{r.vehicle_fee || r.transport_fee_total}</td>
+                    <td style={{ padding: '10px', color: '#4f46e5', fontWeight: 'bold' }}>{r.installment_label || 'N/A'}</td>
+                    <td style={{ padding: '10px', fontWeight: 'bold', color: '#16a34a' }}>₹{r.school_fee_total}</td>
+                    <td style={{ padding: '10px' }}>₹{r.transport_fee_total}</td>
                   </tr>
                 ))
               )}
