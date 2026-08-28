@@ -48,6 +48,7 @@ const ExpenseTracker = lazy(() => import('./components/ExpenseTracker'));
 const IDCardStudio = lazy(() => import('./components/IDCardStudio'));
 const ClassAttendance = lazy(() => import('./components/ClassAttendance'));
 const PromotionPanel = lazy(() => import('./components/PromotionPanel'));
+const BalanceSheet = lazy(() => import('./components/BalanceSheet'));
 
 const BASE_URL = "https://erp-api.aapschool.in";
 
@@ -708,6 +709,15 @@ function App() {
                 <button onClick={() => { setActiveTab('expense_tracker'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'expense_tracker' ? 'text-white bg-rose-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Coins className={`w-4 h-4 ${activeTab === 'expense_tracker' ? 'text-amber-300' : 'text-slate-400'}`} />
                   <span>📊 Income & Expenses</span>
+                </button>
+              )}
+
+              {activeTab === 'balance_sheet' && <BalanceSheet BASE_URL={BASE_URL} />}
+
+              {role === 'Admin' && (
+                <button onClick={() => { setActiveTab('balance_sheet'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'balance_sheet' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
+                  <Landmark className={`w-4 h-4 ${activeTab === 'balance_sheet' ? 'text-amber-300' : 'text-slate-400'}`} />
+                  <span>📊 Balance Sheet</span>
                 </button>
               )}
 
