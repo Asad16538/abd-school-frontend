@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 export default function BalanceSheet({ BASE_URL }) {
-  const [data, setData] = useState({ items: [], total_assets: 0, total_liabilities: 0, net_worth: 0 });
+  const [data, setData] = useState({ school_name: 'School ERP', items: [], total_assets: 0, total_liabilities: 0, net_worth: 0 });
   const [form, setForm] = useState({ id: null, category: 'Asset', item_name: '', amount: '', remarks: '' });
   const [loading, setLoading] = useState(false);
   const [reportType, setReportType] = useState('yearly');
@@ -158,7 +158,7 @@ export default function BalanceSheet({ BASE_URL }) {
         
         {/* Header Title */}
         <div className="text-center border-b-2 border-gray-800 pb-4 mb-6">
-          <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider text-gray-900">ADITYA ARMY PUBLIC SCHOOL</h1>
+          <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider text-gray-900">{data.school_name}</h1>
           <p className="text-xs font-bold text-gray-600 uppercase tracking-widest mt-1">STATEMENT OF ASSETS AND LIABILITIES ({reportType.toUpperCase()} VIEW)</p>
           <p className="text-[10px] text-gray-500 font-semibold mt-0.5">As on: {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
         </div>
