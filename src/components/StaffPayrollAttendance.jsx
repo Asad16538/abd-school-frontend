@@ -25,6 +25,7 @@ const StaffPayrollAttendance = () => {
   const [activeTab, setActiveTab] = useState('directory'); // directory | reports | rules | qr_wall
   const [reportMode, setReportMode] = useState('today'); // today | monthly | management
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().split('T')[0].substring(0, 7)); // YYYY-MM
+  const [showExportMenu, setShowExportMenu] = useState(false);
   const [reportData, setReportData] = useState([]);
   const [managementSheetData, setManagementSheetData] = useState([]);
   
@@ -808,11 +809,59 @@ const handleEditSubmit = async (e) => {
           <button onClick={() => setActiveTab('qr_wall')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'qr_wall' ? '#4f46e5' : '#fff', color: activeTab === 'qr_wall' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><QrCode size={16}/> Wall QR Terminal</button>
         </div>
         
+        {/* 🎯 EXPORT ATTENDANCE EXCEL BUTTON WITH DROPDOWN MENU */}
         {activeTab === 'reports' && reportMode !== 'management' && (
-          <button onClick={downloadExcelReport} style={{ ...tabBtnStyle, backgroundColor: '#16a34a', color: 'white' }}>
-            <Download size={16}/> 📥 Export Attendance Excel
-          </button>
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <button 
+              onClick={() => setShowExportMenu(!showExportMenu)} 
+              style={{ ...tabBtnStyle, backgroundColor: '#16a34a', color: 'white' }}
+            >
+              <Download size={16}/> 📥 Export Attendance Excel ▾
+            </button>
+
+            {showExportMenu && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                marginTop: '4px',
+                backgroundColor: 'white',
+                border: '1px solid #cbd5e1',
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                zIndex: 100,
+                minWidth: '200px',
+                overflow: 'hidden'
+              }}>
+                <button 
+                  onClick={() => {
+                    setReportMode('today');
+                    setShowExportMenu(false);
+                    setTimeout(() => downloadExcelReport(), 100);
+                  }}
+                  style={{ width: '100%', padding: '10px 14px', textAlign: 'left', backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 'bold', color: '#334155', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+                >
+                  📅 Aaj ki Attendance (Today)
+                </button>
+                <button 
+                  onClick={() => {
+                    setReportMode('monthly');
+                    setShowExportMenu(false);
+                    setTimeout(() => downloadExcelReport(), 100);
+                  }}
+                  style={{ width: '100%', padding: '10px 14px', textAlign: 'left', backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 'bold', color: '#334155', cursor: 'pointer' }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
+                >
+                  📊 Month Wise Attendance
+                </button>
+              </div>
+            )}
+          </div>
         )}
+
         {activeTab === 'reports' && reportMode === 'management' && (
           <button onClick={downloadManagementPayrollExcel} style={{ ...tabBtnStyle, backgroundColor: '#1e293b', color: 'white' }}>
             <Download size={16}/> 📥 Download Master Payroll Sheet
