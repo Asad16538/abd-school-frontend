@@ -73,7 +73,7 @@ export default function BalanceSheet({ BASE_URL }) {
   return (
     <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
       
-      {/* 🖨️ CSS PRINT ISOLATION HACK: Sirf target area print hoga */}
+      {/* 🖨️ PRINT ISOLATION CSS: Sirf print ke waqt baaki cheezein hide hongi */}
       <style>{`
         @media print {
           body * {
@@ -88,10 +88,8 @@ export default function BalanceSheet({ BASE_URL }) {
             top: 0;
             width: 100%;
             margin: 0;
-            padding: 10mm;
+            padding: 5mm;
             background: white;
-            box-shadow: none !important;
-            border: none !important;
           }
           .no-print {
             display: none !important;
@@ -99,18 +97,62 @@ export default function BalanceSheet({ BASE_URL }) {
         }
       `}</style>
 
-      {/* 🛑 NO-PRINT ACTION BAR (Ye print me hide rahega) */}
-      <div className="flex flex-wrap gap-3 items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100 no-print">
-        {/* ... action buttons ... */}
+      {/* 🛑 ACTION BAR (Screen par dikhega, print me hide ho jayega) */}
+      <div className="no-print flex flex-wrap gap-3 items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-black text-gray-800">📊 Balance Sheet Control Hub</h2>
+          <select 
+            value={reportType} 
+            onChange={(e) => setReportType(e.target.value)}
+            className="p-2 border rounded-lg text-sm font-bold bg-gray-50 cursor-pointer"
+          >
+            <option value="monthly">Monthly Statement</option>
+            <option value="yearly">Yearly Statement (Financial Year)</option>
+          </select>
+        </div>
+        <div className="flex gap-2">
+          <button onClick={downloadExcel} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+            📥 Download Excel
+          </button>
+          <button onClick={handlePrintPDF} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+            🖨️ Print CA-Style A4 PDF
+          </button>
+        </div>
       </div>
 
-      {/* 🛑 NO-PRINT FORM INPUT (Ye bhi print me hide rahega) */}
-      <form onSubmit={handleSave} className="no-print bg-white p-5 rounded-xl shadow-sm border border-gray-100 ...">
-        {/* ... form fields ... */}
+      {/* 🛑 FORM INPUT FOR ADD/EDIT (Screen par dikhega, print me hide ho jayega) */}
+      <form onSubmit={handleSave} className="no-print bg-white p-5 rounded-xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div>
+          <label className="text-xs font-bold text-gray-600 block mb-1">Type</label>
+          <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} className="w-full p-2.5 border rounded-lg font-medium text-sm">
+            <option value="Asset">Asset (संपत्ति)</option>
+            <option value="Liability">Liability (देयता/कर्ज़)</option>
+          </select>
+        </div>
+        <div>
+          <label className="text-xs font-bold text-gray-600 block mb-1">Item Name</label>
+          <input type="text" placeholder="e.g. Lab Equipment" value={form.item_name} onChange={e => setForm({...form, item_name: e.target.value})} required className="w-full p-2.5 border rounded-lg text-sm" />
+        </div>
+        <div>
+          <label className="text-xs font-bold text-gray-600 block mb-1">Amount (₹)</label>
+          <input type="number" placeholder="0.00" value={form.amount} onChange={e => setForm({...form, amount: e.target.value})} required className="w-full p-2.5 border rounded-lg text-sm" />
+        </div>
+        <div>
+          <label className="text-xs font-bold text-gray-600 block mb-1">Remarks</label>
+          <input type="text" placeholder="Optional notes" value={form.remarks} onChange={e => setForm({...form, remarks: e.target.value})} className="w-full p-2.5 border rounded-lg text-sm" />
+        </div>
+        <div className="flex gap-2">
+          <button type="submit" disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold p-2.5 rounded-lg text-sm transition cursor-pointer">
+            {form.id ? 'Update' : 'Add Item'}
+          </button>
+          {form.id && (
+            <button type="button" onClick={() => setForm({ id: null, category: 'Asset', item_name: '', amount: '', remarks: '' })} className="bg-gray-300 px-3 py-2.5 rounded-lg text-sm font-bold cursor-pointer">Cancel</button>
+          )}
+        </div>
       </form>
 
       {/* ========================================================== */}
-      {/* 📄 YE WALA AREA HI SIRF PRINT / PDF ME AAYEGA */}
+      {/* 📄 PROFESSIONAL CA-STYLE A4 PRINTABLE BALANCE SHEET FORMAT  */}
       {/* ========================================================== */}
       <div id="printable-balance-sheet" className="bg-white p-6 md:p-10 rounded-2xl shadow-md border border-gray-200 text-gray-900">
         
@@ -141,7 +183,8 @@ export default function BalanceSheet({ BASE_URL }) {
                 const liab = liabilitiesList[index];
                 const ast = assetsList[index];
                 return (
-                  <tr key={index} className="border-b border-gray-300">
+                  <tr key={index} className="border-b border-gray-300 hover:bg-gray-50/50">
+                    {/* Liability Side */}
                     <td className="border-r border-gray-300 p-2 font-medium">
                       {liab ? (
                         <div>
@@ -153,10 +196,14 @@ export default function BalanceSheet({ BASE_URL }) {
                     <td className="border-r border-gray-800 p-2 text-right font-semibold">
                       {liab ? Number(liab.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
                       {liab && (
-                        <span className="no-print ml-2 text-[10px] text-blue-600 cursor-pointer" onClick={() => setForm(liab)}>[Edit]</span>
+                        <span className="no-print ml-2 text-[10px] text-blue-600 cursor-pointer font-bold" onClick={() => setForm(liab)}>[Edit]</span>
+                      )}
+                      {liab && (
+                        <span className="no-print ml-1 text-[10px] text-red-600 cursor-pointer font-bold" onClick={() => handleDelete(liab.id)}>[Del]</span>
                       )}
                     </td>
 
+                    {/* Asset Side */}
                     <td className="border-r border-gray-300 p-2 font-medium">
                       {ast ? (
                         <div>
@@ -168,13 +215,17 @@ export default function BalanceSheet({ BASE_URL }) {
                     <td className="p-2 text-right font-semibold">
                       {ast ? Number(ast.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
                       {ast && (
-                        <span className="no-print ml-2 text-[10px] text-blue-600 cursor-pointer" onClick={() => setForm(ast)}>[Edit]</span>
+                        <span className="no-print ml-2 text-[10px] text-blue-600 cursor-pointer font-bold" onClick={() => setForm(ast)}>[Edit]</span>
+                      )}
+                      {ast && (
+                        <span className="no-print ml-1 text-[10px] text-red-600 cursor-pointer font-bold" onClick={() => handleDelete(ast.id)}>[Del]</span>
                       )}
                     </td>
                   </tr>
                 );
               })}
 
+              {/* Capital / Net Worth Row */}
               <tr className="border-b border-gray-800 bg-gray-50 font-bold">
                 <td className="border-r border-gray-800 p-2 text-gray-900">Capital / Net Worth</td>
                 <td className="border-r border-gray-800 p-2 text-right text-indigo-700">
@@ -185,6 +236,7 @@ export default function BalanceSheet({ BASE_URL }) {
               </tr>
             </tbody>
 
+            {/* Grand Total Footer Row */}
             <tfoot>
               <tr className="bg-gray-200 border-t-2 border-gray-800 font-black text-sm text-gray-900">
                 <td className="border-r border-gray-800 p-2.5">TOTAL LIABILITIES</td>
@@ -200,8 +252,8 @@ export default function BalanceSheet({ BASE_URL }) {
           </table>
         </div>
 
-        {/* Signature Block */}
-        <div className="mt-16 pt-8 flex justify-between items-end text-xs font-bold text-gray-800">
+        {/* Signature & Verification Block for Print */}
+        <div className="mt-16 pt-8 flex justify-between items-end text-xs font-bold text-gray-800 print:mt-24">
           <div className="text-center">
             <div className="border-t border-gray-800 w-40 pt-1">Prepared By (Accountant)</div>
           </div>
