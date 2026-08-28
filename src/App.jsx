@@ -71,85 +71,6 @@ function App() {
   const [role, setRole] = useState('');
   const [activeTab, setActiveTab] = useState('overview');
 
-  // ============================================================
-  // 🎙️ ALWAYS-ON BACKGROUND VOICE ASSISTANT LISTENER
-  // ============================================================
-  useEffect(() => {
-    if (!isLoggedIn) return; // Sirf login hone ke baad hi active hoga
-
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      console.warn("Browser Speech Recognition not supported.");
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'hi-IN'; // Hindi aur Hinglish commands ke liye
-    recognition.continuous = true; // Hamesha background me chalta rahega
-    recognition.interimResults = false;
-
-    recognition.onresult = async (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
-      console.log("🗣️ Voice Command Heard:", transcript);
-
-      // Instant Software Tab Switching Logic
-      if (transcript.includes('dashboard') || transcript.includes('overview') || transcript.includes('home')) {
-        setActiveTab('overview');
-      } else if (transcript.includes('staff attendance') || transcript.includes('payroll') || transcript.includes('attendance')) {
-        setActiveTab('payroll_attendance');
-      } else if (transcript.includes('student register') || transcript.includes('admission') || transcript.includes('bachha jodo')) {
-        setActiveTab('registration');
-      } else if (transcript.includes('search fee') || transcript.includes('pay fee') || transcript.includes('fees jama')) {
-        setActiveTab('search_pay');
-      } else if (transcript.includes('quick fee')) {
-        setActiveTab('quick_fee_panel');
-      } else if (transcript.includes('class management') || transcript.includes('id card')) {
-        setActiveTab('class_management');
-      } else if (transcript.includes('exam management') || transcript.includes('exam')) {
-        setActiveTab('exam_management');
-      } else if (transcript.includes('expense') || transcript.includes('kharcha')) {
-        setActiveTab('expense_tracker');
-      } else if (transcript.includes('settings')) {
-        setActiveTab('settings');
-      } else {
-        try {
-          const res = await axios.post(`${BASE_URL}/api/voice-command`, { text: transcript });
-          if (res.data && res.data.target) {
-            setActiveTab(res.data.target);
-          }
-        } catch (err) {
-          console.error("Voice router error:", err);
-        }
-      }
-    };
-
-    recognition.onerror = () => {
-      try {
-        recognition.stop();
-        setTimeout(() => recognition.start(), 1000);
-      } catch (e) {}
-    };
-
-    recognition.onend = () => {
-      try {
-        recognition.start();
-      } catch (e) {}
-    };
-
-    try {
-      recognition.start();
-      console.log("🎙️ Background Voice Assistant Initialized & Active!");
-    } catch (e) {
-      console.log("Voice start error:", e);
-    }
-
-    return () => {
-      try {
-        recognition.stop();
-      } catch (e) {}
-    };
-  }, [isLoggedIn]);
-
   // 📱 MOBILE APP DRAWER STATE
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -824,8 +745,59 @@ function App() {
           {/* MAIN CONTENT SPACE CONTAINER */}
           <div className="flex-grow flex flex-col min-w-0">
             <header className="no-print bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
-              <h2 className="text-lg font-black text-gray-800 capitalize tracking-tight">⚙️ {activeTab.replace('_', ' ')} Control Hub</h2>
-            </header>
+  <h2 className="text-lg font-black text-gray-800 capitalize tracking-tight">⚙️ {activeTab.replace('_', ' ')} Control Hub</h2>
+  
+  {/* 🎙️ Clickable Clean Mic Button */}
+  <button 
+    onClick={() => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("Browser voice support nahi karta!");
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'hi-IN';
+      recognition.interimResults = false;
+      
+      recognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript.toLowerCase().trim();
+        console.log("🗣️ Voice Command:", transcript);
+
+        if (transcript.includes('dashboard') || transcript.includes('overview')) {
+          setActiveTab('overview');
+        } else if (transcript.includes('staff attendance') || transcript.includes('payroll')) {
+          setActiveTab('payroll_attendance');
+        } else if (transcript.includes('student register') || transcript.includes('admission')) {
+          setActiveTab('registration');
+        } else if (transcript.includes('search fee') || transcript.includes('pay fee')) {
+          setActiveTab('search_pay');
+        } else if (transcript.includes('exam')) {
+          setActiveTab('exam_management');
+        } else {
+          try {
+            const res = await axios.post(`${BASE_URL}/api/voice-command`, { text: transcript });
+            if (res.data && res.data.target) {
+              setActiveTab(res.data.target);
+            }
+          } catch (err) {
+            console.error("Voice error:", err);
+          }
+        }
+      };
+      recognition.start();
+    }}
+    className="relative bg-gradient-to-tr from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white p-2.5 rounded-full shadow-md transition-all active:scale-95 flex items-center justify-center cursor-pointer"
+    title="Tap to speak command"
+  >
+    <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+      <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+    </span>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.2} stroke="currentColor" className="w-5 h-5">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 0 3-3V4.5a3 3 0 1 0-6 0v8.25a3 3 0 0 0 3 3Z" />
+    </svg>
+  </button>
+</header>
 
             <main className="flex-grow p-6 overflow-y-auto">
               <Suspense fallback={
