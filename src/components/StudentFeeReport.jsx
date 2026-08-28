@@ -47,7 +47,8 @@ const StudentFeeReport = () => {
 
   const downloadClassFeeExcelReport = () => {
     if (feeReport.length === 0) {
-      alert("⚠️ Excel report download karne ke liye data grid me bacchon ka hona zaroori hai!");
+      setUiMessage("⚠️ Excel report download karne ke liye data grid me bacchon ka hona zaroori hai!");
+      setTimeout(() => setUiMessage(''), 4000); // 4 second me message apne aap gayab ho jayega
       return;
     }
 
