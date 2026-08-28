@@ -712,8 +712,6 @@ function App() {
                 </button>
               )}
 
-              {activeTab === 'balance_sheet' && <BalanceSheet BASE_URL={BASE_URL} />}
-
               {role === 'Admin' && (
                 <button onClick={() => { setActiveTab('balance_sheet'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'balance_sheet' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
                   <Landmark className={`w-4 h-4 ${activeTab === 'balance_sheet' ? 'text-amber-300' : 'text-slate-400'}`} />
@@ -1065,6 +1063,7 @@ function App() {
                 {activeTab === 'class_management' && <IDCardStudio />}
                 {activeTab === 'student_attendance' && <ClassAttendance />}
                 {activeTab === 'exam_management' && <ExamManagement />}
+                {activeTab === 'balance_sheet' && <BalanceSheet BASE_URL={BASE_URL} />}
               </Suspense>
             </main>
 
