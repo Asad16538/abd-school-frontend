@@ -816,7 +816,7 @@ function App() {
                     {role === 'Teacher' ? (
                       <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm max-w-2xl">
                         <h3 className="text-base font-black text-gray-800 border-b border-gray-100 pb-3 mb-4">👨‍🏫 Teacher Attendance & Duty Terminal</h3>
-                        <p className="text-xs text-gray-500 mb-6 font-semibold">Aapka financial overview restricted hai. Aap yahan se apni attendance aur assigned duties manage kar sakte hain.</p>
+                        <p className="text-xs text-gray-500 mb-6 font-semibold">Welcome Dear Teacher.</p>
                         <div className="p-4 bg-indigo-50/60 border border-indigo-100 rounded-xl flex items-center justify-between">
                           <div>
                             <h4 className="font-black text-indigo-900 text-sm mb-1">📅 Geo-Payroll Attendance</h4>
