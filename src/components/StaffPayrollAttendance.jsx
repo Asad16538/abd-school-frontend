@@ -71,6 +71,68 @@ const StaffPayrollAttendance = () => {
   const [uiMessage, setUiMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
+  // 🎯 USER ROLE CHECK: Pata lagayein ki login karne wala Admin hai ya Teacher
+  const userRole = localStorage.getItem('role') || 'Admin';
+
+  // Agar user Teacher hai, toh unke liye sirf unka khud ka restricted self-portal render hoga
+  if (userRole === 'Teacher') {
+    return (
+      <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh', boxSizing: 'border-box' }}>
+        <div style={{ marginBottom: '24px', backgroundColor: '#fff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+          <h2 style={{ margin: 0, color: '#0f172a', fontSize: '22px', fontWeight: 'bold' }}>👤 My Attendance & Salary Portal</h2>
+          <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '13px' }}>Aap yahan apni attendance record, advance history aur payslip dekh aur download kar sakte hain.</p>
+        </div>
+
+        <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#1e293b', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
+            📋 My Personal Records (Read-Only)
+          </h3>
+          <p style={{ fontSize: '13px', color: '#475569', lineHeight: '1.6', marginBottom: '20px' }}>
+            Security policies ke mutabik aap sirf apna khud ka record dekh sakte hain. Kisi bhi tarah ke badlaav ya correction ke liye कृपया Principal / Admin se sampark karein.
+          </p>
+
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <button 
+              onClick={() => {
+                const staffId = localStorage.getItem('staff_id') || 1;
+                fetchIndividualPaySlip(staffId);
+              }} 
+              style={{ padding: '10px 18px', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
+            >
+              📄 Download My Pay Slip (PDF/Text)
+            </button>
+          </div>
+        </div>
+
+        {/* PAY SLIP MODAL VIEW FOR TEACHER */}
+        {selectedStaffSlip && (
+          <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 1000 }}>
+            <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '500px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+              <h3 style={{ margin: '0 0 14px 0', fontSize: '18px', fontWeight: 'bold', color: '#0f172a' }}>My Salary Slip Details</h3>
+              <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', fontFamily: 'monospace', fontSize: '12px', color: '#334155', lineHeight: '1.5' }}>
+                <div><b>Name:</b> {selectedStaffSlip.name}</div>
+                <div><b>Designation:</b> {selectedStaffSlip.designation}</div>
+                <div><b>Base Salary:</b> ₹{selectedStaffSlip.base_salary}</div>
+                <div><b>Days Present:</b> {selectedStaffSlip.days_present} Days</div>
+                <div style={{ color: '#ef4444' }}><b>Late Fines:</b> -₹{selectedStaffSlip.late_fines_deducted}</div>
+                <div style={{ color: '#ef4444' }}><b>EPF Deduction:</b> -₹{selectedStaffSlip.pf_deducted}</div>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#16a34a', marginTop: '8px' }}>💰 Net Payout: ₹{selectedStaffSlip.net_salary_payout}</div>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                <button onClick={() => downloadTextPaySlipFile(selectedStaffSlip)} style={{ flex: 1, padding: '10px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  📥 Download File
+                </button>
+                <button onClick={() => setSelectedStaffSlip(null)} style={{ padding: '10px 16px', backgroundColor: '#cbd5e1', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // Safe wrapper for rounding metrics
   const roundVal = (val) => {
     const num = parseFloat(val);
