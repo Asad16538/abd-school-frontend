@@ -52,6 +52,24 @@ const PromotionPanel = lazy(() => import('./components/PromotionPanel'));
 const BASE_URL = "https://erp-api.aapschool.in";
 
 function App() {
+  // ============================================================
+  // ✅ STEP 1: SARE HOOKS PEHLE (TOP LEVEL)
+  // ============================================================
+  const [loginRole, setLoginRole] = useState('Admin');
+  const [formMode, setFormMode] = useState('login');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [num1, setNum1] = useState(0);
+  const [num2, setNum2] = useState(0);
+  const [captchaInput, setCaptchaInput] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [role, setRole] = useState('');
+  const [activeTab, setActiveTab] = useState('overview');
 
   // ============================================================
   // 🎙️ ALWAYS-ON BACKGROUND VOICE ASSISTANT LISTENER
@@ -131,25 +149,6 @@ function App() {
       } catch (e) {}
     };
   }, [isLoggedIn]);
-  
-  // ============================================================
-  // ✅ STEP 1: SARE HOOKS PEHLE (TOP LEVEL)
-  // ============================================================
-  const [loginRole, setLoginRole] = useState('Admin');
-  const [formMode, setFormMode] = useState('login');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [num1, setNum1] = useState(0);
-  const [num2, setNum2] = useState(0);
-  const [captchaInput, setCaptchaInput] = useState('');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [role, setRole] = useState('');
-  const [activeTab, setActiveTab] = useState('overview');
 
   // 📱 MOBILE APP DRAWER STATE
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
