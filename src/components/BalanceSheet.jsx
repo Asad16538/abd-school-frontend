@@ -49,7 +49,7 @@ export default function BalanceSheet({ BASE_URL }) {
   };
 
   const downloadExcel = () => {
-    let csvContent = "data:text/csv;charset=utf-8,Category,Item Name,Amount,Remarks\n";
+    let csvContent = "data:text/csv;charset=utf-8,Category,Item Name,Amount (INR),Remarks\n";
     data.items.forEach(row => {
       csvContent += `"${row.category}","${row.item_name}",${row.amount},"${row.remarks || ''}"\n`;
     });
@@ -66,35 +66,36 @@ export default function BalanceSheet({ BASE_URL }) {
     window.print();
   };
 
+  const assetsList = data.items.filter(i => i.category === 'Asset');
+  const liabilitiesList = data.items.filter(i => i.category === 'Liability');
+  const maxRows = Math.max(assetsList.length, liabilitiesList.length, 1);
+
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-4 md:p-6 max-w-5xl mx-auto space-y-6">
+      {/* 🛑 NO-PRINT ACTION BAR (Ye print me hide rahega) */}
       <div className="flex flex-wrap gap-3 items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-100 no-print">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-black text-gray-800">📊 Balance Sheet</h2>
+          <h2 className="text-lg font-black text-gray-800">📊 Balance Sheet Control Hub</h2>
           <select 
             value={reportType} 
             onChange={(e) => setReportType(e.target.value)}
             className="p-2 border rounded-lg text-sm font-bold bg-gray-50 cursor-pointer"
           >
-            <option value="monthly">Monthly View</option>
-            <option value="yearly">Yearly View</option>
+            <option value="monthly">Monthly Statement</option>
+            <option value="yearly">Yearly Statement (Financial Year)</option>
           </select>
         </div>
         <div className="flex gap-2">
-          <button onClick={downloadExcel} className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+          <button onClick={downloadExcel} className="bg-emerald-600 hover:bg-emerald-750 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm">
             📥 Download Excel
           </button>
-          <button onClick={handlePrintPDF} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
-            🖨️ Print / Save PDF
+          <button onClick={handlePrintPDF} className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm">
+            🖨️ Print CA-Style A4 PDF
           </button>
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
-        <span className="text-sm font-bold text-gray-600 uppercase">Net Worth / Capital Position</span>
-        <span className="text-xl font-black text-indigo-900">₹{data.net_worth.toLocaleString()}</span>
-      </div>
-
+      {/* 🛑 NO-PRINT FORM INPUT (Item add/edit karne ke liye) */}
       <form onSubmit={handleSave} className="no-print bg-white p-5 rounded-xl shadow-sm border border-gray-100 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
         <div>
           <label className="text-xs font-bold text-gray-600 block mb-1">Type</label>
@@ -125,66 +126,114 @@ export default function BalanceSheet({ BASE_URL }) {
         </div>
       </form>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-emerald-50 px-5 py-3 border-b border-emerald-100 flex justify-between items-center">
-            <h3 className="font-bold text-emerald-800">🟢 Assets (संपत्ति)</h3>
-            <span className="font-black text-emerald-900">Total: ₹{data.total_assets.toLocaleString()}</span>
-          </div>
-          <table className="w-full text-left border-collapse">
+      {/* ========================================================== */}
+      {/* 📄 PROFESSIONAL CA-STYLE A4 PRINTABLE BALANCE SHEET FORMAT  */}
+      {/* ========================================================== */}
+      <div id="printable-balance-sheet" className="bg-white p-6 md:p-10 rounded-2xl shadow-md border border-gray-200 text-gray-900 print:shadow-none print:border-none print:p-0 print:w-full">
+        
+        {/* Header Title */}
+        <div className="text-center border-b-2 border-gray-800 pb-4 mb-6">
+          <h1 className="text-xl md:text-2xl font-black uppercase tracking-wider text-gray-900">ADITYA ARMY PUBLIC SCHOOL</h1>
+          <p className="text-xs font-bold text-gray-600 uppercase tracking-widest mt-1">STATEMENT OF ASSETS AND LIABILITIES ({reportType.toUpperCase()} VIEW)</p>
+          <p className="text-[10px] text-gray-500 font-semibold mt-0.5">As on: {new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}</p>
+        </div>
+
+        {/* Dual Side CA Table Structure */}
+        <div className="overflow-x-auto border-2 border-gray-800">
+          <table className="w-full border-collapse text-xs">
             <thead>
-              <tr className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-                <th className="p-3">Item Name</th>
-                <th className="p-3">Remarks</th>
-                <th className="p-3 text-right">Amount</th>
-                <th className="p-3 text-center no-print">Action</th>
+              <tr className="bg-gray-100 border-b-2 border-gray-800 text-gray-900 font-black text-center">
+                <th className="border-r border-gray-800 p-2.5 w-1/2" colSpan="2">LIABILITIES & CAPITAL</th>
+                <th className="p-2.5 w-1/2" colSpan="2">ASSETS</th>
+              </tr>
+              <tr className="bg-gray-50 border-b border-gray-800 text-gray-700 font-bold text-[11px]">
+                <th className="border-r border-gray-800 p-2 text-left">Particulars</th>
+                <th className="border-r border-gray-800 p-2 text-right w-28">Amount (₹)</th>
+                <th className="border-r border-gray-800 p-2 text-left">Particulars</th>
+                <th className="p-2 text-right w-28">Amount (₹)</th>
               </tr>
             </thead>
-            <tbody className="divide-y text-sm">
-              {data.items.filter(i => i.category === 'Asset').map(item => (
-                <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="p-3 font-semibold text-gray-800">{item.item_name}</td>
-                  <td className="p-3 text-gray-500 text-xs">{item.remarks}</td>
-                  <td className="p-3 text-right font-bold text-emerald-600">₹{item.amount.toLocaleString()}</td>
-                  <td className="p-3 text-center space-x-2 no-print">
-                    <button onClick={() => setForm(item)} className="text-blue-600 font-bold text-xs hover:underline cursor-pointer">Edit</button>
-                    <button onClick={() => handleDelete(item.id)} className="text-red-600 font-bold text-xs hover:underline cursor-pointer">Delete</button>
-                  </td>
-                </tr>
-              ))}
+            <tbody>
+              {Array.from({ length: maxRows }).map((_, index) => {
+                const liab = liabilitiesList[index];
+                const ast = assetsList[index];
+                return (
+                  <tr key={index} className="border-b border-gray-300 hover:bg-gray-50/50">
+                    {/* Liability Side */}
+                    <td className="border-r border-gray-300 p-2 font-medium">
+                      {liab ? (
+                        <div>
+                          <span>{liab.item_name}</span>
+                          {liab.remarks && <span className="block text-[9px] text-gray-400 italic">[{liab.remarks}]</span>}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="border-r border-gray-800 p-2 text-right font-semibold">
+                      {liab ? Number(liab.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+                      {liab && (
+                        <span className="no-print ml-2 text-[10px] text-blue-600 cursor-pointer" onClick={() => setForm(liab)}>[Edit]</span>
+                      )}
+                    </td>
+
+                    {/* Asset Side */}
+                    <td className="border-r border-gray-300 p-2 font-medium">
+                      {ast ? (
+                        <div>
+                          <span>{ast.item_name}</span>
+                          {ast.remarks && <span className="block text-[9px] text-gray-400 italic">[{ast.remarks}]</span>}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="p-2 text-right font-semibold">
+                      {ast ? Number(ast.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}
+                      {ast && (
+                        <span className="no-print ml-2 text-[10px] text-blue-600 cursor-pointer" onClick={() => setForm(ast)}>[Edit]</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {/* Capital / Net Worth Row if applicable */}
+              <tr className="border-b border-gray-800 bg-gray-50 font-bold">
+                <td className="border-r border-gray-800 p-2 text-gray-900">Capital / Net Worth</td>
+                <td className="border-r border-gray-800 p-2 text-right text-indigo-700">
+                  {Number(data.net_worth).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </td>
+                <td className="border-r border-gray-800 p-2"></td>
+                <td className="p-2"></td>
+              </tr>
             </tbody>
+
+            {/* Grand Total Footer Row */}
+            <tfoot>
+              <tr className="bg-gray-200 border-t-2 border-gray-800 font-black text-sm text-gray-900">
+                <td className="border-r border-gray-800 p-2.5">TOTAL LIABILITIES</td>
+                <td className="border-r border-gray-800 p-2.5 text-right text-rose-700">
+                  ₹{Number(data.total_liabilities + (data.net_worth > 0 ? data.net_worth : 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </td>
+                <td className="border-r border-gray-800 p-2.5">TOTAL ASSETS</td>
+                <td className="p-2.5 text-right text-emerald-700">
+                  ₹{Number(data.total_assets).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="bg-rose-50 px-5 py-3 border-b border-rose-100 flex justify-between items-center">
-            <h3 className="font-bold text-rose-800">🔴 Liabilities (देयता / कर्ज़)</h3>
-            <span className="font-black text-rose-900">Total: ₹{data.total_liabilities.toLocaleString()}</span>
+        {/* Signature & Verification Block for Print */}
+        <div className="mt-16 pt-8 flex justify-between items-end text-xs font-bold text-gray-800 print:mt-24">
+          <div className="text-center">
+            <div className="border-t border-gray-800 w-40 pt-1">Prepared By (Accountant)</div>
           </div>
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-gray-50 text-xs text-gray-500 uppercase border-b">
-                <th className="p-3">Item Name</th>
-                <th className="p-3">Remarks</th>
-                <th className="p-3 text-right">Amount</th>
-                <th className="p-3 text-center no-print">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y text-sm">
-              {data.items.filter(i => i.category === 'Liability').map(item => (
-                <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="p-3 font-semibold text-gray-800">{item.item_name}</td>
-                  <td className="p-3 text-gray-500 text-xs">{item.remarks}</td>
-                  <td className="p-3 text-right font-bold text-rose-600">₹{item.amount.toLocaleString()}</td>
-                  <td className="p-3 text-center space-x-2 no-print">
-                    <button onClick={() => setForm(item)} className="text-blue-600 font-bold text-xs hover:underline cursor-pointer">Edit</button>
-                    <button onClick={() => handleDelete(item.id)} className="text-red-600 font-bold text-xs hover:underline cursor-pointer">Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="text-center">
+            <div className="border-t border-gray-800 w-40 pt-1">Audited By (CA / Auditor)</div>
+          </div>
+          <div className="text-center">
+            <div className="border-t border-gray-800 w-40 pt-1">Principal / Manager Stamp</div>
+          </div>
         </div>
+
       </div>
     </div>
   );
