@@ -419,20 +419,6 @@ const IDCardStudio = () => {
                 </button>
             </div>
 
-            {/* 🎙️ Voice Assistant */}
-            <div className="flex items-center justify-end px-6 mb-4 no-print">
-                <button onClick={startVoiceCommand} className="flex items-center gap-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-2.5 px-5 rounded-full shadow-md hover:shadow-lg transition-all active:scale-95 group cursor-pointer">
-                    <span className="relative flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                    </span>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 group-hover:scale-110 transition-transform">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 0 0 6-6v-1.5m-6 7.5a6 6 0 0 1-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 0 0 3-3V4.5a3 3 0 1 0-6 0v8.25a3 3 0 0 0 3 3Z" />
-                    </svg>
-                    <span className="text-[12px] tracking-wide uppercase font-black">बोलो भाई (Voice Assistant)</span>
-                </button>
-            </div>
-
             {/* ===== ID CARDS MODULE ===== */}
             {activeSubTab === 'id-cards' && (
                 <div className="id-cards-active-print-job-parent w-full">
