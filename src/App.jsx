@@ -52,6 +52,86 @@ const PromotionPanel = lazy(() => import('./components/PromotionPanel'));
 const BASE_URL = "https://erp-api.aapschool.in";
 
 function App() {
+
+  // ============================================================
+  // 🎙️ ALWAYS-ON BACKGROUND VOICE ASSISTANT LISTENER
+  // ============================================================
+  useEffect(() => {
+    if (!isLoggedIn) return; // Sirf login hone ke baad hi active hoga
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn("Browser Speech Recognition not supported.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'hi-IN'; // Hindi aur Hinglish commands ke liye
+    recognition.continuous = true; // Hamesha background me chalta rahega
+    recognition.interimResults = false;
+
+    recognition.onresult = async (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.toLowerCase().trim();
+      console.log("🗣️ Voice Command Heard:", transcript);
+
+      // Instant Software Tab Switching Logic
+      if (transcript.includes('dashboard') || transcript.includes('overview') || transcript.includes('home')) {
+        setActiveTab('overview');
+      } else if (transcript.includes('staff attendance') || transcript.includes('payroll') || transcript.includes('attendance')) {
+        setActiveTab('payroll_attendance');
+      } else if (transcript.includes('student register') || transcript.includes('admission') || transcript.includes('bachha jodo')) {
+        setActiveTab('registration');
+      } else if (transcript.includes('search fee') || transcript.includes('pay fee') || transcript.includes('fees jama')) {
+        setActiveTab('search_pay');
+      } else if (transcript.includes('quick fee')) {
+        setActiveTab('quick_fee_panel');
+      } else if (transcript.includes('class management') || transcript.includes('id card')) {
+        setActiveTab('class_management');
+      } else if (transcript.includes('exam management') || transcript.includes('exam')) {
+        setActiveTab('exam_management');
+      } else if (transcript.includes('expense') || transcript.includes('kharcha')) {
+        setActiveTab('expense_tracker');
+      } else if (transcript.includes('settings')) {
+        setActiveTab('settings');
+      } else {
+        try {
+          const res = await axios.post(`${BASE_URL}/api/voice-command`, { text: transcript });
+          if (res.data && res.data.target) {
+            setActiveTab(res.data.target);
+          }
+        } catch (err) {
+          console.error("Voice router error:", err);
+        }
+      }
+    };
+
+    recognition.onerror = () => {
+      try {
+        recognition.stop();
+        setTimeout(() => recognition.start(), 1000);
+      } catch (e) {}
+    };
+
+    recognition.onend = () => {
+      try {
+        recognition.start();
+      } catch (e) {}
+    };
+
+    try {
+      recognition.start();
+      console.log("🎙️ Background Voice Assistant Initialized & Active!");
+    } catch (e) {
+      console.log("Voice start error:", e);
+    }
+
+    return () => {
+      try {
+        recognition.stop();
+      } catch (e) {}
+    };
+  }, [isLoggedIn]);
+  
   // ============================================================
   // ✅ STEP 1: SARE HOOKS PEHLE (TOP LEVEL)
   // ============================================================
