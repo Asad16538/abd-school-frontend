@@ -23,6 +23,29 @@ const StaffPayrollAttendance = () => {
   // Core System States with Strict Safe Defaults
   const [staffList, setStaffList] = useState([]);
   const [activeTab, setActiveTab] = useState('directory'); // directory | reports | rules | qr_wall
+  // 👤 Teacher Profile State
+  const [teacherProfile, setTeacherProfile] = useState({ name: '', designation: '', image_url: '' });
+
+  // Teacher Profile fetch karne ka function
+  useEffect(() => {
+    if (userRole === 'Teacher') {
+      const staffId = localStorage.getItem('staff_id') || 1;
+      axios.get(`${BASE_URL}/api/staff`)
+        .then(res => {
+          if (Array.isArray(res.data)) {
+            const currentTeacher = res.data.find(s => s.id.toString() === staffId.toString()) || res.data[0];
+            if (currentTeacher) {
+              setTeacherProfile({
+                name: currentTeacher.name,
+                designation: currentTeacher.designation || 'Teacher',
+                image_url: currentTeacher.image_url || `${BASE_URL}/static/teacher_photos/${currentTeacher.id}.jpg`
+              });
+            }
+          }
+        })
+        .catch(err => console.log("Teacher profile fetch error:", err));
+    }
+  }, [userRole]);
   const [reportMode, setReportMode] = useState('today'); // today | monthly | management
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().split('T')[0].substring(0, 7)); // YYYY-MM
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -78,9 +101,33 @@ const StaffPayrollAttendance = () => {
   if (userRole === 'Teacher') {
     return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh', boxSizing: 'border-box' }}>
-        <div style={{ marginBottom: '24px', backgroundColor: '#fff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-          <h2 style={{ margin: 0, color: '#0f172a', fontSize: '22px', fontWeight: 'bold' }}>👤 My Attendance & Salary Portal</h2>
-          <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '13px' }}>Aap yahan apni attendance record, advance history aur payslip dekh aur download kar sakte hain.</p>
+        <div style={{ marginBottom: '24px', backgroundColor: '#fff', padding: '16px 20px', borderRadius: '12px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h2 style={{ margin: 0, color: '#0f172a', fontSize: '22px', fontWeight: 'bold' }}>👤 My Attendance & Salary Portal</h2>
+            <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '13px' }}>Aap yahan apni attendance record, advance history aur payslip dekh aur download kar sakte hain.</p>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#f8fafc', padding: '8px 14px', borderRadius: '30px', border: '1px solid #e2e8f0' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '12px', fontWeight: '900', color: '#1e293b', textTransform: 'uppercase' }}>
+                {teacherProfile.name || 'Teacher Name'}
+              </div>
+              <div style={{ fontSize: '10px', fontWeight: '600', color: '#64748b' }}>
+                {teacherProfile.designation || 'Teacher'}
+              </div>
+            </div>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #4f46e5', overflow: 'hidden', background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: '0' }}>
+              <img 
+                src={teacherProfile.image_url} 
+                alt="Teacher Profile" 
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = "https://via.placeholder.com/40x40?text=U";
+                }}
+              />
+            </div>
+          </div>
         </div>
 
         <div style={{ backgroundColor: 'white', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
