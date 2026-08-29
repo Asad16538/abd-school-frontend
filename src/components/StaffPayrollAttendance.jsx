@@ -1051,7 +1051,29 @@ const StaffPayrollAttendance = () => {
           </div>
 
           <div style={cardStyle}>
-            <h3 style={cardTitleStyle}><Users size={18} color="#4f46e5" /> Registered Staff Registry ({(staffList || []).length})</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
+              <h3 style={{ margin: 0, fontSize: '15px', color: '#1e293b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Users size={18} color="#4f46e5" /> Registered Staff Registry ({(staffList || []).length})
+              </h3>
+              <button
+                onClick={downloadStaffDirectoryExcel}
+                style={{
+                  padding: '6px 12px',
+                  backgroundColor: '#0284c7',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  fontSize: '11px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                📥 Download Excel
+              </button>
+            </div>
             <div style={{ maxHeight: '450px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {(!staffList || staffList.length === 0) ? (
                 <p style={{ color: '#94a3b8', fontSize: '13px', textAlign: 'center', marginTop: '20px' }}>No accounts found.</p>
