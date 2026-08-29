@@ -1053,7 +1053,7 @@ const StaffPayrollAttendance = () => {
           <div style={cardStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px' }}>
               <h3 style={{ margin: 0, fontSize: '15px', color: '#1e293b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Users size={18} color="#4f46e5" /> Registered Staff Registry ({(staffList || []).length})
+                <Users size={18} color="#4f46e5" /> Staff Data Download ({(staffList || []).length})
               </h3>
               <button
                 onClick={downloadStaffDirectoryExcel}
