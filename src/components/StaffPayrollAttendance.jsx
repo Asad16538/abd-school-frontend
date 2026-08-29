@@ -71,6 +71,7 @@ const StaffPayrollAttendance = () => {
   const [staffPrefix, setStaffPrefix] = useState('Mr.');
   const [staffName, setStaffName] = useState('');
   const [designation, setDesignation] = useState('');
+  const [staffPhoto, setStaffPhoto] = useState(null);
   const [mobile, setMobile] = useState('');
   const [baseSalary, setBaseSalary] = useState('');
   const [pfEnabled, setPfEnabled] = useState(0);
@@ -556,7 +557,7 @@ const StaffPayrollAttendance = () => {
 
   const handleAddStaff = async (e) => {
     e.preventDefault();
-
+    
     if (!staffName || !staffName.trim()) {
       setUiMessage("❌ Staff Name zaroori hai!");
       return;
@@ -565,34 +566,38 @@ const StaffPayrollAttendance = () => {
       setUiMessage("❌ Mobile Number zaroori hai!");
       return;
     }
-
+    
     const rawName = cleanStaffName(staffName);
     const fullStaffName = `${staffPrefix} ${rawName}`;
-
-    const payload = {
-      name: fullStaffName,
-      designation: designation.trim() || 'Teacher',
-      mobile: mobile.trim(),
-      base_salary: parseFloat(baseSalary) || 0,
-      pf_enabled: pfEnabled ? 1 : 0
-    };
-
+    
+    // FormData ka use karenge taaki text aur photo dono backend par ja sakein
+    const formData = new FormData();
+    formData.append('name', fullStaffName);
+    formData.append('designation', designation.trim() || 'Teacher');
+    formData.append('mobile', mobile.trim());
+    formData.append('base_salary', parseFloat(baseSalary) || 0);
+    formData.append('pf_enabled', pfEnabled ? 1 : 0);
+    
+    if (staffPhoto) {
+      formData.append('student_photo', staffPhoto); // Backend is field name ko read karega
+    }
+    
     try {
-      const res = await fetch(`${BASE_URL}/api/staff`, {
+      const res = await fetch(`${BASE_URL}/api/staff/register-manual`, { // ya aap apna staff registration endpoint yahan use karein
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: formData
       });
       const data = await res.json();
-
+      
       if (res.ok && data.success) {
-        setUiMessage('🎉 New Staff Member Registered into Ledger!');
+        setUiMessage('🎉 New Staff Member Registered with Photo!');
         setStaffPrefix('Mr.');
         setStaffName('');
         setDesignation('');
         setMobile('');
         setBaseSalary('');
         setPfEnabled(0);
+        setStaffPhoto(null);
         fetchStaff();
         setTimeout(() => setUiMessage(''), 3000);
       } else {
@@ -1001,6 +1006,17 @@ const StaffPayrollAttendance = () => {
               <div>
                 <label style={labelStyle}>Basic Monthly Salary Structure (₹)</label>
                 <input type="number" placeholder="e.g. 25000" value={baseSalary || ''} onChange={(e) => setBaseSalary(e.target.value)} style={inpStyle} required />
+              </div>
+
+              {/* 📷 NAYA STAFF PHOTO UPLOAD FIELD */}
+              <div>
+                <label style={labelStyle}>Staff Passport Photo</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => setStaffPhoto(e.target.files[0])} 
+                  style={{ ...inpStyle, padding: '6px', fontSize: '11px' }} 
+                />
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
