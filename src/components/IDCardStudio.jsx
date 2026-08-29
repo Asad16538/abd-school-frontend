@@ -473,13 +473,13 @@ const IDCardStudio = () => {
                                                     <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '130px', height: '130px', backgroundImage: `url(${schoolSettings.logo_url})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain', opacity: '0.07', pointerEvents: 'none', zIndex: '1' }} />
                                                 )}
 
-                                                {/* 🏷️ HEADER: School name wrap hokar pura dikhega */}
-                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '58px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius, display: 'flex', alignItems: 'center', padding: '0 8px' }}>
-                                                    <div style={{ width: '32px', height: '32px', background: '#ffffff', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: '0' }}>
+                                                {/* 🏷️ HEADER: Logo aur School Name side-by-side */}
+                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '52px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius, display: 'flex', alignItems: 'center', padding: '0 6px', gap: '6px' }}>
+                                                    <div style={{ width: '32px', height: '32px', background: '#ffffff', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: '0' }}>
                                                         <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
                                                     </div>
-                                                    <div style={{ flexGrow: '1', textAlign: 'center', paddingLeft: '6px', overflow: 'hidden' }}>
-                                                        <div style={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.15', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{schoolSettings.school_name}</div>
+                                                    <div style={{ flexGrow: '1', textAlign: 'left', overflow: 'hidden' }}>
+                                                        <div style={{ fontSize: '8px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.15', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{schoolSettings.school_name}</div>
                                                     </div>
                                                 </div>
 
