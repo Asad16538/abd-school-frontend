@@ -221,19 +221,22 @@ const IDCardStudio = () => {
         setLoading(true);
         axios.get(`${BASE_URL}/api/academic/class-students-cards?class_name=${encodeURIComponent(selectedClass)}&section=${selectedSection}`)
             .then(res => {
-                if (res.data.success) {
-                    setStudents(res.data.students);
+                if (res.data && res.data.success) {
+                    setStudents(res.data.students || []);
                 } else {
                     alert('Bhai records nahi mil paye!');
+                    setStudents([]);
                 }
-                setLoading(false);
             })
             .catch(err => {
-                console.error(err);
-                setLoading(false);
+                console.error("ID Card Fetch Error:", err);
+                alert('Server connection fail ho gaya!');
+                setStudents([]);
+            })
+            .finally(() => {
+                setLoading(false); // 👈 Yeh ensure karega ki error aaye ya success, loading hamesha band ho jaye
             });
     };
-
     // 🏫 MASTER TIMETABLE FUNCTIONS
     const fetchMasterTimetable = () => {
         setLoading(true);
