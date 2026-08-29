@@ -4,12 +4,10 @@ import { UserPlus, Settings, QrCode, Download, Users, AlertTriangle, MapPin, Clo
 import * as XLSX from 'xlsx';
 import axios from 'axios';
 
+// 🎯 FIX: Ise component function ke strictly BAHAR aur UPAR rakhein taaki ReferenceError khatam ho!
 const BASE_URL = 'https://erp-api.aapschool.in';
 
 const StaffPayrollAttendance = () => {
-  // 🎯 1. USER ROLE KO SABSE UPAR RAKHEIN (Taaki useEffect me error na aaye)
-  const userRole = localStorage.getItem('role') || 'Admin';
-
   // Edit modal states
   const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [selectedStaffMobile, setSelectedStaffMobile] = useState('');
@@ -17,21 +15,23 @@ const StaffPayrollAttendance = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingStaff, setEditingStaff] = useState(null);
   const [editFormData, setEditFormData] = useState({
-      name: '',
-      designation: '',
-      mobile: '',
-      base_salary: '',
-      epf_enabled: false
+    name: '',
+    designation: '',
+    mobile: '',
+    base_salary: '',
+    epf_enabled: false
   });
-
   // Core System States with Strict Safe Defaults
   const [staffList, setStaffList] = useState([]);
   const [activeTab, setActiveTab] = useState('directory'); // directory | reports | rules | qr_wall
-  
+
+  // 🎯 USER ROLE CHECK: Pata lagayein ki login karne wala Admin hai ya Teacher (Isse useEffect ke error se bachne ke liye bilkul upar declare kiya gaya hai)
+  const userRole = localStorage.getItem('role') || 'Admin';
+
   // 👤 Teacher Profile State
   const [teacherProfile, setTeacherProfile] = useState({ name: '', designation: '', image_url: '' });
 
-  // Teacher Profile fetch karne ka function (Ab `userRole` upar defined hai, isliye error nahi aayegi)
+  // Teacher Profile fetch karne ka function
   useEffect(() => {
     if (userRole === 'Teacher') {
       const staffId = localStorage.getItem('staff_id') || 1;
@@ -57,7 +57,7 @@ const StaffPayrollAttendance = () => {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [reportData, setReportData] = useState([]);
   const [managementSheetData, setManagementSheetData] = useState([]);
-  
+
   // Salary / Pay Slip Modal View State variables
   const [selectedStaffSlip, setSelectedStaffSlip] = useState(null);
 
@@ -75,7 +75,7 @@ const StaffPayrollAttendance = () => {
   const [baseSalary, setBaseSalary] = useState('');
   const [pfEnabled, setPfEnabled] = useState(0);
   const [clEncashment, setClEncashment] = useState({}); // Stores per staff CL pay rule boolean state
-  
+
   // Manual Attendance States
   const [manualStaffId, setManualStaffId] = useState('');
   const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
@@ -98,7 +98,7 @@ const StaffPayrollAttendance = () => {
   const [uiMessage, setUiMessage] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Agar user Teacher hai, toh unke liye sirf unka khud ka restricted self-portal render hoga
+  // ========== TEACHER ROLE RETURN (FIXED) ==========
   if (userRole === 'Teacher') {
     return (
       <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh', boxSizing: 'border-box' }}>
@@ -107,7 +107,7 @@ const StaffPayrollAttendance = () => {
             <h2 style={{ margin: 0, color: '#0f172a', fontSize: '22px', fontWeight: 'bold' }}>👤 My Attendance & Salary Portal</h2>
             <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '13px' }}>Aap yahan apni attendance record, advance history aur payslip dekh aur download kar sakte hain.</p>
           </div>
-          
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: '#f8fafc', padding: '8px 14px', borderRadius: '30px', border: '1px solid #e2e8f0' }}>
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '12px', fontWeight: '900', color: '#1e293b', textTransform: 'uppercase' }}>
@@ -118,9 +118,9 @@ const StaffPayrollAttendance = () => {
               </div>
             </div>
             <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid #4f46e5', overflow: 'hidden', background: '#eef2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: '0' }}>
-              <img 
-                src={teacherProfile.image_url} 
-                alt="Teacher Profile" 
+              <img
+                src={teacherProfile.image_url}
+                alt="Teacher Profile"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={(e) => {
                   e.target.onerror = null;
@@ -140,11 +140,11 @@ const StaffPayrollAttendance = () => {
           </p>
 
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <button 
+            <button
               onClick={() => {
                 const staffId = localStorage.getItem('staff_id') || 1;
                 fetchIndividualPaySlip(staffId);
-              }} 
+              }}
               style={{ padding: '10px 18px', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
             >
               📄 Download My Pay Slip (PDF/Text)
@@ -152,7 +152,7 @@ const StaffPayrollAttendance = () => {
           </div>
         </div>
 
-        {/* PAY SLIP MODAL VIEW FOR TEACHER */}
+        {/* ✅ TEACHER PAY SLIP MODAL - YAHAN SAHI HAI */}
         {selectedStaffSlip && (
           <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 1000 }}>
             <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '500px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
@@ -181,30 +181,32 @@ const StaffPayrollAttendance = () => {
     );
   }
 
-  // Safe wrapper for rounding metrics
+  // ========== SAFE WRAPPER FUNCTIONS ==========
   const roundVal = (val) => {
     const num = parseFloat(val);
     if (isNaN(num)) return 0;
     return Math.round((num + Number.EPSILON) * 100) / 100;
   };
 
+  // ========== useEffect HOOKS ==========
   useEffect(() => {
     let isMounted = true;
-    
+
     const loadInitialData = async () => {
       try {
         setLoading(true);
-        const timeoutPromise = new Promise((_, reject) => 
+
+        const timeoutPromise = new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Timeout')), 15000)
         );
-        
+
         const fetchPromise = Promise.all([
           fetch(`${BASE_URL}/api/staff`).catch(() => null),
           fetch(`${BASE_URL}/api/attendance-rules`).catch(() => null)
         ]);
-        
+
         const results = await Promise.race([fetchPromise, timeoutPromise]);
-        
+
         if (isMounted) {
           if (results && results[0] && results[0].ok) {
             const data = await results[0].json();
@@ -212,7 +214,7 @@ const StaffPayrollAttendance = () => {
           } else {
             setStaffList([]);
           }
-          
+
           if (results && results[1] && results[1].ok) {
             const data = await results[1].json();
             if (data && !data.error) {
@@ -238,9 +240,9 @@ const StaffPayrollAttendance = () => {
         }
       }
     };
-    
+
     loadInitialData();
-    
+
     return () => {
       isMounted = false;
     };
@@ -277,6 +279,7 @@ const StaffPayrollAttendance = () => {
     }
   }, [activeTab, reportMode, selectedMonth]);
 
+  // ========== API FUNCTIONS ==========
   const fetchStaff = async () => {
     try {
       const res = await fetch(`${BASE_URL}/api/staff`);
@@ -285,7 +288,7 @@ const StaffPayrollAttendance = () => {
       if (Array.isArray(data)) setStaffList(data);
     } catch (err) {
       console.error("Staff engine link failure", err);
-      setStaffList([]); 
+      setStaffList([]);
     }
   };
 
@@ -293,7 +296,7 @@ const StaffPayrollAttendance = () => {
     try {
       const rulesRes = await fetch(`${BASE_URL}/api/attendance-rules`);
       let rulesData = null;
-      
+
       if (rulesRes.ok) {
         rulesData = await rulesRes.json();
       }
@@ -306,7 +309,7 @@ const StaffPayrollAttendance = () => {
         currentLat = parseFloat(rulesData.latitude);
         currentLng = parseFloat(rulesData.longitude);
         currentRadius = parseInt(rulesData.radius) || 50;
-        
+
         setRules({
           latitude: currentLat,
           longitude: currentLng,
@@ -350,7 +353,7 @@ const StaffPayrollAttendance = () => {
 
   const fetchAttendanceReports = async () => {
     try {
-      const url = reportMode === 'today' 
+      const url = reportMode === 'today'
         ? `${BASE_URL}/api/payroll/today-report`
         : `${BASE_URL}/api/payroll/monthly-report?month=${selectedMonth}`;
       const res = await fetch(url);
@@ -407,7 +410,7 @@ const StaffPayrollAttendance = () => {
           const advData = await advRes.json();
           if (Array.isArray(advData)) totalAdvanceToDeduct = advData.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0);
         } catch (e) { console.log("Advance fetch handled safely."); }
-        
+
         const clBonus = clEncashment[staffId] ? ((data.cl_remaining || 0) * 500) : 0;
         const finalCalculatedPayout = (data.net_salary_payout || 0) - totalAdvanceToDeduct + clBonus;
 
@@ -420,7 +423,7 @@ const StaffPayrollAttendance = () => {
         });
       }
     } catch (err) {
-      const currentS = staffList.find(s=>s.id===staffId);
+      const currentS = staffList.find(s => s.id === staffId);
       const isClActive = !!clEncashment[staffId];
       const fallbackClBonus = isClActive ? 12 * 500 : 0;
       const base = parseFloat(currentS?.base_salary) || 0;
@@ -435,7 +438,7 @@ const StaffPayrollAttendance = () => {
 
   const downloadTextPaySlipFile = (slip) => {
     if (!slip) return;
-    const slipText = 
+    const slipText =
       `==================================================\n` +
       `          A.B.DIGITAL WORK SYSTEMS LOGS          \n` +
       `               MONTHLY SALARY SLIP               \n` +
@@ -472,6 +475,7 @@ const StaffPayrollAttendance = () => {
     try {
       const res = await fetch(`${BASE_URL}/api/payroll/advance-history/${staffId}`);
       const data = await res.json();
+      console.log("Advance history response:", data);
       if (Array.isArray(data)) {
         setAdvanceHistory(data);
       } else if (data && Array.isArray(data.history)) {
@@ -508,18 +512,21 @@ const StaffPayrollAttendance = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      
+
+      const result = await res.json();
+      console.log("Advance submit response:", result);
+
       if (res.ok) {
         setUiMessage("✅ Advance Payment logged successfully!");
         setAdvanceAmount('');
         setAdvanceReason('');
         await handleFetchAdvanceHistory(advanceModalStaff.id);
       } else {
-        setUiMessage("Failed to log advance payment");
+        setUiMessage("Failed: " + (result.error || "Unknown error"));
       }
     } catch (err) {
       console.error("Submit advance error:", err);
-      setUiMessage("Error saving advance.");
+      setUiMessage("Error saving advance. Check backend logs.");
     }
   };
 
@@ -527,7 +534,7 @@ const StaffPayrollAttendance = () => {
     try {
       const response = await fetch(`${BASE_URL}/api/payroll/download-advance-history/${staffId}`);
       if (!response.ok) throw new Error('Download failed');
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -549,7 +556,7 @@ const StaffPayrollAttendance = () => {
 
   const handleAddStaff = async (e) => {
     e.preventDefault();
-    
+
     if (!staffName || !staffName.trim()) {
       setUiMessage("❌ Staff Name zaroori hai!");
       return;
@@ -558,18 +565,18 @@ const StaffPayrollAttendance = () => {
       setUiMessage("❌ Mobile Number zaroori hai!");
       return;
     }
-    
+
     const rawName = cleanStaffName(staffName);
     const fullStaffName = `${staffPrefix} ${rawName}`;
-    
-    const payload = { 
-      name: fullStaffName, 
-      designation: designation.trim() || 'Teacher', 
-      mobile: mobile.trim(), 
-      base_salary: parseFloat(baseSalary) || 0, 
-      pf_enabled: pfEnabled ? 1 : 0 
+
+    const payload = {
+      name: fullStaffName,
+      designation: designation.trim() || 'Teacher',
+      mobile: mobile.trim(),
+      base_salary: parseFloat(baseSalary) || 0,
+      pf_enabled: pfEnabled ? 1 : 0
     };
-    
+
     try {
       const res = await fetch(`${BASE_URL}/api/staff`, {
         method: 'POST',
@@ -577,7 +584,7 @@ const StaffPayrollAttendance = () => {
         body: JSON.stringify(payload)
       });
       const data = await res.json();
-      
+
       if (res.ok && data.success) {
         setUiMessage('🎉 New Staff Member Registered into Ledger!');
         setStaffPrefix('Mr.');
@@ -607,7 +614,7 @@ const StaffPayrollAttendance = () => {
       setUiMessage("Kripya valid Telegram ID daalein!");
       return;
     }
-    
+
     try {
       const response = await fetch('https://erp-api.aapschool.in/api/staff/link-telegram', {
         method: 'POST',
@@ -615,7 +622,7 @@ const StaffPayrollAttendance = () => {
         body: JSON.stringify({ mobile: selectedStaffMobile, telegram_id: telegramIdInput.trim() })
       });
       const data = await response.json();
-      
+
       if (data.success) {
         setUiMessage("✅ " + data.message);
         setShowTelegramModal(false);
@@ -636,7 +643,7 @@ const StaffPayrollAttendance = () => {
 
       if (res.ok) {
         setUiMessage(`❌ ${staffName} removed successfully!`);
-        fetchStaff(); 
+        fetchStaff();
         setTimeout(() => setUiMessage(''), 3000);
       } else {
         setUiMessage("Error removing staff profile.");
@@ -652,7 +659,7 @@ const StaffPayrollAttendance = () => {
       setUiMessage("Staff, Date aur Check-In time zaroori hain!");
       return;
     }
-    
+
     try {
       const response = await fetch(`${BASE_URL}/api/staff/manual-attendance`, {
         method: 'POST',
@@ -666,7 +673,7 @@ const StaffPayrollAttendance = () => {
         })
       });
       const data = await response.json();
-      
+
       if (data.success) {
         setUiMessage(data.message);
         fetchManualAttendanceList();
@@ -702,11 +709,12 @@ const StaffPayrollAttendance = () => {
     setManualCheckOut(att.check_out_time || '');
     setManualStatus(att.status || 'Present');
     setEditingManualAttendance(att);
+    document.querySelector('.manual-attendance-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const deleteManualAttendance = async (attendanceId) => {
     if (!confirm("Kya aap yeh attendance record delete karna chahte hain?")) return;
-    
+
     try {
       const response = await fetch(`${BASE_URL}/api/staff/attendance/${attendanceId}/delete`, {
         method: 'DELETE'
@@ -724,11 +732,11 @@ const StaffPayrollAttendance = () => {
   const handleEditClick = (staff) => {
     setEditingStaff(staff);
     setEditFormData({
-        name: staff.name || '',
-        designation: staff.designation || '',
-        mobile: staff.mobile || '',
-        base_salary: staff.base_salary || '',
-        epf_enabled: staff.epf_enabled || false
+      name: staff.name || '',
+      designation: staff.designation || '',
+      mobile: staff.mobile || '',
+      base_salary: staff.base_salary || '',
+      epf_enabled: staff.epf_enabled || false
     });
     setShowEditModal(true);
   };
@@ -736,16 +744,16 @@ const StaffPayrollAttendance = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-        const response = await axios.put(`${BASE_URL}/api/staff/${editingStaff.id}`, editFormData);
-        if (response.data.success) {
-            setShowEditModal(false);
-            setUiMessage("✅ Staff Updated Successfully!");
-            fetchStaff();
-            setTimeout(() => setUiMessage(''), 3000);
-        }
+      const response = await axios.put(`${BASE_URL}/api/staff/${editingStaff.id}`, editFormData);
+      if (response.data.success) {
+        setShowEditModal(false);
+        setUiMessage("✅ Staff Updated Successfully!");
+        fetchStaff();
+        setTimeout(() => setUiMessage(''), 3000);
+      }
     } catch (err) {
-        setUiMessage("❌ Error updating staff: " + (err.response?.data?.error || err.message));
-        setTimeout(() => setUiMessage(''), 4000);
+      setUiMessage("❌ Error updating staff: " + (err.response?.data?.error || err.message));
+      setTimeout(() => setUiMessage(''), 4000);
     }
   };
 
@@ -836,6 +844,7 @@ const StaffPayrollAttendance = () => {
     XLSX.writeFile(workbook, `Master_Management_Payroll_${selectedMonth}.xlsx`);
   };
 
+  // ========== STYLES ==========
   const tabBtnStyle = { padding: '8px 16px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' };
   const cardStyle = { backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' };
   const cardTitleStyle = { margin: '0 0 16px 0', fontSize: '15px', color: '#1e293b', fontWeight: 'bold', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' };
@@ -845,10 +854,12 @@ const StaffPayrollAttendance = () => {
   const rowActionBtnStyle = { padding: '5px 10px', backgroundColor: '#f1f5f9', border: 'none', borderRadius: '6px', color: '#334155', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid #cbd5e1', transition: 'all 0.1s' };
   const thTdStyle = { padding: '12px 10px', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' };
 
+  // ========== WALL QR ==========
   const myComputerIp = window.location.hostname;
-  const wallQrDataString = `https://${myComputerIp}/staff-attendance-terminal`; 
+  const wallQrDataString = `https://${myComputerIp}/staff-attendance-terminal`;
   const generatedWallQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(wallQrDataString)}`;
 
+  // ========== LOADING ==========
   if (loading) {
     return (
       <div style={{ padding: '20px', textAlign: 'center', fontFamily: 'Arial, sans-serif', color: '#64748b' }}>
@@ -857,9 +868,11 @@ const StaffPayrollAttendance = () => {
     );
   }
 
+  // ========== MAIN ADMIN RETURN ==========
   return (
     <div style={{ padding: '10px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh', boxSizing: 'border-box' }}>
-      
+
+      {/* HEADER TITLE MATRIX ROW */}
       <div style={{ marginBottom: '24px', backgroundColor: '#fff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
         <h2 style={{ margin: 0, color: '#0f172a', fontSize: '24px', fontWeight: 'bold' }}>📅 Staff Management & Geo-Payroll Matrix</h2>
         <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: '14px' }}>Track range bounds attendance, deploy automated Telegram alerts, and check live accounting sheets</p>
@@ -871,24 +884,27 @@ const StaffPayrollAttendance = () => {
         </div>
       )}
 
+      {/* HORIZONTAL TAB BAR MENU PANEL */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px' }}>
-          <button onClick={() => setActiveTab('directory')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'directory' ? '#4f46e5' : '#fff', color: activeTab === 'directory' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Users size={16}/> Staff Profiles</button>
-          <button onClick={() => { setActiveTab('reports'); setReportMode('today'); }} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'reports' ? '#4f46e5' : '#fff', color: activeTab === 'reports' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Calendar size={16}/> Master Reports Engine</button>
-          
-          <button onClick={() => setActiveTab('advance')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'advance' ? '#e65100' : '#fff', color: activeTab === 'advance' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><DollarSign size={16}/> Advance Salary</button>
-          
-          <button onClick={() => setActiveTab('rules')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'rules' ? '#4f46e5' : '#fff', color: activeTab === 'rules' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Settings size={16}/> Attendance Rules</button>
-          <button onClick={() => setActiveTab('qr_wall')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'qr_wall' ? '#4f46e5' : '#fff', color: activeTab === 'qr_wall' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><QrCode size={16}/> Wall QR Terminal</button>
+          <button onClick={() => setActiveTab('directory')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'directory' ? '#4f46e5' : '#fff', color: activeTab === 'directory' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Users size={16} /> Staff Profiles</button>
+          <button onClick={() => { setActiveTab('reports'); setReportMode('today'); }} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'reports' ? '#4f46e5' : '#fff', color: activeTab === 'reports' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Calendar size={16} /> Master Reports Engine</button>
+          <button onClick={() => setActiveTab('advance')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'advance' ? '#e65100' : '#fff', color: activeTab === 'advance' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><DollarSign size={16} /> Advance Salary</button>
+          <button onClick={() => setActiveTab('rules')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'rules' ? '#4f46e5' : '#fff', color: activeTab === 'rules' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Settings size={16} /> Attendance Rules</button>
+          <button onClick={() => setActiveTab('qr_wall')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'qr_wall' ? '#4f46e5' : '#fff', color: activeTab === 'qr_wall' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><QrCode size={16} /> Wall QR Terminal</button>
+          <button onClick={() => setActiveTab('manual_attendance')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'manual_attendance' ? '#8b5cf6' : '#fff', color: activeTab === 'manual_attendance' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}>
+            📋 Manual Attendance
+          </button>
         </div>
-        
+
+        {/* EXPORT BUTTON */}
         {activeTab === 'reports' && reportMode !== 'management' && (
           <div style={{ position: 'relative', display: 'inline-block' }}>
-            <button 
-              onClick={() => setShowExportMenu(!showExportMenu)} 
+            <button
+              onClick={() => setShowExportMenu(!showExportMenu)}
               style={{ ...tabBtnStyle, backgroundColor: '#16a34a', color: 'white' }}
             >
-              <Download size={16}/> 📥 Export Attendance Excel ▾
+              <Download size={16} /> 📥 Export Attendance Excel ▾
             </button>
 
             {showExportMenu && (
@@ -905,23 +921,27 @@ const StaffPayrollAttendance = () => {
                 minWidth: '200px',
                 overflow: 'hidden'
               }}>
-                <button 
+                <button
                   onClick={() => {
                     setReportMode('today');
                     setShowExportMenu(false);
                     setTimeout(() => downloadExcelReport(), 100);
                   }}
                   style={{ width: '100%', padding: '10px 14px', textAlign: 'left', backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 'bold', color: '#334155', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
                 >
                   📅 Aaj ki Attendance (Today)
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setReportMode('monthly');
                     setShowExportMenu(false);
                     setTimeout(() => downloadExcelReport(), 100);
                   }}
                   style={{ width: '100%', padding: '10px 14px', textAlign: 'left', backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 'bold', color: '#334155', cursor: 'pointer' }}
+                  onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                  onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
                 >
                   📊 Month Wise Attendance
                 </button>
@@ -932,34 +952,22 @@ const StaffPayrollAttendance = () => {
 
         {activeTab === 'reports' && reportMode === 'management' && (
           <button onClick={downloadManagementPayrollExcel} style={{ ...tabBtnStyle, backgroundColor: '#1e293b', color: 'white' }}>
-            <Download size={16}/> 📥 Download Master Payroll Sheet
+            <Download size={16} /> 📥 Download Master Payroll Sheet
           </button>
         )}
       </div>
 
-      <button 
-        onClick={() => setActiveTab('manual_attendance')} 
-        style={{ 
-            ...tabBtnStyle, 
-            backgroundColor: activeTab === 'manual_attendance' ? '#8b5cf6' : '#fff', 
-            color: activeTab === 'manual_attendance' ? 'white' : '#475569', 
-            border: '1px solid #cbd5e1',
-            marginBottom: '20px' 
-        }}
-      >
-        📋 Manual Attendance
-      </button>
-
+      {/* ===== TAB CONTENT: DIRECTORY ===== */}
       {activeTab === 'directory' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
           <div style={cardStyle}>
-            <h3 style={cardTitleStyle}><UserPlus size={18} color="#4f46e5"/> Register New Staff Matrix</h3>
+            <h3 style={cardTitleStyle}><UserPlus size={18} color="#4f46e5" /> Register New Staff Matrix</h3>
             <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
                 <label style={labelStyle}>Staff / Teacher Full Name</label>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                  <select 
-                    value={staffPrefix} 
+                  <select
+                    value={staffPrefix}
                     onChange={(e) => setStaffPrefix(e.target.value)}
                     style={{ width: '90px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '14px', fontWeight: 'bold', backgroundColor: '#fff' }}
                   >
@@ -969,14 +977,13 @@ const StaffPayrollAttendance = () => {
                     <option value="Dr.">Dr.</option>
                     <option value="Prof.">Prof.</option>
                   </select>
-                  
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Alexa" 
-                    value={staffName || ''} 
-                    onChange={(e) => setStaffName(e.target.value)} 
-                    style={{ ...inpStyle, marginTop: '0', flex: 1 }} 
-                    required 
+                  <input
+                    type="text"
+                    placeholder="e.g. Alexa"
+                    value={staffName || ''}
+                    onChange={(e) => setStaffName(e.target.value)}
+                    style={{ ...inpStyle, marginTop: '0', flex: 1 }}
+                    required
                   />
                 </div>
               </div>
@@ -985,28 +992,28 @@ const StaffPayrollAttendance = () => {
                 <label style={labelStyle}>Designation Post</label>
                 <input type="text" placeholder="e.g. Co-Ordinator" value={designation || ''} onChange={(e) => setDesignation(e.target.value)} style={inpStyle} required />
               </div>
-              
+
               <div>
                 <label style={labelStyle}>📱 Telegram Mobile Connection</label>
                 <input type="text" placeholder="e.g. 98932XXXXX" value={mobile || ''} onChange={(e) => setMobile(e.target.value)} style={{ ...inpStyle, color: '#16a34a' }} required />
               </div>
-              
+
               <div>
                 <label style={labelStyle}>Basic Monthly Salary Structure (₹)</label>
                 <input type="number" placeholder="e.g. 25000" value={baseSalary || ''} onChange={(e) => setBaseSalary(e.target.value)} style={inpStyle} required />
               </div>
-              
+
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
                 <input type="checkbox" id="pf_check" checked={pfEnabled === 1} onChange={(e) => setPfEnabled(e.target.checked ? 1 : 0)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
                 <label htmlFor="pf_check" style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b', cursor: 'pointer' }}>Enable Standard EPF Deduction (12%)</label>
               </div>
-              
+
               <button type="submit" style={submitBtnStyle}>Save Staff ⚡</button>
             </form>
           </div>
 
           <div style={cardStyle}>
-            <h3 style={cardTitleStyle}><Users size={18} color="#4f46e5"/> Registered Staff Registry ({(staffList || []).length})</h3>
+            <h3 style={cardTitleStyle}><Users size={18} color="#4f46e5" /> Registered Staff Registry ({(staffList || []).length})</h3>
             <div style={{ maxHeight: '450px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {(!staffList || staffList.length === 0) ? (
                 <p style={{ color: '#94a3b8', fontSize: '13px', textAlign: 'center', marginTop: '20px' }}>No accounts found.</p>
@@ -1016,7 +1023,7 @@ const StaffPayrollAttendance = () => {
                     <div style={{ flex: 1, marginRight: '10px' }}>
                       <strong style={{ color: '#0f172a', fontSize: '14px' }}>{s?.name || 'Unknown'}</strong>
                       <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>{s?.designation || 'N/A'} | Mob: {s?.mobile || 'N/A'}</div>
-                      
+
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '8px' }}>
                         <input type="checkbox" id={`cl_toggle_${s?.id}`} checked={!!clEncashment[s?.id]} onChange={() => handleToggleClRule(s?.id)} style={{ width: '13px', height: '13px', cursor: 'pointer' }} />
                         <label htmlFor={`cl_toggle_${s?.id}`} style={{ fontSize: '11px', color: '#334155', fontWeight: 'bold', cursor: 'pointer' }}>CL Encashment Bonus</label>
@@ -1027,25 +1034,36 @@ const StaffPayrollAttendance = () => {
                         {s?.pf_enabled === 1 && <span style={{ fontSize: '10px', padding: '2px 6px', backgroundColor: '#f0fdf4', color: '#16a34a', borderRadius: '4px', fontWeight: 'bold' }}>PF Bound</span>}
                       </div>
                     </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '95px' }}>
-                      <button onClick={() => handleOpenAdvanceModal(s)} style={{ ...rowActionBtnStyle, backgroundColor: '#fff3e0', color: '#e65100', borderColor: '#ffe0b2' }}><DollarSign size={11}/> + Advance</button>
-                      <button onClick={() => fetchIndividualPaySlip(s?.id)} style={{ ...rowActionBtnStyle, backgroundColor: '#4f46e5', color: '#fff', borderColor: '#4f46e5' }}><FileText size={11}/> Pay Slip</button>
-                      
-                      <button 
-                          onClick={() => handleOpenTelegramModal(s.mobile)}
-                          style={{ ...rowActionBtnStyle, backgroundColor: '#25D366', color: 'white', borderColor: '#25D366', fontSize: '10px', padding: '4px 8px' }}
-                      >
-                          📱 Link Telegram
-                      </button>
 
-                      <button 
-                          onClick={() => handleEditClick(s)}
-                          style={{ ...rowActionBtnStyle, backgroundColor: '#f59e0b', color: 'white', borderColor: '#f59e0b', fontSize: '10px', padding: '4px 8px' }}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '95px' }}>
+                      <button onClick={() => handleOpenAdvanceModal(s)} style={{ ...rowActionBtnStyle, backgroundColor: '#fff3e0', color: '#e65100', borderColor: '#ffe0b2' }}><DollarSign size={11} /> + Advance</button>
+                      <button onClick={() => fetchIndividualPaySlip(s?.id)} style={{ ...rowActionBtnStyle, backgroundColor: '#4f46e5', color: '#fff', borderColor: '#4f46e5' }}><FileText size={11} /> Pay Slip</button>
+                      <button
+                        onClick={() => handleOpenTelegramModal(s.mobile)}
+                        style={{
+                          ...rowActionBtnStyle,
+                          backgroundColor: '#25D366',
+                          color: 'white',
+                          borderColor: '#25D366',
+                          fontSize: '10px',
+                          padding: '4px 8px'
+                        }}
                       >
-                          ✏️ Edit
+                        📱 Link Telegram
                       </button>
-                      
+                      <button
+                        onClick={() => handleEditClick(s)}
+                        style={{
+                          ...rowActionBtnStyle,
+                          backgroundColor: '#f59e0b',
+                          color: 'white',
+                          borderColor: '#f59e0b',
+                          fontSize: '10px',
+                          padding: '4px 8px'
+                        }}
+                      >
+                        ✏️ Edit
+                      </button>
                       <button onClick={() => handleDeleteStaff(s.id, s.name)} style={{ ...rowActionBtnStyle, backgroundColor: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5', marginTop: '2px' }}>❌ Delete Staff</button>
                     </div>
                   </div>
@@ -1056,9 +1074,10 @@ const StaffPayrollAttendance = () => {
         </div>
       )}
 
+      {/* ===== TAB CONTENT: ADVANCE ===== */}
       {activeTab === 'advance' && (
         <div style={cardStyle}>
-          <h3 style={cardTitleStyle}><DollarSign size={18} color="#e65100"/> Advance Salary Management</h3>
+          <h3 style={cardTitleStyle}><DollarSign size={18} color="#e65100" /> Advance Salary Management</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {staffList.map((s) => (
               <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
@@ -1072,149 +1091,151 @@ const StaffPayrollAttendance = () => {
         </div>
       )}
 
+      {/* ===== TAB CONTENT: MANUAL ATTENDANCE ===== */}
       {activeTab === 'manual_attendance' && (
         <div style={cardStyle}>
-            <h3 style={cardTitleStyle}>
-                <Clock size={18} color="#8b5cf6"/> Manual Staff Attendance
-            </h3>
-            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
-                Admin manually mark attendance for staff without smartphones (Maid, Peon, etc.)
-            </p>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '10px' }}>
-                <div>
-                    <label style={labelStyle}>Select Staff *</label>
-                    <select 
-                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                        value={manualStaffId}
-                        onChange={(e) => setManualStaffId(e.target.value)}
-                    >
-                        <option value="">-- Select Staff --</option>
-                        {staffList.map(s => (
-                            <option key={s.id} value={s.id}>{s.name} ({s.designation})</option>
-                        ))}
-                    </select>
-                </div>
-                <div>
-                    <label style={labelStyle}>Date *</label>
-                    <input 
-                        type="date" 
-                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                        value={manualDate}
-                        onChange={(e) => setManualDate(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label style={labelStyle}>Check-In Time *</label>
-                    <input 
-                        type="time" 
-                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                        value={manualCheckIn}
-                        onChange={(e) => setManualCheckIn(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label style={labelStyle}>Check-Out Time</label>
-                    <input 
-                        type="time" 
-                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                        value={manualCheckOut}
-                        onChange={(e) => setManualCheckOut(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label style={labelStyle}>Status</label>
-                    <select 
-                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                        value={manualStatus}
-                        onChange={(e) => setManualStatus(e.target.value)}
-                    >
-                        <option value="Present">Present</option>
-                        <option value="Late">Late</option>
-                        <option value="Half-Day">Half-Day</option>
-                        <option value="Leave">Leave</option>
-                        <option value="Absent">Absent</option>
-                    </select>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'end', gap: '8px' }}>
-                    <button 
-                        onClick={handleManualAttendanceSubmit}
-                        style={{ ...submitBtnStyle, backgroundColor: '#8b5cf6', marginTop: '0' }}
-                    >
-                        💾 Save Attendance
-                    </button>
-                    <button 
-                        onClick={fetchManualAttendanceList}
-                        style={{ ...submitBtnStyle, backgroundColor: '#3b82f6', marginTop: '0' }}
-                    >
-                        🔄 Refresh
-                    </button>
-                </div>
+          <h3 style={cardTitleStyle}>
+            <Clock size={18} color="#8b5cf6" /> Manual Staff Attendance
+          </h3>
+          <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
+            Admin manually mark attendance for staff without smartphones (Maid, Peon, etc.)
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '10px' }}>
+            <div>
+              <label style={labelStyle}>Select Staff *</label>
+              <select
+                className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                value={manualStaffId}
+                onChange={(e) => setManualStaffId(e.target.value)}
+              >
+                <option value="">-- Select Staff --</option>
+                {staffList.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.designation})</option>
+                ))}
+              </select>
             </div>
-            
-            <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                    <thead>
-                        <tr style={{ backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 'bold' }}>
-                            <th style={thTdStyle}>Staff</th>
-                            <th style={thTdStyle}>Designation</th>
-                            <th style={thTdStyle}>Date</th>
-                            <th style={thTdStyle}>Check-In</th>
-                            <th style={thTdStyle}>Check-Out</th>
-                            <th style={thTdStyle}>Status</th>
-                            <th style={thTdStyle}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {manualAttendanceList.length === 0 ? (
-                            <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>No attendance records found</td></tr>
-                        ) : (
-                            manualAttendanceList.map((att) => (
-                                <tr key={att.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                    <td style={thTdStyle}><b>{att.name}</b></td>
-                                    <td style={thTdStyle}>{att.designation}</td>
-                                    <td style={thTdStyle}>{att.date}</td>
-                                    <td style={thTdStyle}>{att.check_in_time || '--:--'}</td>
-                                    <td style={thTdStyle}>{att.check_out_time || '--:--'}</td>
-                                    <td style={thTdStyle}>
-                                        <span style={{ 
-                                            padding: '2px 8px', 
-                                            borderRadius: '4px', 
-                                            backgroundColor: att.status === 'Present' ? '#dcfce7' : 
-                                                           att.status === 'Late' ? '#fef3c7' : 
-                                                           att.status === 'Half-Day' ? '#fef9c3' : '#fee2e2',
-                                            color: att.status === 'Present' ? '#16a34a' : 
-                                                   att.status === 'Late' ? '#d97706' : 
-                                                   att.status === 'Half-Day' ? '#a16207' : '#dc2626',
-                                            fontWeight: 'bold',
-                                            fontSize: '11px'
-                                        }}>
-                                            {att.status}
-                                        </span>
-                                    </td>
-                                    <td style={thTdStyle}>
-                                        <button 
-                                            onClick={() => editManualAttendance(att)}
-                                            style={{ ...rowActionBtnStyle, backgroundColor: '#dbeafe', color: '#2563eb', marginRight: '4px' }}
-                                        >
-                                            ✏️ Edit
-                                        </button>
-                                        <button 
-                                            onClick={() => deleteManualAttendance(att.id)}
-                                            style={{ ...rowActionBtnStyle, backgroundColor: '#fee2e2', color: '#dc2626' }}
-                                        >
-                                            🗑️ Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+            <div>
+              <label style={labelStyle}>Date *</label>
+              <input
+                type="date"
+                className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                value={manualDate}
+                onChange={(e) => setManualDate(e.target.value)}
+              />
             </div>
+            <div>
+              <label style={labelStyle}>Check-In Time *</label>
+              <input
+                type="time"
+                className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                value={manualCheckIn}
+                onChange={(e) => setManualCheckIn(e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Check-Out Time</label>
+              <input
+                type="time"
+                className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                value={manualCheckOut}
+                onChange={(e) => setManualCheckOut(e.target.value)}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Status</label>
+              <select
+                className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                value={manualStatus}
+                onChange={(e) => setManualStatus(e.target.value)}
+              >
+                <option value="Present">Present</option>
+                <option value="Late">Late</option>
+                <option value="Half-Day">Half-Day</option>
+                <option value="Leave">Leave</option>
+                <option value="Absent">Absent</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'end', gap: '8px' }}>
+              <button
+                onClick={handleManualAttendanceSubmit}
+                style={{ ...submitBtnStyle, backgroundColor: '#8b5cf6', marginTop: '0' }}
+              >
+                💾 Save Attendance
+              </button>
+              <button
+                onClick={fetchManualAttendanceList}
+                style={{ ...submitBtnStyle, backgroundColor: '#3b82f6', marginTop: '0' }}
+              >
+                🔄 Refresh
+              </button>
+            </div>
+          </div>
+
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 'bold' }}>
+                  <th style={thTdStyle}>Staff</th>
+                  <th style={thTdStyle}>Designation</th>
+                  <th style={thTdStyle}>Date</th>
+                  <th style={thTdStyle}>Check-In</th>
+                  <th style={thTdStyle}>Check-Out</th>
+                  <th style={thTdStyle}>Status</th>
+                  <th style={thTdStyle}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {manualAttendanceList.length === 0 ? (
+                  <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>No attendance records found</td></tr>
+                ) : (
+                  manualAttendanceList.map((att) => (
+                    <tr key={att.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={thTdStyle}><b>{att.name}</b></td>
+                      <td style={thTdStyle}>{att.designation}</td>
+                      <td style={thTdStyle}>{att.date}</td>
+                      <td style={thTdStyle}>{att.check_in_time || '--:--'}</td>
+                      <td style={thTdStyle}>{att.check_out_time || '--:--'}</td>
+                      <td style={thTdStyle}>
+                        <span style={{
+                          padding: '2px 8px',
+                          borderRadius: '4px',
+                          backgroundColor: att.status === 'Present' ? '#dcfce7' :
+                            att.status === 'Late' ? '#fef3c7' :
+                              att.status === 'Half-Day' ? '#fef9c3' : '#fee2e2',
+                          color: att.status === 'Present' ? '#16a34a' :
+                            att.status === 'Late' ? '#d97706' :
+                              att.status === 'Half-Day' ? '#a16207' : '#dc2626',
+                          fontWeight: 'bold',
+                          fontSize: '11px'
+                        }}>
+                          {att.status}
+                        </span>
+                      </td>
+                      <td style={thTdStyle}>
+                        <button
+                          onClick={() => editManualAttendance(att)}
+                          style={{ ...rowActionBtnStyle, backgroundColor: '#dbeafe', color: '#2563eb', marginRight: '4px' }}
+                        >
+                          ✏️ Edit
+                        </button>
+                        <button
+                          onClick={() => deleteManualAttendance(att.id)}
+                          style={{ ...rowActionBtnStyle, backgroundColor: '#fee2e2', color: '#dc2626' }}
+                        >
+                          🗑️ Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
+      {/* ===== TAB CONTENT: REPORTS ===== */}
       {activeTab === 'reports' && (
         <div style={cardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
@@ -1223,7 +1244,7 @@ const StaffPayrollAttendance = () => {
               <button onClick={() => setReportMode('monthly')} style={{ ...tabBtnStyle, padding: '6px 12px', backgroundColor: reportMode === 'monthly' ? '#4f46e5' : '#f1f5f9', color: reportMode === 'monthly' ? 'white' : '#475569' }}>Monthly Master Directory</button>
               <button onClick={() => setReportMode('management')} style={{ ...tabBtnStyle, padding: '6px 12px', backgroundColor: reportMode === 'management' ? '#1e293b' : '#f1f5f9', color: reportMode === 'management' ? 'white' : '#475569' }}>💰 Management Salary Sheet</button>
             </div>
-            
+
             {reportMode !== 'today' && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <label style={{ fontSize: '13px', fontWeight: 'bold', color: '#475569' }}>Select Target Month:</label>
@@ -1294,20 +1315,21 @@ const StaffPayrollAttendance = () => {
         </div>
       )}
 
+      {/* ===== TAB CONTENT: RULES ===== */}
       {activeTab === 'rules' && (
         <div style={{ ...cardStyle, maxWidth: '600px', margin: '0 auto' }}>
-          <h3 style={cardTitleStyle}><Settings size={18} color="#4f46e5"/> Live Location & Duty Hours Setup</h3>
+          <h3 style={cardTitleStyle}><Settings size={18} color="#4f46e5" /> Live Location & Duty Hours Setup</h3>
           <div style={{ backgroundColor: '#fef3c7', border: '1px solid #f59e0b', padding: '10px', borderRadius: '8px', fontSize: '12px', color: '#b45309', marginBottom: '16px', display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <AlertTriangle size={18}/> <span><b>Dynamic SaaS Geo-Fence Sync:</b> Yeh input fields ab fully editable hain bhai. Aap yahan jo bhi coordinates ya radius daal kar save karenge, wo poore core system me instantaneous overwrite aur apply ho jayenge!</span>
+            <AlertTriangle size={18} /> <span><b>Dynamic SaaS Geo-Fence Sync:</b> Yeh input fields ab fully editable hain bhai. Aap yahan jo bhi coordinates ya radius daal kar save karenge, wo poore core system me instantaneous overwrite aur apply ho jayenge!</span>
           </div>
-          
+
           <form onSubmit={handleUpdateRules} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             <div>
-              <label style={labelStyle}><MapPin size={14}/> Operational Latitude</label>
+              <label style={labelStyle}><MapPin size={14} /> Operational Latitude</label>
               <input type="number" step="any" value={rules?.latitude ?? 24.7432} onChange={(e) => setRules({ ...rules, latitude: parseFloat(e.target.value) || 0 })} style={{ ...inpStyle, border: '1px solid #cbd5e1', color: '#1e293b' }} required />
             </div>
             <div>
-              <label style={labelStyle}><MapPin size={14}/> Operational Longitude</label>
+              <label style={labelStyle}><MapPin size={14} /> Operational Longitude</label>
               <input type="number" step="any" value={rules?.longitude ?? 78.8561} onChange={(e) => setRules({ ...rules, longitude: parseFloat(e.target.value) || 0 })} style={{ ...inpStyle, border: '1px solid #cbd5e1', color: '#1e293b' }} required />
             </div>
             <div>
@@ -1316,7 +1338,7 @@ const StaffPayrollAttendance = () => {
               <p style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>* Mobile testing me bypass karne ke liye ise temporarilly 500 meters kar sakte hain.</p>
             </div>
             <div>
-              <label style={labelStyle}><Clock size={14}/> Shift Start Time (Entry)</label>
+              <label style={labelStyle}><Clock size={14} /> Shift Start Time (Entry)</label>
               <input type="text" placeholder="e.g. 08:00" value={rules?.start_time || '08:00'} onChange={(e) => setRules({ ...rules, start_time: e.target.value })} style={inpStyle} required />
             </div>
             <div>
@@ -1324,7 +1346,7 @@ const StaffPayrollAttendance = () => {
               <input type="number" value={rules?.buffer ?? 15} onChange={(e) => setRules({ ...rules, buffer: parseInt(e.target.value) || 0 })} style={inpStyle} required />
             </div>
             <div>
-              <label style={labelStyle}><Clock size={14}/> Shift End Time (Exit)</label>
+              <label style={labelStyle}><Clock size={14} /> Shift End Time (Exit)</label>
               <input type="text" placeholder="e.g. 14:00" value={rules?.end_time || '14:00'} onChange={(e) => setRules({ ...rules, end_time: e.target.value })} style={inpStyle} required />
             </div>
             <button type="submit" style={{ ...submitBtnStyle, gridColumn: 'span 2', backgroundColor: '#10b981' }}>Save Operational Parameters 💾</button>
@@ -1332,11 +1354,12 @@ const StaffPayrollAttendance = () => {
         </div>
       )}
 
+      {/* ===== TAB CONTENT: QR WALL ===== */}
       {activeTab === 'qr_wall' && (
         <div style={{ textAlign: 'center', padding: '20px', maxWidth: '500px', margin: '0 auto', border: '2px dashed #cbd5e1', borderRadius: '16px', backgroundColor: '#fff' }}>
           <h3 style={{ margin: '0 0 6px 0', color: '#0f172a', fontWeight: 'bold', fontSize: '18px' }}>🏫 A.B.DIGITAL WORK ATTENDANCE TERMINAL</h3>
           <p style={{ margin: '0 0 20px 0', color: '#64748b', fontSize: '13px' }}>Print this Master QR and paste it on the school wall. Staff will scan it twice a day via mobile.</p>
-          
+
           <div id="printable-wall-qr-zone" style={{ padding: '20px', border: '4px solid #000', borderRadius: '12px', display: 'inline-block', backgroundColor: '#fff', marginBottom: '20px' }}>
             <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', letterSpacing: '1px', fontWeight: '900', color: '#000' }}>SCAN HERE FOR DAILY DIGITAL ATTENDANCE</h4>
             <img src={generatedWallQrUrl} alt="Wall QR Code Terminal" style={{ width: '220px', height: '220px', display: 'block', margin: '0 auto' }} />
@@ -1345,37 +1368,38 @@ const StaffPayrollAttendance = () => {
 
           <div>
             <button onClick={() => window.print()} style={{ padding: '10px 20px', backgroundColor: '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>
-              <Download size={16}/> Print Master Wall QR Slip
+              <Download size={16} /> Print Master Wall QR Slip
             </button>
           </div>
         </div>
       )}
 
+      {/* ===== ADVANCE PAYMENT MODAL ===== */}
       {advanceModalStaff && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 1100 }}>
           <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '500px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
             <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 'bold', color: '#0f172a' }}>💸 Advance Payout Log: Mr. {advanceModalStaff.name}</h3>
             <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#64748b' }}>Submit new advance transactions. These balances are forcefully deducted in automatic monthly payroll calculations.</p>
-            
+
             <form onSubmit={handleSubmitAdvancePayment} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px', borderBottom: '2px dashed #e2e8f0', paddingBottom: '20px' }}>
               <div>
                 <label style={labelStyle}>Advance Paid Amount (₹)</label>
-                <input type="number" placeholder="e.g. 5000" value={advanceAmount} onChange={(e)=>setAdvanceAmount(e.target.value)} style={inpStyle} required/>
+                <input type="number" placeholder="e.g. 5000" value={advanceAmount} onChange={(e) => setAdvanceAmount(e.target.value)} style={inpStyle} required />
               </div>
               <div>
                 <label style={labelStyle}>Reason / Kyun liya amount</label>
-                <input type="text" placeholder="e.g. Medical emergency, Festival loan" value={advanceReason} onChange={(e)=>setAdvanceReason(e.target.value)} style={inpStyle} required/>
+                <input type="text" placeholder="e.g. Medical emergency, Festival loan" value={advanceReason} onChange={(e) => setAdvanceReason(e.target.value)} style={inpStyle} required />
               </div>
               <button type="submit" style={{ ...submitBtnStyle, backgroundColor: '#e65100', marginTop: '6px' }}>Issue Advance Transaction ⚡</button>
             </form>
 
-            <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}><History size={14}/> Payout History Ledger Logs</h4>
+            <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px' }}><History size={14} /> Payout History Ledger Logs</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '180px', overflowY: 'auto' }}>
               {!Array.isArray(advanceHistory) || advanceHistory.length === 0 ? (
                 <p style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', padding: '10px' }}>No historic advance transactions recorded.</p>
               ) : (
                 advanceHistory.map((h, i) => (
-                  <div key={i} style={{ padding: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div key={i} style={{ padding: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifycontent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e293b' }}>{h.purpose || 'Personal Advance'}</div>
                       <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>Date: {h.date}</div>
@@ -1387,29 +1411,44 @@ const StaffPayrollAttendance = () => {
             </div>
 
             <div style={{ marginTop: '12px', marginBottom: '12px' }}>
-              <button 
+              <button
                 onClick={() => downloadAdvanceHistory(advanceModalStaff.id, advanceModalStaff.name)}
-                style={{ width: '100%', padding: '8px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  backgroundColor: '#16a34a',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
               >
-                <Download size={14}/> 📥 Download History as CSV
+                <Download size={14} /> 📥 Download History as CSV
               </button>
             </div>
 
             <div style={{ textAlign: 'right', marginTop: '16px' }}>
-              <button onClick={()=>{setAdvanceModalStaff(null); setAdvanceHistory([]);}} style={{ padding: '8px 16px', backgroundColor: '#cbd5e1', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>Close Logs</button>
+              <button onClick={() => { setAdvanceModalStaff(null); setAdvanceHistory([]); }} style={{ padding: '8px 16px', backgroundColor: '#cbd5e1', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>Close Logs</button>
             </div>
           </div>
         </div>
       )}
 
+      {/* ===== PAY SLIP MODAL ===== */}
       {selectedStaffSlip && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '500px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#4f46e5', marginBottom: '14px' }}>
-              <CheckCircle2 size={24}/>
+              <CheckCircle2 size={24} />
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#0f172a' }}>Payroll Specifications Verified!</h3>
             </div>
-            
+
             <div style={{ backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '16px', fontFamily: 'monospace', fontSize: '12px', color: '#334155', lineHeight: '1.5' }}>
               <div style={{ textAlign: 'center', fontWeight: 'bold', borderBottom: '1px dashed #cbd5e1', paddingBottom: '8px', marginBottom: '8px' }}>A.B.DIGITAL WORK SYSTEMS LOGS</div>
               <div><b>Name:</b> Mr./Ms. {selectedStaffSlip.name || 'N/A'}</div>
@@ -1418,21 +1457,21 @@ const StaffPayrollAttendance = () => {
               <div><b>Base Fixed Salary:</b> ₹{selectedStaffSlip.base_salary || 0}</div>
               <div><b>Days Logged Present:</b> {selectedStaffSlip.days_present || 0} Days</div>
               <div style={{ color: '#16a34a', borderBottom: '1px dashed #cbd5e1', paddingBottom: '6px', marginBottom: '6px' }}><b>(+) CL Encashment Extra Bonus:</b> +₹{selectedStaffSlip.cl_bonus_added || 0} ({selectedStaffSlip.cl_encashment_active || 'Disabled'})</div>
-              
+
               <div style={{ color: '#ef4444' }}><b>(-) Late Fine Penalties:</b> ₹{selectedStaffSlip.late_fines_deducted || 0}</div>
               <div style={{ color: '#ef4444' }}><b>(-) Half Day Reductions:</b> ₹{selectedStaffSlip.half_day_deductions || 0} ({selectedStaffSlip.half_days_count || 0} times)</div>
               <div style={{ color: '#ef4444' }}><b>(-) EPF Contribution (12%):</b> ₹{selectedStaffSlip.pf_deducted || 0}</div>
               <div style={{ color: '#c62828', borderBottom: '1px dashed #cbd5e1', paddingBottom: '6px', marginBottom: '6px' }}><b>(-) Advance Amount Deducted:</b> -₹{selectedStaffSlip.advance_deducted || 0}</div>
-              
+
               <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a', paddingTop: '4px' }}>💰 NET PAYOUT INCOME: ₹{selectedStaffSlip.net_salary_payout || 0}</div>
               <div style={{ fontSize: '10px', color: '#64748b', marginTop: '8px' }}>* leaves balance left: {selectedStaffSlip.cl_remaining ?? 12} CLs</div>
             </div>
 
             <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
               <button onClick={() => downloadTextPaySlipFile(selectedStaffSlip)} style={{ flex: 1, padding: '10px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                <Download size={14}/> Download Slip
+                <Download size={14} /> Download Slip
               </button>
-              <button onClick={() => setSelectedStaffSlip(null)} style={{ padding: '10px 16px', backgroundColor: '#cbd5e1', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+              <button onClick={() => setSelectedStaffSlip(null)} style={{ padding: '10px 16px', backgroundColor: '#cbd5e1', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
                 Close
               </button>
             </div>
@@ -1440,9 +1479,17 @@ const StaffPayrollAttendance = () => {
         </div>
       )}
 
+      {/* ===== EDIT STAFF MODAL ===== */}
       {showEditModal && editingStaff && (
-        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15,23,42,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 2000 }}>
-          <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '450px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+          backgroundColor: 'rgba(15,23,42,0.6)', display: 'flex',
+          justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 2000
+        }}>
+          <div style={{
+            backgroundColor: 'white', borderRadius: '14px', padding: '24px',
+            maxWidth: '450px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
+          }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 'bold', color: '#0f172a' }}>
               ✏️ Edit Staff Profile
             </h3>
@@ -1450,26 +1497,26 @@ const StaffPayrollAttendance = () => {
               <div>
                 <label style={labelStyle}>Full Name *</label>
                 <input type="text" required style={inpStyle} value={editFormData.name}
-                  onChange={(e) => setEditFormData({...editFormData, name: e.target.value})} />
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} />
               </div>
               <div>
                 <label style={labelStyle}>Designation *</label>
                 <input type="text" required style={inpStyle} value={editFormData.designation}
-                  onChange={(e) => setEditFormData({...editFormData, designation: e.target.value})} />
+                  onChange={(e) => setEditFormData({ ...editFormData, designation: e.target.value })} />
               </div>
               <div>
                 <label style={labelStyle}>Mobile Number *</label>
                 <input type="text" required style={inpStyle} value={editFormData.mobile}
-                  onChange={(e) => setEditFormData({...editFormData, mobile: e.target.value})} />
+                  onChange={(e) => setEditFormData({ ...editFormData, mobile: e.target.value })} />
               </div>
               <div>
                 <label style={labelStyle}>Base Salary (₹) *</label>
                 <input type="number" required style={inpStyle} value={editFormData.base_salary}
-                  onChange={(e) => setEditFormData({...editFormData, base_salary: e.target.value})} />
+                  onChange={(e) => setEditFormData({ ...editFormData, base_salary: e.target.value })} />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input type="checkbox" id="edit_pf" checked={editFormData.epf_enabled}
-                  onChange={(e) => setEditFormData({...editFormData, epf_enabled: e.target.checked})}
+                  onChange={(e) => setEditFormData({ ...editFormData, epf_enabled: e.target.checked })}
                   style={{ width: '16px', height: '16px' }} />
                 <label htmlFor="edit_pf" style={{ fontSize: '13px', fontWeight: 'bold' }}>Enable EPF (12%)</label>
               </div>
@@ -1488,6 +1535,7 @@ const StaffPayrollAttendance = () => {
         </div>
       )}
 
+      {/* ===== TELEGRAM LINK MODAL ===== */}
       {showTelegramModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 2000 }}>
           <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '400px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
@@ -1495,23 +1543,23 @@ const StaffPayrollAttendance = () => {
             <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: '#64748b' }}>
               Apni Telegram ID enter karein (Aap ise Telegram par <b>@userinfobot</b> se nikal sakte hain):
             </p>
-            
-            <input 
-              type="text" 
+
+            <input
+              type="text"
               placeholder="e.g. 1989970458"
               value={telegramIdInput}
               onChange={(e) => setTelegramIdInput(e.target.value)}
               style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '14px', fontWeight: 'bold', boxSizing: 'border-box', marginBottom: '16px' }}
             />
-            
+
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
+              <button
                 onClick={() => setShowTelegramModal(false)}
                 style={{ flex: 1, padding: '10px', backgroundColor: '#e2e8f0', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', color: '#334155' }}
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleSaveTelegramLink}
                 style={{ flex: 1, padding: '10px', backgroundColor: '#25D366', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}
               >
