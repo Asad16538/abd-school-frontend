@@ -529,7 +529,10 @@ const IDCardStudio = () => {
         </div>
     </div>
 </div>
-
+{/* 🔴 DEBUG - DEKHO KYA AA RAHA HAI */}
+<div style={{ fontSize: '6px', color: 'red', background: 'yellow', textAlign: 'center', position: 'absolute', bottom: '0', left: '0', right: '0', zIndex: '999' }}>
+    school_name: "{schoolSettings.school_name}" | Type: {typeof schoolSettings.school_name}
+</div>
                                                 <div style={{ width: '217px', height: '228px', padding: '4px 12px 0 12px', display: 'block', position: 'relative', boxSizing: 'border-box', overflow: 'hidden', zIndex: '2' }}>
                                                     
                                                     {/* ⭐ STUDENT ID CARD TAG PHOTO KE UPAR CENTER MEIN */}
