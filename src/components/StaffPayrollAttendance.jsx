@@ -19,7 +19,8 @@ const StaffPayrollAttendance = () => {
     designation: '',
     mobile: '',
     base_salary: '',
-    epf_enabled: false
+    epf_enabled: false,
+    staff_photo: null
   });
   // Core System States with Strict Safe Defaults
   const [staffList, setStaffList] = useState([]);
@@ -737,11 +738,12 @@ const StaffPayrollAttendance = () => {
   const handleEditClick = (staff) => {
     setEditingStaff(staff);
     setEditFormData({
-      name: staff.name || '',
-      designation: staff.designation || '',
-      mobile: staff.mobile || '',
-      base_salary: staff.base_salary || '',
-      epf_enabled: staff.epf_enabled || false
+        name: staff.name || '',
+        designation: staff.designation || '',
+        mobile: staff.mobile || '',
+        base_salary: staff.base_salary || '',
+        epf_enabled: staff.epf_enabled || false,
+        staff_photo: null // 👈 New upload ke liye reset rakhein
     });
     setShowEditModal(true);
   };
@@ -749,16 +751,34 @@ const StaffPayrollAttendance = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`${BASE_URL}/api/staff/${editingStaff.id}`, editFormData);
-      if (response.data.success) {
-        setShowEditModal(false);
-        setUiMessage("✅ Staff Updated Successfully!");
-        fetchStaff();
-        setTimeout(() => setUiMessage(''), 3000);
-      }
+        const formData = new FormData();
+        formData.append('name', editFormData.name);
+        formData.append('designation', editFormData.designation);
+        formData.append('mobile', editFormData.mobile);
+        formData.append('base_salary', editFormData.base_salary);
+        formData.append('epf_enabled', editFormData.epf_enabled ? 1 : 0);
+        
+        if (editFormData.staff_photo) {
+            formData.append('student_photo', editFormData.staff_photo); // Backend same key support karega
+        }
+
+        const response = await fetch(`${BASE_URL}/api/staff/${editingStaff.id}`, {
+            method: 'PUT',
+            body: formData
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            setShowEditModal(false);
+            setUiMessage("✅ Staff Profile & Photo Updated Successfully!");
+            fetchStaff();
+            setTimeout(() => setUiMessage(''), 3000);
+        } else {
+            setUiMessage("❌ Error updating staff: " + (data.error || "Unknown error"));
+        }
     } catch (err) {
-      setUiMessage("❌ Error updating staff: " + (err.response?.data?.error || err.message));
-      setTimeout(() => setUiMessage(''), 4000);
+        setUiMessage("❌ Error updating staff: " + err.message);
+        setTimeout(() => setUiMessage(''), 4000);
     }
   };
 
@@ -1573,6 +1593,16 @@ const StaffPayrollAttendance = () => {
                 <label style={labelStyle}>Base Salary (₹) *</label>
                 <input type="number" required style={inpStyle} value={editFormData.base_salary}
                   onChange={(e) => setEditFormData({ ...editFormData, base_salary: e.target.value })} />
+              </div>
+              {/* 📷 EDIT MODAL PHOTO UPLOAD FIELD */}
+              <div>
+                <label style={labelStyle}>Update Passport Photo (Optional)</label>
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={(e) => setEditFormData({...editFormData, staff_photo: e.target.files[0]})} 
+                  style={{ ...inpStyle, padding: '6px', fontSize: '11px' }} 
+                />
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <input type="checkbox" id="edit_pf" checked={editFormData.epf_enabled}
