@@ -473,15 +473,45 @@ const IDCardStudio = () => {
                                                     <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '130px', height: '130px', backgroundImage: `url(${schoolSettings.logo_url})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain', opacity: '0.07', pointerEvents: 'none', zIndex: '1' }} />
                                                 )}
 
-                                                {/* 🏷️ HEADER: Logo aur School Name side-by-side */}
-                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '58px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius, display: 'flex', alignItems: 'center', padding: '0 8px' }}>
+                               {/* ========== 🆕 HEADER: LOGO LEFT + SCHOOL NAME RIGHT (VISIBLE) ========== */}
+<div className="strict-header-box" style={{ 
+    backgroundColor: activeStyle.primary, 
+    color: activeStyle.text, 
+    width: '217px', 
+    height: '58px', 
+    boxSizing: 'border-box', 
+    position: 'relative', 
+    borderRadius: activeStyle.borderRadius, 
+    display: 'flex', 
+    alignItems: 'center', 
+    padding: '0 8px' 
+}}>
     {/* 🏫 LOGO - LEFT SIDE */}
-    <div style={{ width: '36px', height: '36px', background: '#ffffff', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: '0' }}>
+    <div style={{ 
+        width: '36px', 
+        height: '36px', 
+        background: '#ffffff', 
+        borderRadius: '5px', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        overflow: 'hidden', 
+        flexShrink: '0' 
+    }}>
         <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
     </div>
     
-    {/* 📝 SCHOOL NAME - RIGHT SIDE (LOGO KE BAGAL MEIN) */}
-    <div style={{ flexGrow: '1', textAlign: 'center', paddingLeft: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+    {/* 📝 SCHOOL NAME - RIGHT SIDE (WHITE TEXT ON COLORED BACKGROUND) */}
+    <div style={{ 
+        flexGrow: '1', 
+        textAlign: 'center', 
+        paddingLeft: '8px', 
+        overflow: 'hidden', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100%' 
+    }}>
         <div style={{ 
             fontSize: '11px', 
             fontWeight: '900', 
@@ -492,7 +522,8 @@ const IDCardStudio = () => {
             WebkitBoxOrient: 'vertical', 
             overflow: 'hidden', 
             wordBreak: 'break-word',
-            letterSpacing: '0.5px'
+            letterSpacing: '0.5px',
+            color: '#ffffff'  // ⬅️ YEH IMPORTANT HAI - WHITE TEXT
         }}>
             {schoolSettings.school_name}
         </div>
