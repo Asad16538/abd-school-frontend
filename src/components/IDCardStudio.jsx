@@ -473,61 +473,61 @@ const IDCardStudio = () => {
                                                     <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '130px', height: '130px', backgroundImage: `url(${schoolSettings.logo_url})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain', opacity: '0.07', pointerEvents: 'none', zIndex: '1' }} />
                                                 )}
 
-                               {/* ========== 🏫 HEADER: LOGO LEFT + SCHOOL NAME EXACT RIGHT SIDE ========== */}
-<div className="strict-header-box" style={{ 
-    backgroundColor: activeStyle.primary, 
-    color: '#ffffff', 
-    width: '217px', 
-    height: '52px', 
-    boxSizing: 'border-box', 
-    position: 'relative', 
-    borderRadius: activeStyle.borderRadius, 
-    display: 'flex', 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    padding: '0 6px',
-    overflow: 'hidden'
-}}>
-    {/* 🏫 LOGO - LEFT SIDE FIXED */}
-    <div style={{ 
-        width: '32px', 
-        height: '32px', 
-        background: '#ffffff', 
-        borderRadius: '4px', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        overflow: 'hidden', 
-        flexShrink: '0',
-        marginRight: '6px'
-    }}>
-        <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
-    </div>
-    
-    {/* 📝 SCHOOL NAME - RIGHT SIDE HORIZONTAL */}
-    <div style={{ 
-        flexGrow: '1', 
-        overflow: 'hidden',
-        display: 'flex',
-        alignItem: 'center'
-    }}>
-        <div style={{ 
-            fontSize: '8px', 
-            fontWeight: '900', 
-            textTransform: 'uppercase', 
-            lineHeight: '1.15', 
-            display: '-webkit-box', 
-            WebkitLineClamp: '2', 
-            WebkitBoxOrient: 'vertical', 
-            overflow: 'hidden', 
-            wordBreak: 'break-word',
-            color: '#ffffff',
-            width: '100%'
-        }}>
-            {schoolSettings.school_name ? schoolSettings.school_name : "ADITYA ARMY PUBLIC SCHOOL"}
-        </div>
-    </div>
-</div>
+                               {/* ========== ✅ FIXED HEADER: LOGO LEFT + SCHOOL NAME RIGHT ========== */}
+            <div className="strict-header-box" style={{ 
+                backgroundColor: activeStyle.primary, 
+                width: '217px', 
+                height: '58px', 
+                boxSizing: 'border-box', 
+                position: 'relative', 
+                borderRadius: activeStyle.borderRadius, 
+                display: 'flex', 
+                alignItems: 'center', 
+                padding: '0 8px',
+                gap: '6px'
+            }}>
+                {/* LOGO - LEFT */}
+                <div style={{ 
+                    width: '36px', 
+                    height: '36px', 
+                    background: '#ffffff', 
+                    borderRadius: '5px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    overflow: 'hidden', 
+                    flexShrink: '0' 
+                }}>
+                    <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
+                </div>
+                
+                {/* SCHOOL NAME - RIGHT (LOGO KE BAGAL) */}
+                <div style={{ 
+                    flex: '1',
+                    textAlign: 'center', 
+                    overflow: 'hidden',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    height: '100%' 
+                }}>
+                    <div style={{ 
+                        fontSize: '10px', 
+                        fontWeight: '900', 
+                        textTransform: 'uppercase', 
+                        lineHeight: '1.2', 
+                        display: '-webkit-box', 
+                        WebkitLineClamp: '2', 
+                        WebkitBoxOrient: 'vertical', 
+                        overflow: 'hidden', 
+                        wordBreak: 'break-word',
+                        letterSpacing: '0.3px',
+                        color: '#ffffff'
+                    }}>
+                        {schoolSettings.school_name || 'ADITYA ARMY PUBLIC SCHOOL'}
+                    </div>
+                </div>
+            </div>
 
                                                 <div style={{ width: '217px', height: '228px', padding: '4px 12px 0 12px', display: 'block', position: 'relative', boxSizing: 'border-box', overflow: 'hidden', zIndex: '2' }}>
                                                     
