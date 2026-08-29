@@ -34,7 +34,7 @@ const IDCardStudio = () => {
     const [formEndTime, setFormEndTime] = useState('10:15');
     // Class Teacher Assignment States
     const [classTeacherClass, setClassTeacherClass] = useState('');
-    const [classTeacherSection, setClassTeacherSection] = useState('A');  // ✅ YEH ADD KARO
+    const [classTeacherSection, setClassTeacherSection] = useState('A');
     const [classTeacherId, setClassTeacherId] = useState('');
     const [classTeacherList, setClassTeacherList] = useState([]);
 
@@ -70,43 +70,42 @@ const IDCardStudio = () => {
             .catch(err => console.error("Faculty Sync Delay Handled Safely", err));
     };
 
-        
     // 👨‍🏫 CLASS TEACHER ASSIGNMENT FUNCTIONS
     const handleAssignClassTeacher = async () => {
-    if (!classTeacherClass || !classTeacherId) {
-        alert("Class aur Teacher dono select karo!");
-        return;
-    }
-    
-    try {
-        console.log("📤 Sending:", {
-            class_name: classTeacherClass,
-            section: classTeacherSection,  // ✅ YEH ADD KARO
-            teacher_id: classTeacherId
-        });
-        
-        const response = await axios.post(`${BASE_URL}/api/class-teacher/assign`, {
-            class_name: classTeacherClass,
-            section: classTeacherSection,  // ✅ YEH ADD KARO
-            teacher_id: parseInt(classTeacherId)
-        });
-        
-        console.log("📥 Response:", response.data);
-        
-        if (response.data.success) {
-            alert(response.data.message);
-            setClassTeacherClass('');
-            setClassTeacherSection('A');  // ✅ YEH ADD KARO
-            setClassTeacherId('');
-            fetchClassTeachers();
-        } else {
-            alert("❌ " + response.data.error);
+        if (!classTeacherClass || !classTeacherId) {
+            alert("Class aur Teacher dono select karo!");
+            return;
         }
-    } catch (err) {
-        console.error("❌ Error:", err.response?.data || err.message);
-        alert("❌ Error: " + (err.response?.data?.error || err.message));
-    }
-};
+        
+        try {
+            console.log("📤 Sending:", {
+                class_name: classTeacherClass,
+                section: classTeacherSection,
+                teacher_id: classTeacherId
+            });
+            
+            const response = await axios.post(`${BASE_URL}/api/class-teacher/assign`, {
+                class_name: classTeacherClass,
+                section: classTeacherSection,
+                teacher_id: parseInt(classTeacherId)
+            });
+            
+            console.log("📥 Response:", response.data);
+            
+            if (response.data.success) {
+                alert(response.data.message);
+                setClassTeacherClass('');
+                setClassTeacherSection('A');
+                setClassTeacherId('');
+                fetchClassTeachers();
+            } else {
+                alert("❌ " + response.data.error);
+            }
+        } catch (err) {
+            console.error("❌ Error:", err.response?.data || err.message);
+            alert("❌ Error: " + (err.response?.data?.error || err.message));
+        }
+    };
 
     const fetchClassTeachers = async () => {
         try {
@@ -171,36 +170,35 @@ const IDCardStudio = () => {
     };
 
     const handleSaveSlotSubmit = (e) => {
-    e.preventDefault();
-    if (!selectedClass || !selectedSlotData) return;
+        e.preventDefault();
+        if (!selectedClass || !selectedSlotData) return;
 
-    // ✅ Class name directly send karo, backend handle kar lega
-    const payload = {
-        class_id: selectedClass,  // "Class 10th" hi bhejo
-        section: selectedSection === 'All' ? 'A' : selectedSection,
-        day: selectedSlotData.day,
-        period: selectedSlotData.period,
-        start_time: formStartTime,
-        end_time: formEndTime,
-        subject_id: formSubjectId,
-        teacher_id: formTeacherId || null
+        const payload = {
+            class_id: selectedClass,
+            section: selectedSection === 'All' ? 'A' : selectedSection,
+            day: selectedSlotData.day,
+            period: selectedSlotData.period,
+            start_time: formStartTime,
+            end_time: formEndTime,
+            subject_id: formSubjectId,
+            teacher_id: formTeacherId || null
+        };
+
+        console.log("📤 Sending payload:", payload);
+
+        axios.post(`${BASE_URL}/api/timetable/save-slot`, payload)
+            .then(res => {
+                if (res.data.success) {
+                    alert("🎉 Routine Matrix Saved Directly!");
+                    setShowModal(false);
+                    fetchTimetableSheet();
+                }
+            })
+            .catch(err => {
+                console.error("❌ Error:", err.response?.data || err.message);
+                alert(err.response?.data?.error || "Matrix Network Error!");
+            });
     };
-
-    console.log("📤 Sending payload:", payload);
-
-    axios.post(`${BASE_URL}/api/timetable/save-slot`, payload)
-        .then(res => {
-            if (res.data.success) {
-                alert("🎉 Routine Matrix Saved Directly!");
-                setShowModal(false);
-                fetchTimetableSheet();
-            }
-        })
-        .catch(err => {
-            console.error("❌ Error:", err.response?.data || err.message);
-            alert(err.response?.data?.error || "Matrix Network Error!");
-        });
-};
 
     const fetchTimetableSheet = () => {
         if (!selectedClass) return alert("Bhai pehle Class select karo!");
@@ -234,9 +232,10 @@ const IDCardStudio = () => {
                 setStudents([]);
             })
             .finally(() => {
-                setLoading(false); // 👈 Yeh ensure karega ki error aaye ya success, loading hamesha band ho jaye
+                setLoading(false);
             });
     };
+
     // 🏫 MASTER TIMETABLE FUNCTIONS
     const fetchMasterTimetable = () => {
         setLoading(true);
@@ -298,7 +297,6 @@ const IDCardStudio = () => {
             return;
         }
 
-        // Data ko format karo
         const exportData = data.map((slot, index) => ({
             'S.No': index + 1,
             'Day': slot.day || '',
@@ -312,32 +310,27 @@ const IDCardStudio = () => {
             'Status': slot.teacher_id ? 'Assigned' : 'Pending'
         }));
 
-        // Worksheet banayein
         const ws = XLSX.utils.json_to_sheet(exportData);
     
-        // Column width set karein
         ws['!cols'] = [
-            { wch: 6 },  // S.No
-            { wch: 12 }, // Day
-            { wch: 10 }, // Period
-            { wch: 18 }, // Class
-            { wch: 10 }, // Section
-            { wch: 20 }, // Subject
-            { wch: 25 }, // Teacher
-            { wch: 12 }, // Start Time
-            { wch: 12 }, // End Time
-            { wch: 12 }  // Status
+            { wch: 6 },
+            { wch: 12 },
+            { wch: 10 },
+            { wch: 18 },
+            { wch: 10 },
+            { wch: 20 },
+            { wch: 25 },
+            { wch: 12 },
+            { wch: 12 },
+            { wch: 12 }
         ];
 
-        // Workbook banayein
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, 'Timetable');
 
-        // Excel file generate karo
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
         const dataBlob = new Blob([excelBuffer], { type: 'application/octet-stream' });
     
-        // Download karo
         saveAs(dataBlob, `${filename}.xlsx`);
     };
 
@@ -347,7 +340,6 @@ const IDCardStudio = () => {
     useEffect(() => {
         const loadInitialBranding = async () => {
             try {
-                // ✅ Direct server se latest fresh settings fetch karo taaki logout/login par gayab na ho
                 const res = await axios.get(`${BASE_URL}/api/settings`);
                 if (res.data) {
                     setSchoolSettings(prev => ({
@@ -364,7 +356,7 @@ const IDCardStudio = () => {
             }
         };
         loadInitialBranding();
-    }, [activeSubTab]); // 🎯 Yahan [activeSubTab] lagane se jab bhi aap tab switch karoge, ye database se naya data khinch lega!
+    }, [activeSubTab]);
 
     useEffect(() => {
         if (activeSubTab === 'master-timetable') {
@@ -372,7 +364,6 @@ const IDCardStudio = () => {
         }
     }, [masterFilterDay, masterFilterTeacher, masterFilterClass]);
 
-        // 👨‍🏫 CLASS TEACHER - Fetch on tab change
     useEffect(() => {
         if (activeSubTab === 'class_teacher') {
             fetchClassTeachers();
@@ -403,7 +394,7 @@ const IDCardStudio = () => {
     const blankPlotsArray = Array.from({ length: emptySlotsCount });
 
     // ============================================
-    // 5️⃣ RETURN - JSX (TUMHARA ORIGINAL JSX WAISA HI)
+    // 5️⃣ RETURN - JSX
     // ============================================
     return (
         <div className="w-full bg-gray-50 min-h-screen font-sans">
@@ -462,7 +453,7 @@ const IDCardStudio = () => {
                         <div className="master-studio-grid">
                             {students.length === 0 ? (
                                 <div className="no-print bg-white border border-dashed p-12 text-center rounded-2xl text-gray-400 font-bold text-sm w-full" style={{ gridColumn: 'span 2' }}>
-                                    🪪 Class select karke "Load Cards" par click karein. Ab ek page par exact 6 cards portrait structure me lock milenge bhai!
+                                    🪪 Class select karke "Load Cards" par click karein.
                                 </div>
                             ) : (
                                 <>
@@ -476,32 +467,42 @@ const IDCardStudio = () => {
                                         return (
                                             <div key={student.id || student.admission_no} className={`unbreakable-portrait-card template-${activeStyle.id}`} style={{ width: '220px', maxWidth: '220px', minWidth: '220px', height: '320px', maxHeight: '320px', minHeight: '320px', display: 'block', position: 'relative', boxSizing: 'border-box', background: activeStyle.bg }}>
                                                 {activeStyle.texture === 'geo' && <div className="geo-background-layer" />}
-                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '54px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius }}>
-                                                    <div style={{ position: 'absolute', top: '7px', left: '8px', width: '34px', height: '34px', background: '#ffffff', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                                
+                                                {/* 🏫 LIGHT WATERMARK BACKGROUND LOGO */}
+                                                {schoolSettings.logo_url && (
+                                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '130px', height: '130px', backgroundImage: `url(${schoolSettings.logo_url})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain', opacity: '0.07', pointerEvents: 'none', zIndex: '1' }} />
+                                                )}
+
+                                                {/* 🏷️ HEADER: School name wrap hokar pura dikhega */}
+                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '58px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius, display: 'flex', alignItems: 'center', padding: '0 8px' }}>
+                                                    <div style={{ width: '32px', height: '32px', background: '#ffffff', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: '0' }}>
                                                         <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
                                                     </div>
-                                                    <div style={{ marginLeft: '44px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '160px', height: '100%', overflow: 'hidden' }}>
-                                                        <div style={{ fontSize: '10.5px', fontWeight: '900', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: '0', padding: '0', lineHeight: '1.2', width: '100%' }}>{schoolSettings.school_name}</div>
-                                                        <span style={{ display: 'inline-block', fontSize: '6.5px', fontWeight: '900', backgroundColor: activeStyle.accent, padding: '1px 6px', borderRadius: '3px', letterSpacing: '0.5px', marginTop: '3px', color: '#fff', whiteSpace: 'nowrap' }}>STUDENT ID CARD</span>
+                                                    <div style={{ flexGrow: '1', textAlign: 'center', paddingLeft: '6px', overflow: 'hidden' }}>
+                                                        <div style={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.15', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{schoolSettings.school_name}</div>
                                                     </div>
                                                 </div>
-                                                <div style={{ width: '217px', height: '232px', padding: '6px 12px 0 12px', display: 'block', position: 'relative', boxSizing: 'border-box', overflow: 'hidden' }}>
-                                                    {schoolSettings.logo_url && (
-                                                        <img src={schoolSettings.logo_url} alt="Watermark" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '90px', height: 'auto', opacity: '0.045', pointerEvents: 'none', zIndex: '1', display: 'block', mixBlendMode: 'multiply' }} />
-                                                    )}
-                                                    <div className={`photo-style-${activeStyle.photoStyle}`} style={{ width: '74px', height: '86px', margin: '0 auto', border: `1.5px solid ${activeStyle.primary}`, overflow: 'hidden', zIndex: '10', position: 'relative', background: '#f8fafc' }}>
+
+                                                <div style={{ width: '217px', height: '228px', padding: '4px 12px 0 12px', display: 'block', position: 'relative', boxSizing: 'border-box', overflow: 'hidden', zIndex: '2' }}>
+                                                    
+                                                    {/* ⭐ STUDENT ID CARD TAG PHOTO KE UPAR CENTER MEIN */}
+                                                    <div style={{ textAlign: 'center', marginBottom: '3px' }}>
+                                                        <span style={{ display: 'inline-block', fontSize: '7px', fontWeight: '900', backgroundColor: activeStyle.accent, padding: '1px 8px', borderRadius: '3px', letterSpacing: '0.5px', color: '#fff', textTransform: 'uppercase' }}>STUDENT ID CARD</span>
+                                                    </div>
+
+                                                    <div className={`photo-style-${activeStyle.photoStyle}`} style={{ width: '70px', height: '80px', margin: '0 auto', border: `1.5px solid ${activeStyle.primary}`, overflow: 'hidden', zIndex: '10', position: 'relative', background: '#f8fafc' }}>
                                                         <img src={studentPhotoUrl} alt={student.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                                             onError={(e) => {
                                                                 if (e.target.src === studentPhotoUrl) {
                                                                     e.target.src = `${BASE_URL}/static/student_photos/${encodeURIComponent(folderName)}/${encodeURIComponent(rollNoClean)}.jpg`;
                                                                 } else {
                                                                     e.target.onerror = null;
-                                                                    e.target.src = "https://via.placeholder.com/74x86?text=No+Photo";
+                                                                    e.target.src = "https://via.placeholder.com/70x80?text=No+Photo";
                                                                 }
                                                             }}
                                                         />
                                                     </div>
-                                                    <div style={{ fontSize: '11.5px', fontWeight: '900', textAlign: 'center', textTransform: 'uppercase', margin: '4px 0 3px 0', color: activeStyle.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', zIndex: '10', position: 'relative' }}>
+                                                    <div style={{ fontSize: '11px', fontWeight: '900', textAlign: 'center', textTransform: 'uppercase', margin: '3px 0 2px 0', color: activeStyle.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', zIndex: '10', position: 'relative' }}>
                                                         {student.name ? student.name.toUpperCase() : 'STUDENT NAME'}
                                                     </div>
                                                     <div style={{ width: '100%', borderTop: '1px solid #f1f5f9', paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '1.5px', zIndex: '10', position: 'relative' }}>
@@ -604,25 +605,25 @@ const IDCardStudio = () => {
                             </select>
                         </div>
                         <div className="flex gap-2 items-end">
-    <button onClick={() => window.print()} className="bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-wider p-2.5 px-5 rounded-xl transition shadow-md cursor-pointer">
-        🖨️ PDF
-    </button>
-    <button 
-        onClick={() => {
-            if (masterTimetableData.length === 0) {
-                alert("Bhai pehle 'Refresh Master View' click karo!");
-                return;
-            }
-            const filterText = masterFilterDay !== 'All' ? `_${masterFilterDay}` : '';
-            const classText = masterFilterClass !== 'All' ? `_${masterFilterClass}` : '';
-            exportToExcel(masterTimetableData, `Master_Timetable${filterText}${classText}`);
-        }}
-        disabled={masterTimetableData.length === 0}
-        className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-black text-xs uppercase tracking-wider p-2.5 px-5 rounded-xl transition shadow-md cursor-pointer"
-    >
-        📊 Excel
-    </button>
-</div>
+                            <button onClick={() => window.print()} className="bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-wider p-2.5 px-5 rounded-xl transition shadow-md cursor-pointer">
+                                🖨️ PDF
+                            </button>
+                            <button 
+                                onClick={() => {
+                                    if (masterTimetableData.length === 0) {
+                                        alert("Bhai pehle 'Refresh Master View' click karo!");
+                                        return;
+                                    }
+                                    const filterText = masterFilterDay !== 'All' ? `_${masterFilterDay}` : '';
+                                    const classText = masterFilterClass !== 'All' ? `_${masterFilterClass}` : '';
+                                    exportToExcel(masterTimetableData, `Master_Timetable${filterText}${classText}`);
+                                }}
+                                disabled={masterTimetableData.length === 0}
+                                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-black text-xs uppercase tracking-wider p-2.5 px-5 rounded-xl transition shadow-md cursor-pointer"
+                            >
+                                📊 Excel
+                            </button>
+                        </div>
                     </div>
                     {masterTimetableData.length === 0 ? (
                         <div className="p-12 text-center border border-dashed rounded-xl text-gray-400 font-bold text-xs">📊 "Refresh Master View" click karein. Saare classes ka complete schedule ek jagah dekhein!</div>
@@ -705,7 +706,7 @@ const IDCardStudio = () => {
                             <div className="flex items-center gap-3 bg-indigo-50/50 p-2 rounded-xl border border-indigo-100">
                                 <div>
                                     <label className="block text-[8px] font-black text-indigo-600 uppercase mb-0.5">Total Periods</label>
-                                    <select className="p-1 text-[11px] font-bold bg-white border border-indigo-200 rounded-lg" value={window.configTotalPeriods || 6} onChange={(e) => { window.configTotalPeriods = parseInt(e.target.value); setTimetableGrid([]); }}>
+                                    <select className="p-1 text-[11px] font-bold bg-white border border-indigo-200 rounded-lg" value={configTotalPeriods} onChange={(e) => { setConfigTotalPeriods(parseInt(e.target.value)); setTimetableGrid([]); }}>
                                         <option value="6">6 Periods</option>
                                         <option value="7">7 Periods</option>
                                         <option value="8">8 Periods</option>
@@ -714,7 +715,7 @@ const IDCardStudio = () => {
                                 <div className="border-l border-indigo-200 h-6 mx-1"></div>
                                 <div>
                                     <label className="block text-[8px] font-black text-indigo-600 uppercase mb-0.5">Lunch Interval After</label>
-                                    <select className="p-1 text-[11px] font-bold bg-white border border-indigo-200 rounded-lg" value={window.configLunchAfter || 3} onChange={(e) => { window.configLunchAfter = parseInt(e.target.value); setTimetableGrid([]); }}>
+                                    <select className="p-1 text-[11px] font-bold bg-white border border-indigo-200 rounded-lg" value={configLunchAfter} onChange={(e) => { setConfigLunchAfter(parseInt(e.target.value)); setTimetableGrid([]); }}>
                                         <option value="3">3rd Period</option>
                                         <option value="4">4th Period</option>
                                         <option value="5">5th Period</option>
@@ -743,25 +744,25 @@ const IDCardStudio = () => {
                             </div>
                             
                             <div className="flex items-end gap-2">
-    <button onClick={() => window.print()} disabled={!selectedClass} className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-black text-xs uppercase tracking-wider p-3 rounded-xl transition shadow-md cursor-pointer flex items-center justify-center gap-2">
-        🖨️ PDF
-    </button>
-    <button 
-        onClick={() => {
-            if (timetableGrid.length === 0) {
-                alert("Bhai pehle 'Load Schedule Sheet' click karo!");
-                return;
-            }
-            const className = selectedClass || 'class';
-            const sectionName = selectedSection === 'All' ? 'All' : selectedSection;
-            exportToExcel(timetableGrid, `${className}_Section${sectionName}_Timetable`);
-        }}
-        disabled={!selectedClass || timetableGrid.length === 0}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-black text-xs uppercase tracking-wider p-3 rounded-xl transition shadow-md cursor-pointer flex items-center justify-center gap-2"
-    >
-        📊 Excel
-    </button>
-</div>
+                                <button onClick={() => window.print()} disabled={!selectedClass} className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-black text-xs uppercase tracking-wider p-3 rounded-xl transition shadow-md cursor-pointer flex items-center justify-center gap-2">
+                                    🖨️ PDF
+                                </button>
+                                <button 
+                                    onClick={() => {
+                                        if (timetableGrid.length === 0) {
+                                            alert("Bhai pehle 'Load Schedule Sheet' click karo!");
+                                            return;
+                                        }
+                                        const className = selectedClass || 'class';
+                                        const sectionName = selectedSection === 'All' ? 'All' : selectedSection;
+                                        exportToExcel(timetableGrid, `${className}_Section${sectionName}_Timetable`);
+                                    }}
+                                    disabled={!selectedClass || timetableGrid.length === 0}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-black text-xs uppercase tracking-wider p-3 rounded-xl transition shadow-md cursor-pointer flex items-center justify-center gap-2"
+                                >
+                                    📊 Excel
+                                </button>
+                            </div>
                         </div>
                         {selectedClass && (
                             <div className="print-only-header hidden w-full mb-6 items-center border-b-2 border-slate-300 pb-4">
@@ -784,12 +785,12 @@ const IDCardStudio = () => {
                                     <thead>
                                         <tr className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[10px] font-black border-b border-gray-200">
                                             <th className="p-3.5 border-r border-gray-200/60 w-28 bg-gray-100">📅 Day / Week</th>
-                                            {Array.from({ length: window.configTotalPeriods || 6 }).map((_, index) => {
+                                            {Array.from({ length: configTotalPeriods }).map((_, index) => {
                                                 const pNum = index + 1;
                                                 return (
                                                     <React.Fragment key={index}>
                                                         <th className="p-3.5 text-center border-r border-gray-200/60">Period {pNum}</th>
-                                                        {pNum === (window.configLunchAfter || 4) && <th className="p-3.5 text-center border-r border-gray-200/60 bg-yellow-50 text-yellow-800 font-black">☕ Break</th>}
+                                                        {pNum === configLunchAfter && <th className="p-3.5 text-center border-r border-gray-200/60 bg-yellow-50 text-yellow-800 font-black">☕ Break</th>}
                                                     </React.Fragment>
                                                 );
                                             })}
@@ -799,7 +800,7 @@ const IDCardStudio = () => {
                                         {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((day, idx) => (
                                             <tr key={idx} className="hover:bg-gray-50/50 transition-colors print:bg-white page-break-avoid">
                                                 <td className="p-3.5 font-black text-gray-800 bg-gray-50/80 border-r border-gray-200/60 uppercase text-[10px] tracking-wider print:bg-slate-50">{day}</td>
-                                                {Array.from({ length: window.configTotalPeriods || 6 }).map((_, pIdx) => {
+                                                {Array.from({ length: configTotalPeriods }).map((_, pIdx) => {
                                                     const p = pIdx + 1;
                                                     const slot = Array.isArray(timetableGrid) ? timetableGrid.find(t => t.day === day && t.period === p) : null;
                                                     let finalSubjectText = 'Empty Slot';
@@ -824,7 +825,7 @@ const IDCardStudio = () => {
                                                                     <div className="text-[9px] text-slate-500 font-black mt-0.5 bg-slate-100/60 px-1 py-0.5 rounded print:text-slate-600">{slot ? `${slot.start_time} - ${slot.end_time}` : '00:00 - 00:00'}</div>
                                                                 </div>
                                                             </td>
-                                                            {p === (window.configLunchAfter || 4) && (
+                                                            {p === configLunchAfter && (
                                                                 <td className="p-2 border-r border-gray-200/60 text-center bg-yellow-50/20 font-black text-yellow-700/80 tracking-widest uppercase text-[9px] print:bg-amber-50/40 align-middle">Interval</td>
                                                             )}
                                                         </React.Fragment>
@@ -965,116 +966,114 @@ const IDCardStudio = () => {
                 </div>
             )}
 
-            {/* ===================================================================== */}
-{/* MODULE 6: 👨‍🏫 CLASS TEACHER ASSIGNMENT */}
-{/* ===================================================================== */}
-{activeSubTab === 'class_teacher' && (
-    <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm no-print m-6">
-        <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider mb-4">👨‍🏫 Class Teacher Assignment</h3>
-        
-        {/* Assignment Form */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
-            <div>
-                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Select Class</label>
-                <select 
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                    value={classTeacherClass}
-                    onChange={(e) => setClassTeacherClass(e.target.value)}
-                >
-                    <option value="">-- Select Class --</option>
-                    {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
-                </select>
-            </div>
-            <div>
-                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Select Section</label>
-                <select 
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                    value={classTeacherSection}
-                    onChange={(e) => setClassTeacherSection(e.target.value)}
-                >
-                    <option value="A">Section A</option>
-                    <option value="B">Section B</option>
-                    <option value="C">Section C</option>
-                </select>
-            </div>
-            <div>
-                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Assign Teacher</label>
-                <select 
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                    value={classTeacherId}
-                    onChange={(e) => setClassTeacherId(e.target.value)}
-                >
-                    <option value="">-- Select Teacher --</option>
-                    {teachersList.map((t) => (
-                        <option key={t.id} value={t.id}>
-                            {t.name} ({t.designation || 'Teacher'})
-                        </option>
-                    ))}
-                </select>
-            </div>
-            <div className="flex items-end gap-2">
-                <button 
-                    onClick={handleAssignClassTeacher}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider p-2.5 rounded-xl transition shadow-md cursor-pointer"
-                >
-                    💾 Assign Class Teacher
-                </button>
-                <button 
-                    onClick={fetchClassTeachers}
-                    className="bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-wider p-2.5 rounded-xl transition shadow-md cursor-pointer"
-                >
-                    🔄
-                </button>
-            </div>
-        </div>
-        
-        {/* Assigned Teachers List */}
-        <div>
-            <h4 className="text-xs font-black text-gray-600 uppercase tracking-wider mb-3">
-                📋 Assigned Class Teachers ({classTeacherList.length})
-            </h4>
-            <div className="overflow-x-auto border border-gray-100 rounded-xl max-h-[300px] overflow-y-auto">
-                <table className="w-full text-left text-xs font-medium border-collapse">
-                    <thead>
-                        <tr className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[9px] font-black border-b border-gray-200">
-                            <th className="p-3">Teacher Name</th>
-                            <th className="p-3">Designation</th>
-                            <th className="p-3">Assigned Class</th>
-                            <th className="p-3">Section</th>
-                            <th className="p-3">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 text-gray-700 font-semibold">
-                        {classTeacherList.length === 0 ? (
-                            <tr>
-                                <td colSpan="5" className="p-6 text-center text-gray-400 font-bold text-xs">
-                                    ⚠️ No class teacher assigned yet
-                                </td>
-                            </tr>
-                        ) : (
-                            classTeacherList.map((item) => (
-                                <tr key={item.teacher_id} className="hover:bg-gray-50/60 transition-colors">
-                                    <td className="p-3 font-bold text-slate-800">{item.name}</td>
-                                    <td className="p-3 text-gray-500">{item.designation || 'Teacher'}</td>
-                                    <td className="p-3 font-bold text-indigo-700">{item.class}</td>
-                                    <td className="p-3 text-gray-500">{item.section}</td>
-                                    <td className="p-3">
-                                        <button 
-                                            onClick={() => removeClassTeacher(item.teacher_id)}
-                                            className="bg-red-500 hover:bg-red-600 text-white text-[9px] font-black px-2 py-1 rounded"
-                                        >
-                                            Remove
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-)}
+            {/* ===== CLASS TEACHER MODULE ===== */}
+            {activeSubTab === 'class_teacher' && (
+                <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm no-print m-6">
+                    <h3 className="text-sm font-black text-gray-800 uppercase tracking-wider mb-4">👨‍🏫 Class Teacher Assignment</h3>
+                    
+                    {/* Assignment Form */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6">
+                        <div>
+                            <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Select Class</label>
+                            <select 
+                                className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                                value={classTeacherClass}
+                                onChange={(e) => setClassTeacherClass(e.target.value)}
+                            >
+                                <option value="">-- Select Class --</option>
+                                {classes.map((c, i) => <option key={i} value={c}>{c}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Select Section</label>
+                            <select 
+                                className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                                value={classTeacherSection}
+                                onChange={(e) => setClassTeacherSection(e.target.value)}
+                            >
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Assign Teacher</label>
+                            <select 
+                                className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                                value={classTeacherId}
+                                onChange={(e) => setClassTeacherId(e.target.value)}
+                            >
+                                <option value="">-- Select Teacher --</option>
+                                {teachersList.map((t) => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.name} ({t.designation || 'Teacher'})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex items-end gap-2">
+                            <button 
+                                onClick={handleAssignClassTeacher}
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs uppercase tracking-wider p-2.5 rounded-xl transition shadow-md cursor-pointer"
+                            >
+                                💾 Assign Class Teacher
+                            </button>
+                            <button 
+                                onClick={fetchClassTeachers}
+                                className="bg-green-600 hover:bg-green-700 text-white font-black text-xs uppercase tracking-wider p-2.5 rounded-xl transition shadow-md cursor-pointer"
+                            >
+                                🔄
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {/* Assigned Teachers List */}
+                    <div>
+                        <h4 className="text-xs font-black text-gray-600 uppercase tracking-wider mb-3">
+                            📋 Assigned Class Teachers ({classTeacherList.length})
+                        </h4>
+                        <div className="overflow-x-auto border border-gray-100 rounded-xl max-h-[300px] overflow-y-auto">
+                            <table className="w-full text-left text-xs font-medium border-collapse">
+                                <thead>
+                                    <tr className="bg-gray-100/80 text-gray-600 uppercase tracking-wider text-[9px] font-black border-b border-gray-200">
+                                        <th className="p-3">Teacher Name</th>
+                                        <th className="p-3">Designation</th>
+                                        <th className="p-3">Assigned Class</th>
+                                        <th className="p-3">Section</th>
+                                        <th className="p-3">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100 text-gray-700 font-semibold">
+                                    {classTeacherList.length === 0 ? (
+                                        <tr>
+                                            <td colSpan="5" className="p-6 text-center text-gray-400 font-bold text-xs">
+                                                ⚠️ No class teacher assigned yet
+                                            </td>
+                                        </tr>
+                                    ) : (
+                                        classTeacherList.map((item) => (
+                                            <tr key={item.teacher_id} className="hover:bg-gray-50/60 transition-colors">
+                                                <td className="p-3 font-bold text-slate-800">{item.name}</td>
+                                                <td className="p-3 text-gray-500">{item.designation || 'Teacher'}</td>
+                                                <td className="p-3 font-bold text-indigo-700">{item.class}</td>
+                                                <td className="p-3 text-gray-500">{item.section}</td>
+                                                <td className="p-3">
+                                                    <button 
+                                                        onClick={() => removeClassTeacher(item.teacher_id)}
+                                                        className="bg-red-500 hover:bg-red-600 text-white text-[9px] font-black px-2 py-1 rounded"
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ===== STYLES ===== */}
             <style>{`
