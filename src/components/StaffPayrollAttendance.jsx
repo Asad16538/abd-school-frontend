@@ -848,7 +848,29 @@ const StaffPayrollAttendance = () => {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Payroll Ledger");
     XLSX.writeFile(workbook, `Master_Management_Payroll_${selectedMonth}.xlsx`);
   };
+  // 📊 Staff Directory Excel Export Function
+  const downloadStaffDirectoryExcel = () => {
+    if (!Array.isArray(staffList) || staffList.length === 0) {
+      setUiMessage("❌ Download karne ke liye koi staff data available nahi hai.");
+      return;
+    }
+    
+    const excelRows = staffList.map(s => ({
+      "Staff Full Name": s.name || 'N/A',
+      "Designation / Post": s.designation || 'N/A',
+      "Mobile Number": s.mobile || 'N/A',
+      "Basic Monthly Salary (₹)": s.base_salary || 0,
+      "EPF Status": s.pf_enabled === 1 ? 'Enabled (12%)' : 'Disabled'
+    }));
 
+    const worksheet = XLSX.utils.json_to_sheet(excelRows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Staff Directory");
+    XLSX.writeFile(workbook, `Staff_Directory_List_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    setUiMessage("✅ Staff Directory Excel downloaded successfully!");
+    setTimeout(() => setUiMessage(''), 3000);
+  };
   // ========== STYLES ==========
   const tabBtnStyle = { padding: '8px 16px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' };
   const cardStyle = { backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' };
