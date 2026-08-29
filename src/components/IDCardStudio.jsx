@@ -473,9 +473,9 @@ const IDCardStudio = () => {
                                                     <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '130px', height: '130px', backgroundImage: `url(${schoolSettings.logo_url})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain', opacity: '0.07', pointerEvents: 'none', zIndex: '1' }} />
                                                 )}
 
-                               {/* ========== HEADER: LOGO LEFT + SCHOOL NAME RIGHT ========== */}
+                               {/* ========== HEADER: LOGO LEFT + SCHOOL NAME RIGHT (2 LINES) ========== */}
 <div style={{ 
-    backgroundColor: '#1e3a8a',
+    backgroundColor: activeStyle.primary,
     width: '217px', 
     height: '58px', 
     display: 'flex', 
@@ -497,22 +497,38 @@ const IDCardStudio = () => {
         <img src={schoolSettings.logo_url} alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
     </div>
     
-    {/* SCHOOL NAME - RIGHT SIDE (LOGO KE BAGAL) */}
+    {/* SCHOOL NAME - RIGHT SIDE (2 LINES) */}
     <div style={{ 
         flex: '1',
         textAlign: 'center',
-        color: '#ffffff',
-        fontSize: '13px',
-        fontWeight: '900',
-        textTransform: 'uppercase',
-        letterSpacing: '0.5px',
-        textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-        lineHeight: '1.2',
         overflow: 'hidden',
-        whiteSpace: 'nowrap',
-        textOverflow: 'ellipsis'
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100%' 
     }}>
-        {schoolSettings.school_name || 'ADITYA ARMY PUBLIC SCHOOL'}
+        <div style={{ 
+            fontSize: '13px', 
+            fontWeight: '900', 
+            textTransform: 'uppercase', 
+            lineHeight: '1.3',
+            letterSpacing: '0.5px',
+            color: '#ffffff',
+            textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center'
+        }}>
+            {/* 1st Line: "ADITYA ARMY" */}
+            <span style={{ display: 'block' }}>
+                {schoolSettings.school_name ? schoolSettings.school_name.split(' ').slice(0, 2).join(' ') : 'ADITYA ARMY'}
+            </span>
+            {/* 2nd Line: "PUBLIC SCHOOL" */}
+            <span style={{ display: 'block', fontSize: '11px', letterSpacing: '0.3px' }}>
+                {schoolSettings.school_name ? schoolSettings.school_name.split(' ').slice(2).join(' ') : 'PUBLIC SCHOOL'}
+            </span>
+        </div>
     </div>
 </div>
 
