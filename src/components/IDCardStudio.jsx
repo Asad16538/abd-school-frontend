@@ -474,12 +474,12 @@ const IDCardStudio = () => {
                                                 )}
 
                                                 {/* 🏷️ HEADER: Logo aur School Name side-by-side */}
-                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '52px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius, display: 'flex', alignItems: 'center', padding: '0 6px', gap: '6px' }}>
-                                                    <div style={{ width: '32px', height: '32px', background: '#ffffff', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: '0' }}>
+                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '52px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius, display: 'flex', alignItems: 'center', padding: '0 6px' }}>
+                                                    <div style={{ width: '30px', height: '30px', background: '#ffffff', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: '0', marginRight: '6px' }}>
                                                         <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
                                                     </div>
-                                                    <div style={{ flexGrow: '1', textAlign: 'left', overflow: 'hidden' }}>
-                                                        <div style={{ fontSize: '8px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.15', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{schoolSettings.school_name}</div>
+                                                    <div style={{ flexGrow: '1', textAlign: 'left', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+                                                        <div style={{ fontSize: '8px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.15', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', width: '100%' }}>{schoolSettings.school_name}</div>
                                                     </div>
                                                 </div>
 
