@@ -475,7 +475,7 @@ const IDCardStudio = () => {
 
                                {/* ========== HEADER: LOGO LEFT + SCHOOL NAME RIGHT ========== */}
 <div className="strict-header-box" style={{ 
-    backgroundColor: '#1e3a8a',  // ⬅️ HARDCODE BLUE
+    backgroundColor: '#1e3a8a',
     width: '217px', 
     height: '58px', 
     boxSizing: 'border-box', 
@@ -500,7 +500,7 @@ const IDCardStudio = () => {
         <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
     </div>
     
-    {/* SCHOOL NAME - FORCE VISIBLE */}
+    {/* SCHOOL NAME - PURE WHITE TEXT, NO EXTRA BG */}
     <div style={{ 
         flex: '1',
         textAlign: 'center', 
@@ -511,7 +511,7 @@ const IDCardStudio = () => {
         height: '100%' 
     }}>
         <div style={{ 
-            fontSize: '14px', 
+            fontSize: '13px', 
             fontWeight: '900', 
             textTransform: 'uppercase', 
             lineHeight: '1.2', 
@@ -519,20 +519,16 @@ const IDCardStudio = () => {
             wordBreak: 'break-word',
             letterSpacing: '0.5px',
             color: '#ffffff',
-            textShadow: '0 2px 8px rgba(0,0,0,0.6)',
-            backgroundColor: 'rgba(255,255,255,0.1)',  // ⬅️ LIGHT BG
-            padding: '4px 8px',
-            borderRadius: '4px',
-            width: '100%'
+            textShadow: '0 2px 4px rgba(0,0,0,0.4)'
+            // ⬅️ backgroundColor HATAYA
+            // ⬅️ padding HATAYA
+            // ⬅️ borderRadius HATAYA
         }}>
             {schoolSettings.school_name || 'ADITYA ARMY PUBLIC SCHOOL'}
         </div>
     </div>
 </div>
-{/* 🔴 DEBUG - DEKHO KYA AA RAHA HAI */}
-<div style={{ fontSize: '6px', color: 'red', background: 'yellow', textAlign: 'center', position: 'absolute', bottom: '0', left: '0', right: '0', zIndex: '999' }}>
-    school_name: "{schoolSettings.school_name}" | Type: {typeof schoolSettings.school_name}
-</div>
+
                                                 <div style={{ width: '217px', height: '228px', padding: '4px 12px 0 12px', display: 'block', position: 'relative', boxSizing: 'border-box', overflow: 'hidden', zIndex: '2' }}>
                                                     
                                                     {/* ⭐ STUDENT ID CARD TAG PHOTO KE UPAR CENTER MEIN */}
