@@ -4,9 +4,12 @@ import { UserPlus, Settings, QrCode, Download, Users, AlertTriangle, MapPin, Clo
 import * as XLSX from 'xlsx';
 import axios from 'axios';
 
-// 🎯 FIX: Ise component function ke strictly BAHAR aur UPAR rakhein taaki ReferenceError khatam ho!
 const BASE_URL = 'https://erp-api.aapschool.in';
+
 const StaffPayrollAttendance = () => {
+  // 🎯 1. USER ROLE KO SABSE UPAR RAKHEIN (Taaki useEffect me error na aaye)
+  const userRole = localStorage.getItem('role') || 'Admin';
+
   // Edit modal states
   const [showTelegramModal, setShowTelegramModal] = useState(false);
   const [selectedStaffMobile, setSelectedStaffMobile] = useState('');
@@ -20,13 +23,15 @@ const StaffPayrollAttendance = () => {
       base_salary: '',
       epf_enabled: false
   });
+
   // Core System States with Strict Safe Defaults
   const [staffList, setStaffList] = useState([]);
   const [activeTab, setActiveTab] = useState('directory'); // directory | reports | rules | qr_wall
+  
   // 👤 Teacher Profile State
   const [teacherProfile, setTeacherProfile] = useState({ name: '', designation: '', image_url: '' });
 
-  // Teacher Profile fetch karne ka function
+  // Teacher Profile fetch karne ka function (Ab `userRole` upar defined hai, isliye error nahi aayegi)
   useEffect(() => {
     if (userRole === 'Teacher') {
       const staffId = localStorage.getItem('staff_id') || 1;
@@ -46,6 +51,7 @@ const StaffPayrollAttendance = () => {
         .catch(err => console.log("Teacher profile fetch error:", err));
     }
   }, [userRole]);
+
   const [reportMode, setReportMode] = useState('today'); // today | monthly | management
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().split('T')[0].substring(0, 7)); // YYYY-MM
   const [showExportMenu, setShowExportMenu] = useState(false);
@@ -69,7 +75,7 @@ const StaffPayrollAttendance = () => {
   const [baseSalary, setBaseSalary] = useState('');
   const [pfEnabled, setPfEnabled] = useState(0);
   const [clEncashment, setClEncashment] = useState({}); // Stores per staff CL pay rule boolean state
-  // ✅ YAHAN PASTE KARO - clEncashment ke BAAD
+  
   // Manual Attendance States
   const [manualStaffId, setManualStaffId] = useState('');
   const [manualDate, setManualDate] = useState(new Date().toISOString().split('T')[0]);
@@ -78,8 +84,6 @@ const StaffPayrollAttendance = () => {
   const [manualStatus, setManualStatus] = useState('Present');
   const [manualAttendanceList, setManualAttendanceList] = useState([]);
   const [editingManualAttendance, setEditingManualAttendance] = useState(null);
-  // ✅ YAHAN TAK
-
 
   // Rule Book States Linked to Dynamic Settings Table
   const [rules, setRules] = useState({
@@ -93,9 +97,6 @@ const StaffPayrollAttendance = () => {
 
   const [uiMessage, setUiMessage] = useState('');
   const [loading, setLoading] = useState(true);
-
-  // 🎯 USER ROLE CHECK: Pata lagayein ki login karne wala Admin hai ya Teacher
-  const userRole = localStorage.getItem('role') || 'Admin';
 
   // Agar user Teacher hai, toh unke liye sirf unka khud ka restricted self-portal render hoga
   if (userRole === 'Teacher') {
@@ -188,95 +189,84 @@ const StaffPayrollAttendance = () => {
   };
 
   useEffect(() => {
-  let isMounted = true;
-  
-  const loadInitialData = async () => {
-    try {
-      setLoading(true);
-      
-      // ⏱️ 5 second timeout -> 15 second karo
-const timeoutPromise = new Promise((_, reject) => 
-  setTimeout(() => reject(new Error('Timeout')), 15000)  // ✅ 5 se 15 kiya
-);
-      
-      // 🚀 Parallel fetch with timeout
-      const fetchPromise = Promise.all([
-        fetch(`${BASE_URL}/api/staff`).catch(() => null),
-        fetch(`${BASE_URL}/api/attendance-rules`).catch(() => null)
-      ]);
-      
-      const results = await Promise.race([fetchPromise, timeoutPromise]);
-      
-      if (isMounted) {
-        // Staff data
-        if (results && results[0] && results[0].ok) {
-          const data = await results[0].json();
-          if (Array.isArray(data)) setStaffList(data);
-        } else {
-          setStaffList([]); // ✅ Empty list, loading hat jayegi
-        }
+    let isMounted = true;
+    
+    const loadInitialData = async () => {
+      try {
+        setLoading(true);
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 15000)
+        );
         
-        // Rules data
-        if (results && results[1] && results[1].ok) {
-          const data = await results[1].json();
-          if (data && !data.error) {
-            setRules({
-              latitude: 24.7432,
-              longitude: 78.8561,
-              radius: 50,
-              start_time: data.start_time ?? '08:00',
-              buffer: data.buffer ?? 15,
-              end_time: data.end_time ?? '14:00'
-            });
+        const fetchPromise = Promise.all([
+          fetch(`${BASE_URL}/api/staff`).catch(() => null),
+          fetch(`${BASE_URL}/api/attendance-rules`).catch(() => null)
+        ]);
+        
+        const results = await Promise.race([fetchPromise, timeoutPromise]);
+        
+        if (isMounted) {
+          if (results && results[0] && results[0].ok) {
+            const data = await results[0].json();
+            if (Array.isArray(data)) setStaffList(data);
+          } else {
+            setStaffList([]);
+          }
+          
+          if (results && results[1] && results[1].ok) {
+            const data = await results[1].json();
+            if (data && !data.error) {
+              setRules({
+                latitude: 24.7432,
+                longitude: 78.8561,
+                radius: 50,
+                start_time: data.start_time ?? '08:00',
+                buffer: data.buffer ?? 15,
+                end_time: data.end_time ?? '14:00'
+              });
+            }
           }
         }
+      } catch (e) {
+        console.error("Initial load error:", e);
+        if (isMounted) {
+          setStaffList([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-    } catch (e) {
-      console.error("Initial load error:", e);
-      if (isMounted) {
-        setStaffList([]); // ✅ Error par bhi loading hat jayegi
-      }
-    } finally {
-      if (isMounted) {
-        setLoading(false); // ✅ HAMESHA LOADING HATAO
-      }
+    };
+    
+    loadInitialData();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'rules' && rules.latitude === 24.7432) {
+      fetchRules();
     }
-  };
-  
-  loadInitialData();
-  
-  return () => {
-    isMounted = false;
-  };
-}, []);
+    if (activeTab === 'directory' && staffList.length === 0) {
+      fetchStaff();
+    }
+  }, [activeTab]);
 
-   // ✅ TAB SYNC - Sirf pehli baar fetch karo, har baar nahi
-useEffect(() => {
-  // Rules tab - Sirf tab change par fetch karo, agar data default hai to
-  if (activeTab === 'rules' && rules.latitude === 24.7432) {
-    fetchRules();
-  }
-  // Directory tab - Sirf tab change par fetch karo, agar list empty hai to
-  if (activeTab === 'directory' && staffList.length === 0) {
-    fetchStaff();
-  }
-}, [activeTab]);
-
-  // ✅ CL ENCASHMENT TOGGLE PAR MANAGEMENT SHEET AUTO-REFRESH
   useEffect(() => {
     if (activeTab === 'reports' && reportMode === 'management') {
       fetchManagementPayrollSheet();
     }
   }, [clEncashment, selectedMonth]);
 
-    // ✅ MANUAL ATTENDANCE - Fetch on tab change
   useEffect(() => {
     if (activeTab === 'manual_attendance') {
       fetchManualAttendanceList();
     }
   }, [activeTab, manualDate]);
 
-  // Fetch Reports dynamically jab report mode ya month select badle
   useEffect(() => {
     if (activeTab === 'reports') {
       if (reportMode === 'management') {
@@ -289,7 +279,6 @@ useEffect(() => {
 
   const fetchStaff = async () => {
     try {
-      // 🎯 Sateek Replacement:
       const res = await fetch(`${BASE_URL}/api/staff`);
       if (!res.ok) throw new Error("Network response not ok");
       const data = await res.json();
@@ -301,74 +290,69 @@ useEffect(() => {
   };
 
   const fetchRules = async () => {
-  try {
-    // 1. Pehle attendance rules fetch karo (PRIORITY)
-    const rulesRes = await fetch(`${BASE_URL}/api/attendance-rules`);
-    let rulesData = null;
-    
-    if (rulesRes.ok) {
-      rulesData = await rulesRes.json();
-    }
-
-    // 2. Default values (Aapki exact location)
-    let currentLat = 24.750358920875314;
-    let currentLng = 78.8348749760745;
-    let currentRadius = 50;
-
-    // 3. Agar rules available hain, to UNKO priority do
-    if (rulesData && !rulesData.error && rulesData.latitude) {
-      currentLat = parseFloat(rulesData.latitude);
-      currentLng = parseFloat(rulesData.longitude);
-      currentRadius = parseInt(rulesData.radius) || 50;
+    try {
+      const rulesRes = await fetch(`${BASE_URL}/api/attendance-rules`);
+      let rulesData = null;
       
+      if (rulesRes.ok) {
+        rulesData = await rulesRes.json();
+      }
+
+      let currentLat = 24.750358920875314;
+      let currentLng = 78.8348749760745;
+      let currentRadius = 50;
+
+      if (rulesData && !rulesData.error && rulesData.latitude) {
+        currentLat = parseFloat(rulesData.latitude);
+        currentLng = parseFloat(rulesData.longitude);
+        currentRadius = parseInt(rulesData.radius) || 50;
+        
+        setRules({
+          latitude: currentLat,
+          longitude: currentLng,
+          radius: currentRadius,
+          start_time: rulesData.start_time ?? '08:00',
+          buffer: rulesData.buffer ?? 15,
+          end_time: rulesData.end_time ?? '14:00'
+        });
+        return;
+      }
+
+      const settingsRes = await fetch(`${BASE_URL}/api/settings`);
+      if (settingsRes.ok) {
+        const sData = await settingsRes.json();
+        currentLat = parseFloat(sData.school_latitude) || currentLat;
+        currentLng = parseFloat(sData.school_longitude) || currentLng;
+        currentRadius = parseInt(sData.school_location_radius) || currentRadius;
+      }
+
       setRules({
         latitude: currentLat,
         longitude: currentLng,
         radius: currentRadius,
-        start_time: rulesData.start_time ?? '08:00',
-        buffer: rulesData.buffer ?? 15,
-        end_time: rulesData.end_time ?? '14:00'
+        start_time: '08:00',
+        buffer: 15,
+        end_time: '14:00'
       });
-      return; // ✅ Rules mil gaye, yahi return karo
+
+    } catch (err) {
+      console.error("Rules fetch error:", err);
+      setRules({
+        latitude: 24.750358920875314,
+        longitude: 78.8348749760745,
+        radius: 50,
+        start_time: '08:00',
+        buffer: 15,
+        end_time: '14:00'
+      });
     }
-
-    // 4. Agar rules nahi hain, to settings se lo (FALLBACK)
-    const settingsRes = await fetch(`${BASE_URL}/api/settings`);
-    if (settingsRes.ok) {
-      const sData = await settingsRes.json();
-      currentLat = parseFloat(sData.school_latitude) || currentLat;
-      currentLng = parseFloat(sData.school_longitude) || currentLng;
-      currentRadius = parseInt(sData.school_location_radius) || currentRadius;
-    }
-
-    setRules({
-      latitude: currentLat,
-      longitude: currentLng,
-      radius: currentRadius,
-      start_time: '08:00',
-      buffer: 15,
-      end_time: '14:00'
-    });
-
-  } catch (err) {
-    console.error("Rules fetch error:", err);
-    // Fallback to your exact location
-    setRules({
-      latitude: 24.750358920875314,
-      longitude: 78.8348749760745,
-      radius: 50,
-      start_time: '08:00',
-      buffer: 15,
-      end_time: '14:00'
-    });
-  }
-};
+  };
 
   const fetchAttendanceReports = async () => {
     try {
       const url = reportMode === 'today' 
-  ? `${BASE_URL}/api/payroll/today-report`
-  : `${BASE_URL}/api/payroll/monthly-report?month=${selectedMonth}`;
+        ? `${BASE_URL}/api/payroll/today-report`
+        : `${BASE_URL}/api/payroll/monthly-report?month=${selectedMonth}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error("Network response not ok");
       const data = await res.json();
@@ -485,22 +469,21 @@ useEffect(() => {
   };
 
   const handleFetchAdvanceHistory = async (staffId) => {
-  try {
-    const res = await fetch(`${BASE_URL}/api/payroll/advance-history/${staffId}`);
-    const data = await res.json();
-    console.log("Advance history response:", data); // Debug ke liye
-    if (Array.isArray(data)) {
-      setAdvanceHistory(data);
-    } else if (data && Array.isArray(data.history)) {
-      setAdvanceHistory(data.history);
-    } else {
+    try {
+      const res = await fetch(`${BASE_URL}/api/payroll/advance-history/${staffId}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setAdvanceHistory(data);
+      } else if (data && Array.isArray(data.history)) {
+        setAdvanceHistory(data.history);
+      } else {
+        setAdvanceHistory([]);
+      }
+    } catch (err) {
+      console.error("Fetch advance history error:", err);
       setAdvanceHistory([]);
     }
-  } catch (err) {
-    console.error("Fetch advance history error:", err);
-    setAdvanceHistory([]);
-  }
-};
+  };
 
   const handleOpenAdvanceModal = (staff) => {
     if (!staff) return;
@@ -509,39 +492,36 @@ useEffect(() => {
   };
 
   const handleSubmitAdvancePayment = async (e) => {
-  e.preventDefault();
-  if (!advanceAmount || parseFloat(advanceAmount) <= 0 || !advanceModalStaff) return;
+    e.preventDefault();
+    if (!advanceAmount || parseFloat(advanceAmount) <= 0 || !advanceModalStaff) return;
 
-  const payload = {
-    staff_id: advanceModalStaff.id,
-    amount: parseFloat(advanceAmount),
-    purpose: advanceReason || 'Personal Advance',
-    date: new Date().toISOString().split('T')[0]
-  };
+    const payload = {
+      staff_id: advanceModalStaff.id,
+      amount: parseFloat(advanceAmount),
+      purpose: advanceReason || 'Personal Advance',
+      date: new Date().toISOString().split('T')[0]
+    };
 
-  try {
-    const res = await fetch(`${BASE_URL}/api/payroll/add-advance`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    
-    const result = await res.json();
-    console.log("Advance submit response:", result);
-    
-    if (res.ok) {
-      setUiMessage("✅ Advance Payment logged successfully!");
-      setAdvanceAmount('');
-      setAdvanceReason('');
-      await handleFetchAdvanceHistory(advanceModalStaff.id);
-    } else {
-      setUiMessage("Failed: " + (result.error || "Unknown error"));
+    try {
+      const res = await fetch(`${BASE_URL}/api/payroll/add-advance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      
+      if (res.ok) {
+        setUiMessage("✅ Advance Payment logged successfully!");
+        setAdvanceAmount('');
+        setAdvanceReason('');
+        await handleFetchAdvanceHistory(advanceModalStaff.id);
+      } else {
+        setUiMessage("Failed to log advance payment");
+      }
+    } catch (err) {
+      console.error("Submit advance error:", err);
+      setUiMessage("Error saving advance.");
     }
-  } catch (err) {
-    console.error("Submit advance error:", err);
-    setUiMessage("Error saving advance. Check backend logs.");
-  }
-};
+  };
 
   const downloadAdvanceHistory = async (staffId, staffName) => {
     try {
@@ -563,7 +543,6 @@ useEffect(() => {
     }
   };
 
-  // Purane ya type kiye hue extra prefixes ko clean karne ka helper
   const cleanStaffName = (name) => {
     return name.replace(/^(Mr\.|Mrs\.|Miss|Dr\.|Prof\.)\s*/gi, '').trim();
   };
@@ -580,7 +559,6 @@ useEffect(() => {
       return;
     }
     
-    // 🎯 Pehle naam ko clean karo taaki double prefix (jaise Mr. Miss) na bane
     const rawName = cleanStaffName(staffName);
     const fullStaffName = `${staffPrefix} ${rawName}`;
     
@@ -602,7 +580,7 @@ useEffect(() => {
       
       if (res.ok && data.success) {
         setUiMessage('🎉 New Staff Member Registered into Ledger!');
-        setStaffPrefix('Mr.'); // Reset to default
+        setStaffPrefix('Mr.');
         setStaffName('');
         setDesignation('');
         setMobile('');
@@ -618,7 +596,7 @@ useEffect(() => {
     }
   };
 
-const handleOpenTelegramModal = (mobile) => {
+  const handleOpenTelegramModal = (mobile) => {
     setSelectedStaffMobile(mobile);
     setTelegramIdInput('');
     setShowTelegramModal(true);
@@ -649,9 +627,7 @@ const handleOpenTelegramModal = (mobile) => {
     }
   };
 
-  // 🎯 STAFF REMOVAL PROCESS ENGINE (SOFT DELETE CALL)
   const handleDeleteStaff = async (staffId, staffName) => {
-    // 🎯 window.confirm hata kar seedha API call ya custom state use karein
     try {
       const res = await fetch(`${BASE_URL}/api/staff/delete/${staffId}`, {
         method: 'POST',
@@ -671,7 +647,6 @@ const handleOpenTelegramModal = (mobile) => {
     }
   };
 
-    // 📋 MANUAL ATTENDANCE FUNCTIONS
   const handleManualAttendanceSubmit = async () => {
     if (!manualStaffId || !manualDate || !manualCheckIn) {
       setUiMessage("Staff, Date aur Check-In time zaroori hain!");
@@ -727,7 +702,6 @@ const handleOpenTelegramModal = (mobile) => {
     setManualCheckOut(att.check_out_time || '');
     setManualStatus(att.status || 'Present');
     setEditingManualAttendance(att);
-    document.querySelector('.manual-attendance-form')?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const deleteManualAttendance = async (attendanceId) => {
@@ -747,8 +721,7 @@ const handleOpenTelegramModal = (mobile) => {
     }
   };
 
-  // ✏️ OPEN EDIT MODAL
-const handleEditClick = (staff) => {
+  const handleEditClick = (staff) => {
     setEditingStaff(staff);
     setEditFormData({
         name: staff.name || '',
@@ -758,10 +731,9 @@ const handleEditClick = (staff) => {
         epf_enabled: staff.epf_enabled || false
     });
     setShowEditModal(true);
-};
+  };
 
-// 💾 SAVE EDIT (NATIVE ALERT HATA KAR UI MESSAGE LAGAYA GAYA HAI)
-const handleEditSubmit = async (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
         const response = await axios.put(`${BASE_URL}/api/staff/${editingStaff.id}`, editFormData);
@@ -775,13 +747,11 @@ const handleEditSubmit = async (e) => {
         setUiMessage("❌ Error updating staff: " + (err.response?.data?.error || err.message));
         setTimeout(() => setUiMessage(''), 4000);
     }
-};
+  };
 
-  // 🎯 RULES FORM EDITED FULLY: Ab settings aur rules table dono perfect automatic sync hongi
   const handleUpdateRules = async (e) => {
     e.preventDefault();
     try {
-      // 1. Core attendance rules endpoint update call
       const res = await fetch(`${BASE_URL}/api/attendance-rules`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -795,7 +765,6 @@ const handleEditSubmit = async (e) => {
         })
       });
 
-      // 2. 🎯 PARALLEL AUTO-SYNC LOGIC: Backend data engine ke backup parameters ko exact hit kiya
       await fetch(`${BASE_URL}/api/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -867,7 +836,6 @@ const handleEditSubmit = async (e) => {
     XLSX.writeFile(workbook, `Master_Management_Payroll_${selectedMonth}.xlsx`);
   };
 
-  // Static/Reusable Styles inside Component Framework
   const tabBtnStyle = { padding: '8px 16px', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' };
   const cardStyle = { backgroundColor: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' };
   const cardTitleStyle = { margin: '0 0 16px 0', fontSize: '15px', color: '#1e293b', fontWeight: 'bold', borderBottom: '1px solid #f1f5f9', paddingBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' };
@@ -877,7 +845,6 @@ const handleEditSubmit = async (e) => {
   const rowActionBtnStyle = { padding: '5px 10px', backgroundColor: '#f1f5f9', border: 'none', borderRadius: '6px', color: '#334155', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px', border: '1px solid #cbd5e1', transition: 'all 0.1s' };
   const thTdStyle = { padding: '12px 10px', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' };
 
-  // Master Wall QR Encryption String Generator
   const myComputerIp = window.location.hostname;
   const wallQrDataString = `https://${myComputerIp}/staff-attendance-terminal`; 
   const generatedWallQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(wallQrDataString)}`;
@@ -893,7 +860,6 @@ const handleEditSubmit = async (e) => {
   return (
     <div style={{ padding: '10px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f8fafc', minHeight: '100vh', boxSizing: 'border-box' }}>
       
-      {/* HEADER TITLE MATRIX ROW */}
       <div style={{ marginBottom: '24px', backgroundColor: '#fff', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
         <h2 style={{ margin: 0, color: '#0f172a', fontSize: '24px', fontWeight: 'bold' }}>📅 Staff Management & Geo-Payroll Matrix</h2>
         <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: '14px' }}>Track range bounds attendance, deploy automated Telegram alerts, and check live accounting sheets</p>
@@ -905,20 +871,17 @@ const handleEditSubmit = async (e) => {
         </div>
       )}
 
-      {/* HORIZONTAL TAB BAR MENU PANEL */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', borderBottom: '2px solid #e2e8f0', paddingBottom: '12px' }}>
           <button onClick={() => setActiveTab('directory')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'directory' ? '#4f46e5' : '#fff', color: activeTab === 'directory' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Users size={16}/> Staff Profiles</button>
           <button onClick={() => { setActiveTab('reports'); setReportMode('today'); }} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'reports' ? '#4f46e5' : '#fff', color: activeTab === 'reports' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Calendar size={16}/> Master Reports Engine</button>
-    
-          {/* 🎯 ADVANCE TAB BUTTON */}
+          
           <button onClick={() => setActiveTab('advance')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'advance' ? '#e65100' : '#fff', color: activeTab === 'advance' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><DollarSign size={16}/> Advance Salary</button>
-    
+          
           <button onClick={() => setActiveTab('rules')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'rules' ? '#4f46e5' : '#fff', color: activeTab === 'rules' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><Settings size={16}/> Attendance Rules</button>
           <button onClick={() => setActiveTab('qr_wall')} style={{ ...tabBtnStyle, backgroundColor: activeTab === 'qr_wall' ? '#4f46e5' : '#fff', color: activeTab === 'qr_wall' ? 'white' : '#475569', border: '1px solid #cbd5e1' }}><QrCode size={16}/> Wall QR Terminal</button>
         </div>
         
-        {/* 🎯 EXPORT ATTENDANCE EXCEL BUTTON WITH DROPDOWN MENU */}
         {activeTab === 'reports' && reportMode !== 'management' && (
           <div style={{ position: 'relative', display: 'inline-block' }}>
             <button 
@@ -949,8 +912,6 @@ const handleEditSubmit = async (e) => {
                     setTimeout(() => downloadExcelReport(), 100);
                   }}
                   style={{ width: '100%', padding: '10px 14px', textAlign: 'left', backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 'bold', color: '#334155', cursor: 'pointer', borderBottom: '1px solid #f1f5f9' }}
-                  onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
-                  onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
                 >
                   📅 Aaj ki Attendance (Today)
                 </button>
@@ -961,8 +922,6 @@ const handleEditSubmit = async (e) => {
                     setTimeout(() => downloadExcelReport(), 100);
                   }}
                   style={{ width: '100%', padding: '10px 14px', textAlign: 'left', backgroundColor: 'transparent', border: 'none', fontSize: '13px', fontWeight: 'bold', color: '#334155', cursor: 'pointer' }}
-                  onMouseOver={(e) => e.target.style.backgroundColor = '#f1f5f9'}
-                  onMouseOut={(e) => e.target.style.backgroundColor = 'transparent'}
                 >
                   📊 Month Wise Attendance
                 </button>
@@ -979,74 +938,72 @@ const handleEditSubmit = async (e) => {
       </div>
 
       <button 
-    onClick={() => setActiveTab('manual_attendance')} 
-    style={{ 
-        ...tabBtnStyle, 
-        backgroundColor: activeTab === 'manual_attendance' ? '#8b5cf6' : '#fff', 
-        color: activeTab === 'manual_attendance' ? 'white' : '#475569', 
-        border: '1px solid #cbd5e1' 
-    }}
->
-    📋 Manual Attendance
-</button>
+        onClick={() => setActiveTab('manual_attendance')} 
+        style={{ 
+            ...tabBtnStyle, 
+            backgroundColor: activeTab === 'manual_attendance' ? '#8b5cf6' : '#fff', 
+            color: activeTab === 'manual_attendance' ? 'white' : '#475569', 
+            border: '1px solid #cbd5e1',
+            marginBottom: '20px' 
+        }}
+      >
+        📋 Manual Attendance
+      </button>
 
-      {/* TAB CONTENT: DIRECTORY COMPONENT */}
       {activeTab === 'directory' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
           <div style={cardStyle}>
-  <h3 style={cardTitleStyle}><UserPlus size={18} color="#4f46e5"/> Register New Staff Matrix</h3>
-  <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-    
-    {/* 🎯 NAYA PREFIX DROPDOWN + NAME INPUT ROW */}
-    <div>
-      <label style={labelStyle}>Staff / Teacher Full Name</label>
-      <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-        <select 
-          value={staffPrefix} 
-          onChange={(e) => setStaffPrefix(e.target.value)}
-          style={{ width: '90px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '14px', fontWeight: 'bold', backgroundColor: '#fff' }}
-        >
-          <option value="Mr.">Mr.</option>
-          <option value="Mrs.">Mrs.</option>
-          <option value="Miss">Miss.</option>
-          <option value="Dr.">Dr.</option>
-          <option value="Prof.">Prof.</option>
-        </select>
-        
-        <input 
-          type="text" 
-          placeholder="e.g. Alexa" 
-          value={staffName || ''} 
-          onChange={(e) => setStaffName(e.target.value)} 
-          style={{ ...inpStyle, marginTop: '0', flex: 1 }} 
-          required 
-        />
-      </div>
-    </div>
+            <h3 style={cardTitleStyle}><UserPlus size={18} color="#4f46e5"/> Register New Staff Matrix</h3>
+            <form onSubmit={handleAddStaff} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div>
+                <label style={labelStyle}>Staff / Teacher Full Name</label>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                  <select 
+                    value={staffPrefix} 
+                    onChange={(e) => setStaffPrefix(e.target.value)}
+                    style={{ width: '90px', padding: '10px', borderRadius: '8px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '14px', fontWeight: 'bold', backgroundColor: '#fff' }}
+                  >
+                    <option value="Mr.">Mr.</option>
+                    <option value="Mrs.">Mrs.</option>
+                    <option value="Miss">Miss.</option>
+                    <option value="Dr.">Dr.</option>
+                    <option value="Prof.">Prof.</option>
+                  </select>
+                  
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Alexa" 
+                    value={staffName || ''} 
+                    onChange={(e) => setStaffName(e.target.value)} 
+                    style={{ ...inpStyle, marginTop: '0', flex: 1 }} 
+                    required 
+                  />
+                </div>
+              </div>
 
-    <div>
-      <label style={labelStyle}>Designation Post</label>
-      <input type="text" placeholder="e.g. Co-Ordinator" value={designation || ''} onChange={(e) => setDesignation(e.target.value)} style={inpStyle} required />
-    </div>
-    
-    <div>
-      <label style={labelStyle}>📱 Telegram Mobile Connection</label>
-      <input type="text" placeholder="e.g. 98932XXXXX" value={mobile || ''} onChange={(e) => setMobile(e.target.value)} style={{ ...inpStyle, color: '#16a34a' }} required />
-    </div>
-    
-    <div>
-      <label style={labelStyle}>Basic Monthly Salary Structure (₹)</label>
-      <input type="number" placeholder="e.g. 25000" value={baseSalary || ''} onChange={(e) => setBaseSalary(e.target.value)} style={inpStyle} required />
-    </div>
-    
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
-      <input type="checkbox" id="pf_check" checked={pfEnabled === 1} onChange={(e) => setPfEnabled(e.target.checked ? 1 : 0)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
-      <label htmlFor="pf_check" style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b', cursor: 'pointer' }}>Enable Standard EPF Deduction (12%)</label>
-    </div>
-    
-    <button type="submit" style={submitBtnStyle}>Save Staff ⚡</button>
-  </form>
-</div>
+              <div>
+                <label style={labelStyle}>Designation Post</label>
+                <input type="text" placeholder="e.g. Co-Ordinator" value={designation || ''} onChange={(e) => setDesignation(e.target.value)} style={inpStyle} required />
+              </div>
+              
+              <div>
+                <label style={labelStyle}>📱 Telegram Mobile Connection</label>
+                <input type="text" placeholder="e.g. 98932XXXXX" value={mobile || ''} onChange={(e) => setMobile(e.target.value)} style={{ ...inpStyle, color: '#16a34a' }} required />
+              </div>
+              
+              <div>
+                <label style={labelStyle}>Basic Monthly Salary Structure (₹)</label>
+                <input type="number" placeholder="e.g. 25000" value={baseSalary || ''} onChange={(e) => setBaseSalary(e.target.value)} style={inpStyle} required />
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0' }}>
+                <input type="checkbox" id="pf_check" checked={pfEnabled === 1} onChange={(e) => setPfEnabled(e.target.checked ? 1 : 0)} style={{ width: '16px', height: '16px', cursor: 'pointer' }} />
+                <label htmlFor="pf_check" style={{ fontSize: '13px', fontWeight: 'bold', color: '#1e293b', cursor: 'pointer' }}>Enable Standard EPF Deduction (12%)</label>
+              </div>
+              
+              <button type="submit" style={submitBtnStyle}>Save Staff ⚡</button>
+            </form>
+          </div>
 
           <div style={cardStyle}>
             <h3 style={cardTitleStyle}><Users size={18} color="#4f46e5"/> Registered Staff Registry ({(staffList || []).length})</h3>
@@ -1072,38 +1029,22 @@ const handleEditSubmit = async (e) => {
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '95px' }}>
-    <button onClick={() => handleOpenAdvanceModal(s)} style={{ ...rowActionBtnStyle, backgroundColor: '#fff3e0', color: '#e65100', borderColor: '#ffe0b2' }}><DollarSign size={11}/> + Advance</button>
-    <button onClick={() => fetchIndividualPaySlip(s?.id)} style={{ ...rowActionBtnStyle, backgroundColor: '#4f46e5', color: '#fff', borderColor: '#4f46e5' }}><FileText size={11}/> Pay Slip</button>
-    
-    {/* 🎯 NAYA CLEAN CUSTOM MODAL LINK TELEGRAM BUTTON */}
-    <button 
-        onClick={() => handleOpenTelegramModal(s.mobile)}
-        style={{ 
-            ...rowActionBtnStyle, 
-            backgroundColor: '#25D366', 
-            color: 'white', 
-            borderColor: '#25D366',
-            fontSize: '10px',
-            padding: '4px 8px'
-        }}
-    >
-        📱 Link Telegram
-    </button>
+                      <button onClick={() => handleOpenAdvanceModal(s)} style={{ ...rowActionBtnStyle, backgroundColor: '#fff3e0', color: '#e65100', borderColor: '#ffe0b2' }}><DollarSign size={11}/> + Advance</button>
+                      <button onClick={() => fetchIndividualPaySlip(s?.id)} style={{ ...rowActionBtnStyle, backgroundColor: '#4f46e5', color: '#fff', borderColor: '#4f46e5' }}><FileText size={11}/> Pay Slip</button>
+                      
+                      <button 
+                          onClick={() => handleOpenTelegramModal(s.mobile)}
+                          style={{ ...rowActionBtnStyle, backgroundColor: '#25D366', color: 'white', borderColor: '#25D366', fontSize: '10px', padding: '4px 8px' }}
+                      >
+                          📱 Link Telegram
+                      </button>
 
-                      {/* ✅ EDIT BUTTON - YAHAN ADD KARO */}
-    <button 
-        onClick={() => handleEditClick(s)}
-        style={{ 
-            ...rowActionBtnStyle, 
-            backgroundColor: '#f59e0b', 
-            color: 'white', 
-            borderColor: '#f59e0b',
-            fontSize: '10px',
-            padding: '4px 8px'
-        }}
-    >
-        ✏️ Edit
-    </button>
+                      <button 
+                          onClick={() => handleEditClick(s)}
+                          style={{ ...rowActionBtnStyle, backgroundColor: '#f59e0b', color: 'white', borderColor: '#f59e0b', fontSize: '10px', padding: '4px 8px' }}
+                      >
+                          ✏️ Edit
+                      </button>
                       
                       <button onClick={() => handleDeleteStaff(s.id, s.name)} style={{ ...rowActionBtnStyle, backgroundColor: '#fef2f2', color: '#b91c1c', borderColor: '#fca5a5', marginTop: '2px' }}>❌ Delete Staff</button>
                     </div>
@@ -1131,153 +1072,149 @@ const handleEditSubmit = async (e) => {
         </div>
       )}
 
-      {/* ===== MANUAL ATTENDANCE MODULE ===== */}
-{activeTab === 'manual_attendance' && (
-    <div style={cardStyle}>
-        <h3 style={cardTitleStyle}>
-            <Clock size={18} color="#8b5cf6"/> Manual Staff Attendance
-        </h3>
-        <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
-            Admin manually mark attendance for staff without smartphones (Maid, Peon, etc.)
-        </p>
-        
-        {/* Attendance Form */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '10px' }}>
-            <div>
-                <label style={labelStyle}>Select Staff *</label>
-                <select 
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                    value={manualStaffId}
-                    onChange={(e) => setManualStaffId(e.target.value)}
-                >
-                    <option value="">-- Select Staff --</option>
-                    {staffList.map(s => (
-                        <option key={s.id} value={s.id}>{s.name} ({s.designation})</option>
-                    ))}
-                </select>
+      {activeTab === 'manual_attendance' && (
+        <div style={cardStyle}>
+            <h3 style={cardTitleStyle}>
+                <Clock size={18} color="#8b5cf6"/> Manual Staff Attendance
+            </h3>
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '16px' }}>
+                Admin manually mark attendance for staff without smartphones (Maid, Peon, etc.)
+            </p>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '20px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '10px' }}>
+                <div>
+                    <label style={labelStyle}>Select Staff *</label>
+                    <select 
+                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                        value={manualStaffId}
+                        onChange={(e) => setManualStaffId(e.target.value)}
+                    >
+                        <option value="">-- Select Staff --</option>
+                        {staffList.map(s => (
+                            <option key={s.id} value={s.id}>{s.name} ({s.designation})</option>
+                        ))}
+                    </select>
+                </div>
+                <div>
+                    <label style={labelStyle}>Date *</label>
+                    <input 
+                        type="date" 
+                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                        value={manualDate}
+                        onChange={(e) => setManualDate(e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label style={labelStyle}>Check-In Time *</label>
+                    <input 
+                        type="time" 
+                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                        value={manualCheckIn}
+                        onChange={(e) => setManualCheckIn(e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label style={labelStyle}>Check-Out Time</label>
+                    <input 
+                        type="time" 
+                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                        value={manualCheckOut}
+                        onChange={(e) => setManualCheckOut(e.target.value)}
+                    />
+                </div>
+                <div>
+                    <label style={labelStyle}>Status</label>
+                    <select 
+                        className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
+                        value={manualStatus}
+                        onChange={(e) => setManualStatus(e.target.value)}
+                    >
+                        <option value="Present">Present</option>
+                        <option value="Late">Late</option>
+                        <option value="Half-Day">Half-Day</option>
+                        <option value="Leave">Leave</option>
+                        <option value="Absent">Absent</option>
+                    </select>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'end', gap: '8px' }}>
+                    <button 
+                        onClick={handleManualAttendanceSubmit}
+                        style={{ ...submitBtnStyle, backgroundColor: '#8b5cf6', marginTop: '0' }}
+                    >
+                        💾 Save Attendance
+                    </button>
+                    <button 
+                        onClick={fetchManualAttendanceList}
+                        style={{ ...submitBtnStyle, backgroundColor: '#3b82f6', marginTop: '0' }}
+                    >
+                        🔄 Refresh
+                    </button>
+                </div>
             </div>
-            <div>
-                <label style={labelStyle}>Date *</label>
-                <input 
-                    type="date" 
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                    value={manualDate}
-                    onChange={(e) => setManualDate(e.target.value)}
-                />
-            </div>
-            <div>
-                <label style={labelStyle}>Check-In Time *</label>
-                <input 
-                    type="time" 
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                    value={manualCheckIn}
-                    onChange={(e) => setManualCheckIn(e.target.value)}
-                />
-            </div>
-            <div>
-                <label style={labelStyle}>Check-Out Time</label>
-                <input 
-                    type="time" 
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                    value={manualCheckOut}
-                    onChange={(e) => setManualCheckOut(e.target.value)}
-                />
-            </div>
-            <div>
-                <label style={labelStyle}>Status</label>
-                <select 
-                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-xs font-bold"
-                    value={manualStatus}
-                    onChange={(e) => setManualStatus(e.target.value)}
-                >
-                    <option value="Present">Present</option>
-                    <option value="Late">Late</option>
-                    <option value="Half-Day">Half-Day</option>
-                    <option value="Leave">Leave</option>
-                    <option value="Absent">Absent</option>
-                </select>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'end', gap: '8px' }}>
-                <button 
-                    onClick={handleManualAttendanceSubmit}
-                    style={{ ...submitBtnStyle, backgroundColor: '#8b5cf6', marginTop: '0' }}
-                >
-                    💾 Save Attendance
-                </button>
-                <button 
-                    onClick={fetchManualAttendanceList}
-                    style={{ ...submitBtnStyle, backgroundColor: '#3b82f6', marginTop: '0' }}
-                >
-                    🔄 Refresh
-                </button>
+            
+            <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                    <thead>
+                        <tr style={{ backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 'bold' }}>
+                            <th style={thTdStyle}>Staff</th>
+                            <th style={thTdStyle}>Designation</th>
+                            <th style={thTdStyle}>Date</th>
+                            <th style={thTdStyle}>Check-In</th>
+                            <th style={thTdStyle}>Check-Out</th>
+                            <th style={thTdStyle}>Status</th>
+                            <th style={thTdStyle}>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {manualAttendanceList.length === 0 ? (
+                            <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>No attendance records found</td></tr>
+                        ) : (
+                            manualAttendanceList.map((att) => (
+                                <tr key={att.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                                    <td style={thTdStyle}><b>{att.name}</b></td>
+                                    <td style={thTdStyle}>{att.designation}</td>
+                                    <td style={thTdStyle}>{att.date}</td>
+                                    <td style={thTdStyle}>{att.check_in_time || '--:--'}</td>
+                                    <td style={thTdStyle}>{att.check_out_time || '--:--'}</td>
+                                    <td style={thTdStyle}>
+                                        <span style={{ 
+                                            padding: '2px 8px', 
+                                            borderRadius: '4px', 
+                                            backgroundColor: att.status === 'Present' ? '#dcfce7' : 
+                                                           att.status === 'Late' ? '#fef3c7' : 
+                                                           att.status === 'Half-Day' ? '#fef9c3' : '#fee2e2',
+                                            color: att.status === 'Present' ? '#16a34a' : 
+                                                   att.status === 'Late' ? '#d97706' : 
+                                                   att.status === 'Half-Day' ? '#a16207' : '#dc2626',
+                                            fontWeight: 'bold',
+                                            fontSize: '11px'
+                                        }}>
+                                            {att.status}
+                                        </span>
+                                    </td>
+                                    <td style={thTdStyle}>
+                                        <button 
+                                            onClick={() => editManualAttendance(att)}
+                                            style={{ ...rowActionBtnStyle, backgroundColor: '#dbeafe', color: '#2563eb', marginRight: '4px' }}
+                                        >
+                                            ✏️ Edit
+                                        </button>
+                                        <button 
+                                            onClick={() => deleteManualAttendance(att.id)}
+                                            style={{ ...rowActionBtnStyle, backgroundColor: '#fee2e2', color: '#dc2626' }}
+                                        >
+                                            🗑️ Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
             </div>
         </div>
-        
-        {/* Attendance List */}
-        <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                    <tr style={{ backgroundColor: '#f1f5f9', color: '#475569', fontWeight: 'bold' }}>
-                        <th style={thTdStyle}>Staff</th>
-                        <th style={thTdStyle}>Designation</th>
-                        <th style={thTdStyle}>Date</th>
-                        <th style={thTdStyle}>Check-In</th>
-                        <th style={thTdStyle}>Check-Out</th>
-                        <th style={thTdStyle}>Status</th>
-                        <th style={thTdStyle}>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {manualAttendanceList.length === 0 ? (
-                        <tr><td colSpan="7" style={{ textAlign: 'center', padding: '20px', color: '#94a3b8' }}>No attendance records found</td></tr>
-                    ) : (
-                        manualAttendanceList.map((att) => (
-                            <tr key={att.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                                <td style={thTdStyle}><b>{att.name}</b></td>
-                                <td style={thTdStyle}>{att.designation}</td>
-                                <td style={thTdStyle}>{att.date}</td>
-                                <td style={thTdStyle}>{att.check_in_time || '--:--'}</td>
-                                <td style={thTdStyle}>{att.check_out_time || '--:--'}</td>
-                                <td style={thTdStyle}>
-                                    <span style={{ 
-                                        padding: '2px 8px', 
-                                        borderRadius: '4px', 
-                                        backgroundColor: att.status === 'Present' ? '#dcfce7' : 
-                                                       att.status === 'Late' ? '#fef3c7' : 
-                                                       att.status === 'Half-Day' ? '#fef9c3' : '#fee2e2',
-                                        color: att.status === 'Present' ? '#16a34a' : 
-                                               att.status === 'Late' ? '#d97706' : 
-                                               att.status === 'Half-Day' ? '#a16207' : '#dc2626',
-                                        fontWeight: 'bold',
-                                        fontSize: '11px'
-                                    }}>
-                                        {att.status}
-                                    </span>
-                                </td>
-                                <td style={thTdStyle}>
-                                    <button 
-                                        onClick={() => editManualAttendance(att)}
-                                        style={{ ...rowActionBtnStyle, backgroundColor: '#dbeafe', color: '#2563eb', marginRight: '4px' }}
-                                    >
-                                        ✏️ Edit
-                                    </button>
-                                    <button 
-                                        onClick={() => deleteManualAttendance(att.id)}
-                                        style={{ ...rowActionBtnStyle, backgroundColor: '#fee2e2', color: '#dc2626' }}
-                                    >
-                                        🗑️ Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))
-                    )}
-                </tbody>
-            </table>
-        </div>
-    </div>
-)}
+      )}
 
-      {/* TAB CONTENT: ADVANCED REPORTS ENGINE MODULE */}
       {activeTab === 'reports' && (
         <div style={cardStyle}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px', paddingBottom: '10px', borderBottom: '1px solid #f1f5f9' }}>
@@ -1357,7 +1294,6 @@ const handleEditSubmit = async (e) => {
         </div>
       )}
 
-      {/* TAB CONTENT: ATTENDANCE RULES CONFIGURATION */}
       {activeTab === 'rules' && (
         <div style={{ ...cardStyle, maxWidth: '600px', margin: '0 auto' }}>
           <h3 style={cardTitleStyle}><Settings size={18} color="#4f46e5"/> Live Location & Duty Hours Setup</h3>
@@ -1396,7 +1332,6 @@ const handleEditSubmit = async (e) => {
         </div>
       )}
 
-      {/* TAB CONTENT: MASTER WALL QR SLIP CONFIGURATIONS */}
       {activeTab === 'qr_wall' && (
         <div style={{ textAlign: 'center', padding: '20px', maxWidth: '500px', margin: '0 auto', border: '2px dashed #cbd5e1', borderRadius: '16px', backgroundColor: '#fff' }}>
           <h3 style={{ margin: '0 0 6px 0', color: '#0f172a', fontWeight: 'bold', fontSize: '18px' }}>🏫 A.B.DIGITAL WORK ATTENDANCE TERMINAL</h3>
@@ -1416,7 +1351,6 @@ const handleEditSubmit = async (e) => {
         </div>
       )}
 
-      {/* ADVANCE PAYMENT AND HISTORY MASTER MODAL BOX */}
       {advanceModalStaff && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 1100 }}>
           <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '500px', width: '100%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
@@ -1441,7 +1375,7 @@ const handleEditSubmit = async (e) => {
                 <p style={{ fontSize: '12px', color: '#94a3b8', textAlign: 'center', padding: '10px' }}>No historic advance transactions recorded.</p>
               ) : (
                 advanceHistory.map((h, i) => (
-                  <div key={i} style={{ padding: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifycontent: 'space-between', alignItems: 'center' }}>
+                  <div key={i} style={{ padding: '10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#1e293b' }}>{h.purpose || 'Personal Advance'}</div>
                       <div style={{ fontSize: '10px', color: '#64748b', marginTop: '2px' }}>Date: {h.date}</div>
@@ -1452,25 +1386,10 @@ const handleEditSubmit = async (e) => {
               )}
             </div>
 
-                        {/* Download CSV Button */}
             <div style={{ marginTop: '12px', marginBottom: '12px' }}>
               <button 
                 onClick={() => downloadAdvanceHistory(advanceModalStaff.id, advanceModalStaff.name)}
-                style={{ 
-                  width: '100%', 
-                  padding: '8px', 
-                  backgroundColor: '#16a34a', 
-                  color: 'white', 
-                  border: 'none', 
-                  borderRadius: '8px', 
-                  fontWeight: 'bold', 
-                  fontSize: '12px', 
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
+                style={{ width: '100%', padding: '8px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
               >
                 <Download size={14}/> 📥 Download History as CSV
               </button>
@@ -1483,7 +1402,6 @@ const handleEditSubmit = async (e) => {
         </div>
       )}
 
-      {/* PAY SLIP GENERATION DIALOG OVERLAY MODAL */}
       {selectedStaffSlip && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 1000 }}>
           <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '500px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
@@ -1514,7 +1432,7 @@ const handleEditSubmit = async (e) => {
               <button onClick={() => downloadTextPaySlipFile(selectedStaffSlip)} style={{ flex: 1, padding: '10px', backgroundColor: '#16a34a', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                 <Download size={14}/> Download Slip
               </button>
-              <button onClick={() => setSelectedStaffSlip(null)} style={{ padding: '10px 16px', backgroundColor: '#cbd5e1', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer' }}>
+              <button onClick={() => setSelectedStaffSlip(null)} style={{ padding: '10px 16px', backgroundColor: '#cbd5e1', color: '#334155', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
                 Close
               </button>
             </div>
@@ -1522,17 +1440,9 @@ const handleEditSubmit = async (e) => {
         </div>
       )}
 
-      {/* ✏️ EDIT STAFF MODAL */}
       {showEditModal && editingStaff && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
-          backgroundColor: 'rgba(15,23,42,0.6)', display: 'flex',
-          justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 2000
-        }}>
-          <div style={{
-            backgroundColor: 'white', borderRadius: '14px', padding: '24px',
-            maxWidth: '450px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
-          }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15,23,42,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 2000 }}>
+          <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '450px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', fontWeight: 'bold', color: '#0f172a' }}>
               ✏️ Edit Staff Profile
             </h3>
@@ -1578,7 +1488,6 @@ const handleEditSubmit = async (e) => {
         </div>
       )}
 
-      {/* 🎯 CUSTOM TELEGRAM LINK MODAL */}
       {showTelegramModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(15, 23, 42, 0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px', zIndex: 2000 }}>
           <div style={{ backgroundColor: 'white', borderRadius: '14px', padding: '24px', maxWidth: '400px', width: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
