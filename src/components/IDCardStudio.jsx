@@ -237,6 +237,7 @@ const IDCardStudio = () => {
                 setLoading(false); // 👈 Yeh ensure karega ki error aaye ya success, loading hamesha band ho jaye
             });
     };
+
     // 🏫 MASTER TIMETABLE FUNCTIONS
     const fetchMasterTimetable = () => {
         setLoading(true);
@@ -476,32 +477,42 @@ const IDCardStudio = () => {
                                         return (
                                             <div key={student.id || student.admission_no} className={`unbreakable-portrait-card template-${activeStyle.id}`} style={{ width: '220px', maxWidth: '220px', minWidth: '220px', height: '320px', maxHeight: '320px', minHeight: '320px', display: 'block', position: 'relative', boxSizing: 'border-box', background: activeStyle.bg }}>
                                                 {activeStyle.texture === 'geo' && <div className="geo-background-layer" />}
-                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '54px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius }}>
-                                                    <div style={{ position: 'absolute', top: '7px', left: '8px', width: '34px', height: '34px', background: '#ffffff', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                                
+                                                {/* 🏫 LIGHT WATERMARK BACKGROUND LOGO FROM SETTINGS */}
+                                                {schoolSettings.logo_url && (
+                                                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '130px', height: '130px', backgroundImage: `url(${schoolSettings.logo_url})`, backgroundRepeat: 'no-repeat', backgroundPosition: 'center', backgroundSize: 'contain', opacity: '0.07', pointerEvents: 'none', zIndex: '1' }} />
+                                                )}
+
+                                                {/* 🏷️ HEADER: School name pura dikhega aur text wrap hoga */}
+                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '58px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius, display: 'flex', alignItems: 'center', padding: '0 8px' }}>
+                                                    <div style={{ width: '32px', height: '32px', background: '#ffffff', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: '0' }}>
                                                         <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
                                                     </div>
-                                                    <div style={{ marginLeft: '44px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '160px', height: '100%', overflow: 'hidden' }}>
-                                                        <div style={{ fontSize: '10.5px', fontWeight: '900', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: '0', padding: '0', lineHeight: '1.2', width: '100%' }}>{schoolSettings.school_name}</div>
-                                                        <span style={{ display: 'inline-block', fontSize: '6.5px', fontWeight: '900', backgroundColor: activeStyle.accent, padding: '1px 6px', borderRadius: '3px', letterSpacing: '0.5px', marginTop: '3px', color: '#fff', whiteSpace: 'nowrap' }}>STUDENT ID CARD</span>
+                                                    <div style={{ flexGrow: '1', textAlign: 'center', paddingLeft: '6px', overflow: 'hidden' }}>
+                                                        <div style={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.15', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>{schoolSettings.school_name}</div>
                                                     </div>
                                                 </div>
-                                                <div style={{ width: '217px', height: '232px', padding: '6px 12px 0 12px', display: 'block', position: 'relative', boxSizing: 'border-box', overflow: 'hidden' }}>
-                                                    {schoolSettings.logo_url && (
-                                                        <img src={schoolSettings.logo_url} alt="Watermark" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '90px', height: 'auto', opacity: '0.045', pointerEvents: 'none', zIndex: '1', display: 'block', mixBlendMode: 'multiply' }} />
-                                                    )}
-                                                    <div className={`photo-style-${activeStyle.photoStyle}`} style={{ width: '74px', height: '86px', margin: '0 auto', border: `1.5px solid ${activeStyle.primary}`, overflow: 'hidden', zIndex: '10', position: 'relative', background: '#f8fafc' }}>
+
+                                                <div style={{ width: '217px', height: '228px', padding: '4px 12px 0 12px', display: 'block', position: 'relative', boxSizing: 'border-box', overflow: 'hidden', zIndex: '2' }}>
+                                                    
+                                                    {/* ⭐ STUDENT ID CARD TEXT PHOTO KE UPAR CENTER MEIN */}
+                                                    <div style={{ textAlign: 'center', marginBottom: '3px' }}>
+                                                        <span style={{ display: 'inline-block', fontSize: '7px', fontWeight: '900', backgroundColor: activeStyle.accent, padding: '1px 8px', borderRadius: '3px', letterSpacing: '0.5px', color: '#fff', textTransform: 'uppercase' }}>STUDENT ID CARD</span>
+                                                    </div>
+
+                                                    <div className={`photo-style-${activeStyle.photoStyle}`} style={{ width: '70px', height: '80px', margin: '0 auto', border: `1.5px solid ${activeStyle.primary}`, overflow: 'hidden', zIndex: '10', position: 'relative', background: '#f8fafc' }}>
                                                         <img src={studentPhotoUrl} alt={student.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                                             onError={(e) => {
                                                                 if (e.target.src === studentPhotoUrl) {
                                                                     e.target.src = `${BASE_URL}/static/student_photos/${encodeURIComponent(folderName)}/${encodeURIComponent(rollNoClean)}.jpg`;
                                                                 } else {
                                                                     e.target.onerror = null;
-                                                                    e.target.src = "https://via.placeholder.com/74x86?text=No+Photo";
+                                                                    e.target.src = "https://via.placeholder.com/70x80?text=No+Photo";
                                                                 }
                                                             }}
                                                         />
                                                     </div>
-                                                    <div style={{ fontSize: '11.5px', fontWeight: '900', textAlign: 'center', textTransform: 'uppercase', margin: '4px 0 3px 0', color: activeStyle.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', zIndex: '10', position: 'relative' }}>
+                                                    <div style={{ fontSize: '11px', fontWeight: '900', textAlign: 'center', textTransform: 'uppercase', margin: '3px 0 2px 0', color: activeStyle.primary, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', zIndex: '10', position: 'relative' }}>
                                                         {student.name ? student.name.toUpperCase() : 'STUDENT NAME'}
                                                     </div>
                                                     <div style={{ width: '100%', borderTop: '1px solid #f1f5f9', paddingTop: '3px', display: 'flex', flexDirection: 'column', gap: '1.5px', zIndex: '10', position: 'relative' }}>
@@ -566,10 +577,6 @@ const IDCardStudio = () => {
                                     ))}
                                 </>
                             )}
-                        </div>
-                    </div>
-                </div>
-            )}
 
             {/* ===== MASTER TIMETABLE MODULE ===== */}
             {activeSubTab === 'master-timetable' && (
