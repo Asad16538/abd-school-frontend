@@ -476,7 +476,7 @@ const IDCardStudio = () => {
                                {/* ========== 🆕 HEADER: LOGO LEFT + SCHOOL NAME RIGHT (VISIBLE) ========== */}
 <div className="strict-header-box" style={{ 
     backgroundColor: activeStyle.primary, 
-    color: activeStyle.text, 
+    color: '#0f172a', 
     width: '217px', 
     height: '58px', 
     boxSizing: 'border-box', 
@@ -500,8 +500,8 @@ const IDCardStudio = () => {
     }}>
         <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
     </div>
-    
-    {/* 📝 SCHOOL NAME - RIGHT SIDE (WHITE TEXT ON COLORED BACKGROUND) */}
+     
+    {/* 📝 SCHOOL NAME - RIGHT SIDE */}
     <div style={{ 
         flexGrow: '1', 
         textAlign: 'center', 
@@ -513,7 +513,7 @@ const IDCardStudio = () => {
         height: '100%' 
     }}>
         <div style={{ 
-            fontSize: '11px', 
+            fontSize: '10px', 
             fontWeight: '900', 
             textTransform: 'uppercase', 
             lineHeight: '1.2', 
@@ -522,8 +522,8 @@ const IDCardStudio = () => {
             WebkitBoxOrient: 'vertical', 
             overflow: 'hidden', 
             wordBreak: 'break-word',
-            letterSpacing: '0.5px',
-            color: '#ffffff'  // ⬅️ YEH IMPORTANT HAI - WHITE TEXT
+            letterSpacing: '0.3px',
+            color: '#1e293b' // ⬅️ Yahan dark text color de diya hai taaki background par saaf dikhe
         }}>
             {schoolSettings.school_name}
         </div>
