@@ -474,14 +474,30 @@ const IDCardStudio = () => {
                                                 )}
 
                                                 {/* 🏷️ HEADER: Logo aur School Name side-by-side */}
-                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '52px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius, display: 'flex', alignItems: 'center', padding: '0 6px' }}>
-                                                    <div style={{ width: '30px', height: '30px', background: '#ffffff', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: '0', marginRight: '6px' }}>
-                                                        <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
-                                                    </div>
-                                                    <div style={{ flexGrow: '1', textAlign: 'left', overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
-                                                        <div style={{ fontSize: '8px', fontWeight: '900', textTransform: 'uppercase', lineHeight: '1.15', display: '-webkit-box', WebkitLineClamp: '2', WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word', width: '100%' }}>{schoolSettings.school_name}</div>
-                                                    </div>
-                                                </div>
+                                                <div className="strict-header-box" style={{ backgroundColor: activeStyle.primary, color: activeStyle.text, width: '217px', height: '58px', boxSizing: 'border-box', position: 'relative', borderRadius: activeStyle.borderRadius, display: 'flex', alignItems: 'center', padding: '0 8px' }}>
+    {/* 🏫 LOGO - LEFT SIDE */}
+    <div style={{ width: '36px', height: '36px', background: '#ffffff', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: '0' }}>
+        <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
+    </div>
+    
+    {/* 📝 SCHOOL NAME - RIGHT SIDE (LOGO KE BAGAL MEIN) */}
+    <div style={{ flexGrow: '1', textAlign: 'center', paddingLeft: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+        <div style={{ 
+            fontSize: '11px', 
+            fontWeight: '900', 
+            textTransform: 'uppercase', 
+            lineHeight: '1.2', 
+            display: '-webkit-box', 
+            WebkitLineClamp: '2', 
+            WebkitBoxOrient: 'vertical', 
+            overflow: 'hidden', 
+            wordBreak: 'break-word',
+            letterSpacing: '0.5px'
+        }}>
+            {schoolSettings.school_name}
+        </div>
+    </div>
+</div>
 
                                                 <div style={{ width: '217px', height: '228px', padding: '4px 12px 0 12px', display: 'block', position: 'relative', boxSizing: 'border-box', overflow: 'hidden', zIndex: '2' }}>
                                                     
