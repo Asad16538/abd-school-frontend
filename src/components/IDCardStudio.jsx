@@ -474,18 +474,16 @@ const IDCardStudio = () => {
                                                 )}
 
                                {/* ========== HEADER: LOGO LEFT + SCHOOL NAME RIGHT ========== */}
-<div className="strict-header-box" style={{ 
+<div style={{ 
     backgroundColor: '#1e3a8a',
     width: '217px', 
     height: '58px', 
-    boxSizing: 'border-box', 
-    position: 'relative', 
     display: 'flex', 
     alignItems: 'center', 
-    padding: '0 8px',
-    gap: '6px'
+    padding: '0 10px',
+    gap: '8px'
 }}>
-    {/* LOGO */}
+    {/* LOGO - LEFT SIDE */}
     <div style={{ 
         width: '36px', 
         height: '36px', 
@@ -494,38 +492,27 @@ const IDCardStudio = () => {
         display: 'flex', 
         alignItems: 'center', 
         justifyContent: 'center', 
-        overflow: 'hidden', 
         flexShrink: '0' 
     }}>
-        <img src={schoolSettings.logo_url} alt="Logo" style={{ maxWidth: '90%', maxHeight: '90%', objectFit: 'contain' }} />
+        <img src={schoolSettings.logo_url} alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
     </div>
     
-    {/* SCHOOL NAME - PURE WHITE TEXT, NO EXTRA BG */}
+    {/* SCHOOL NAME - RIGHT SIDE (LOGO KE BAGAL) */}
     <div style={{ 
         flex: '1',
-        textAlign: 'center', 
+        textAlign: 'center',
+        color: '#ffffff',
+        fontSize: '13px',
+        fontWeight: '900',
+        textTransform: 'uppercase',
+        letterSpacing: '0.5px',
+        textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+        lineHeight: '1.2',
         overflow: 'hidden',
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100%' 
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis'
     }}>
-        <div style={{ 
-            fontSize: '13px', 
-            fontWeight: '900', 
-            textTransform: 'uppercase', 
-            lineHeight: '1.2', 
-            overflow: 'hidden', 
-            wordBreak: 'break-word',
-            letterSpacing: '0.5px',
-            color: '#ffffff',
-            textShadow: '0 2px 4px rgba(0,0,0,0.4)'
-            // ⬅️ backgroundColor HATAYA
-            // ⬅️ padding HATAYA
-            // ⬅️ borderRadius HATAYA
-        }}>
-            {schoolSettings.school_name || 'ADITYA ARMY PUBLIC SCHOOL'}
-        </div>
+        {schoolSettings.school_name || 'ADITYA ARMY PUBLIC SCHOOL'}
     </div>
 </div>
 
