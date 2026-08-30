@@ -5,7 +5,8 @@ import {
   Plus, Edit, Trash2, Eye, FileText, Download, 
   Printer, Calendar, BookOpen, Users, TrendingUp,
   Award, CheckCircle, XCircle, AlertCircle, Search,
-  Settings, Copy, RefreshCw, ChevronDown, FileSpreadsheet
+  Settings, Copy, RefreshCw, ChevronDown, FileSpreadsheet,
+  X, Save
 } from 'lucide-react';
 
 const BASE_URL = 'https://erp-api.aapschool.in';
@@ -19,57 +20,17 @@ const ExamManagement = () => {
   const [exams, setExams] = useState([]);
   const [results, setResults] = useState([]);
   const [selectedResultExam, setSelectedResultExam] = useState('');
-  
-  // 🎯 Class-wise Master Marks Entry States
-  const [masterClass, setMasterClass] = useState('');
-  const [masterExamType, setMasterExamType] = useState('Unit Test - 1');
-  const [masterSubjects, setMasterSubjects] = useState([]);
-  const [masterStudents, setMasterStudents] = useState([]);
-  const [masterMarksData, setMasterMarksData] = useState({});
-  
+  const [students, setStudents] = useState([]);
+  const [selectedExam, setSelectedExam] = useState(null);
+  const [marksData, setMarksData] = useState({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  
-  const [practicalType, setPracticalType] = useState('20 Marks Practical');
-  const activityOptions = ['20 Marks Practical', 'Project', 'N.B. (Notebook)', 'S.E. (Internal)', 'Oral Test', 'Internal Assessment'];
   const [message, setMessage] = useState({ type: '', text: '' });
   const [classFilter, setClassFilter] = useState('');
   const [boardFilter, setBoardFilter] = useState('CBSE');
   const [streamFilter, setStreamFilter] = useState('');
-  const [showAddSubject, setShowAddSubject] = useState(false);
-
-  const classesList = ['Nursery', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
-  const sectionsList = ['A', 'B', 'C'];
-  const examTypes = ['Unit Test - 1', 'Quarterly Examination', 'Unit Test - 2', 'Half Yearly Examination', 'Unit Test - 3', 'Annual Examination'];
-  const subjectsList = [
-    { name: 'Mathematics', code: 'MTH101' },
-    { name: 'Science', code: 'SCI101' },
-    { name: 'English', code: 'ENG101' },
-    { name: 'Hindi', code: 'HIN101' },
-    { name: 'Social Studies', code: 'SST101' },
-    { name: 'Computer', code: 'COM101' },
-    { name: 'Sanskrit', code: 'SAN101' },
-    { name: 'Physics', code: 'PHY101' },
-    { name: 'Chemistry', code: 'CHE101' },
-    { name: 'Biology', code: 'BIO101' },
-    { name: 'Accountancy', code: 'ACC101' },
-    { name: 'Business Studies', code: 'BST101' },
-    { name: 'Economics', code: 'ECO101' },
-    { name: 'History', code: 'HIS101' },
-    { name: 'Political Science', code: 'POL101' },
-    { name: 'Geography', code: 'GEO101' }
-  ];
-
-  // Exam Setup Form
-  const [examForm, setExamForm] = useState({
-    exam_type: 'Unit Test - 1',
-    class: '',
-    section: 'A',
-    subject: '',
-    max_marks: 100,
-    passing_marks: 33,
-    date: new Date().toISOString().split('T')[0]
-  });
+  const [selectedSubjects, setSelectedSubjects] = useState([]);
+  const [subjectMarks, setSubjectMarks] = useState({});
 
   // Grade System
   const [gradeSystem, setGradeSystem] = useState([
@@ -81,6 +42,45 @@ const ExamManagement = () => {
     { grade: 'D', min: 40, max: 49, description: 'Below Average' },
     { grade: 'F', min: 0, max: 39, description: 'Fail' }
   ]);
+
+  // ==============================
+  // CONSTANTS
+  // ==============================
+  const classesList = ['Nursery', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+  const sectionsList = ['A', 'B', 'C'];
+  const examTypes = ['Unit Test - 1', 'Quarterly Examination', 'Unit Test - 2', 'Half Yearly Examination', 'Unit Test - 3', 'Annual Examination'];
+  
+  const allSubjectsList = [
+    { name: 'Mathematics', code: 'MTH101', class: ['1','2','3','4','5','6','7','8','9','10','11','12'] },
+    { name: 'Science', code: 'SCI101', class: ['1','2','3','4','5','6','7','8','9','10'] },
+    { name: 'English', code: 'ENG101', class: ['1','2','3','4','5','6','7','8','9','10','11','12'] },
+    { name: 'Hindi', code: 'HIN101', class: ['1','2','3','4','5','6','7','8','9','10','11','12'] },
+    { name: 'Social Studies', code: 'SST101', class: ['1','2','3','4','5','6','7','8','9','10'] },
+    { name: 'Computer', code: 'COM101', class: ['1','2','3','4','5','6','7','8','9','10','11','12'] },
+    { name: 'Sanskrit', code: 'SAN101', class: ['6','7','8','9','10'] },
+    { name: 'Physics', code: 'PHY101', class: ['11','12'] },
+    { name: 'Chemistry', code: 'CHE101', class: ['11','12'] },
+    { name: 'Biology', code: 'BIO101', class: ['11','12'] },
+    { name: 'Accountancy', code: 'ACC101', class: ['11','12'] },
+    { name: 'Business Studies', code: 'BST101', class: ['11','12'] },
+    { name: 'Economics', code: 'ECO101', class: ['11','12'] },
+    { name: 'History', code: 'HIS101', class: ['11','12'] },
+    { name: 'Political Science', code: 'POL101', class: ['11','12'] },
+    { name: 'Geography', code: 'GEO101', class: ['11','12'] }
+  ];
+
+  // Exam Setup Form
+  const [examForm, setExamForm] = useState({
+    exam_type: 'Unit Test - 1',
+    class: '',
+    section: 'A',
+    subjects: [],
+    date: new Date().toISOString().split('T')[0]
+  });
+
+  // New subject input
+  const [newSubject, setNewSubject] = useState('');
+  const [newSubjectCode, setNewSubjectCode] = useState('');
 
   // Marksheet Templates
   const marksheetTemplates = [
@@ -132,27 +132,34 @@ const ExamManagement = () => {
     }
   };
 
-  const fetchMasterExamSheet = async () => {
-    if (!masterClass || !masterExamType) {
-      setMessage({ type: 'error', text: 'Kripya Class aur Exam Type dono select karein!' });
-      return;
-    }
+  const fetchStudentsForExam = async (examId) => {
     setLoading(true);
-    setMessage({ type: '', text: '' });
     try {
-      const res = await axios.get(`${BASE_URL}/api/exams/master-sheet?class=${masterClass}&exam_type=${masterExamType}`);
-      if (res.data.success) {
-        setMasterSubjects(res.data.subjects || []);
-        setMasterStudents(res.data.students || []);
-        
-        const initialMarks = {};
-        res.data.students.forEach(st => {
-          initialMarks[st.student_id] = st.marks || {};
+      const res = await axios.get(`${BASE_URL}/api/exams/${examId}/students`);
+      setStudents(res.data.students || []);
+      setSelectedExam(res.data.exam);
+      
+      // Initialize marks data with subjects
+      const marks = {};
+      const subjectMarksData = {};
+      
+      res.data.students.forEach(student => {
+        marks[student.id] = {};
+        res.data.exam.subjects.forEach(subject => {
+          const existingMarks = student.subject_marks?.find(sm => sm.subject === subject) || {};
+          marks[student.id][subject] = {
+            theory: existingMarks.theory || '',
+            practical: existingMarks.practical || '',
+            total: existingMarks.total || 0
+          };
         });
-        setMasterMarksData(initialMarks);
-      }
+      });
+      
+      setMarksData(marks);
+      setSubjectMarks(marks);
+      setSelectedSubjects(res.data.exam.subjects || []);
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Master sheet load failed' });
+      setMessage({ type: 'error', text: 'Students fetch error' });
     } finally {
       setLoading(false);
     }
@@ -175,14 +182,54 @@ const ExamManagement = () => {
   // ==============================
   // HANDLE FUNCTIONS
   // ==============================
+  const getSubjectsForClass = (className) => {
+    if (!className) return [];
+    return allSubjectsList.filter(subject => 
+      subject.class.includes(className)
+    );
+  };
+
+  const handleAddSubject = () => {
+    if (newSubject.trim() && !selectedSubjects.includes(newSubject.trim())) {
+      setSelectedSubjects([...selectedSubjects, newSubject.trim()]);
+      setExamForm({
+        ...examForm,
+        subjects: [...selectedSubjects, newSubject.trim()]
+      });
+      setNewSubject('');
+    }
+  };
+
+  const handleRemoveSubject = (subject) => {
+    const updatedSubjects = selectedSubjects.filter(s => s !== subject);
+    setSelectedSubjects(updatedSubjects);
+    setExamForm({
+      ...examForm,
+      subjects: updatedSubjects
+    });
+  };
+
   const handleCreateExam = async (e) => {
     e.preventDefault();
+    
+    if (!examForm.class) {
+      setMessage({ type: 'error', text: '⚠️ Please select a class!' });
+      return;
+    }
+    
+    if (selectedSubjects.length === 0) {
+      setMessage({ type: 'error', text: '⚠️ Please add at least one subject!' });
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
         ...examForm,
-        exam_name: examForm.exam_type
+        exam_name: examForm.exam_type,
+        subjects: selectedSubjects
       };
+      
       const res = await axios.post(`${BASE_URL}/api/exams/create`, payload);
       if (res.data.success) {
         setMessage({ type: 'success', text: '✅ Exam created successfully!' });
@@ -190,11 +237,10 @@ const ExamManagement = () => {
           exam_type: 'Unit Test - 1',
           class: '',
           section: 'A',
-          subject: '',
-          max_marks: 100,
-          passing_marks: 33,
+          subjects: [],
           date: new Date().toISOString().split('T')[0]
         });
+        setSelectedSubjects([]);
         fetchExams();
       }
     } catch (err) {
@@ -204,44 +250,40 @@ const ExamManagement = () => {
     }
   };
 
-  const handleSaveMasterMarks = async () => {
-    if (!masterClass || !masterExamType) {
-      setMessage({ type: 'error', text: 'Kripya Class aur Exam Type select karein!' });
-      return;
-    }
+  const handleSaveMarks = async () => {
+    setLoading(true);
     setSaving(true);
     try {
       const payload = {
-        class_name: masterClass,
-        exam_type: masterExamType,
-        records: Object.keys(masterMarksData).map(studentId => ({
-          student_id: parseInt(studentId),
-          subjects: masterMarksData[studentId]
-        }))
+        exam_id: selectedExam.id,
+        marks: Object.keys(marksData).map(studentId => {
+          const studentMarks = marksData[studentId];
+          const subjectMarksArray = selectedSubjects.map(subject => ({
+            subject: subject,
+            theory: parseFloat(studentMarks[subject]?.theory) || 0,
+            practical: parseFloat(studentMarks[subject]?.practical) || 0,
+            total: parseFloat(studentMarks[subject]?.theory) || 0 + parseFloat(studentMarks[subject]?.practical) || 0
+          }));
+          
+          return {
+            student_id: parseInt(studentId),
+            subject_marks: subjectMarksArray,
+            total_marks: subjectMarksArray.reduce((sum, sm) => sum + sm.total, 0)
+          };
+        })
       };
-
-      const res = await axios.post(`${BASE_URL}/api/exams/save-master-marks`, payload);
+      
+      const res = await axios.post(`${BASE_URL}/api/exams/save-marks`, payload);
       if (res.data.success) {
-        setMessage({ type: 'success', text: '✅ Saare subjects ke marks successfully save ho gaye!' });
+        setMessage({ type: 'success', text: '✅ Marks saved successfully!' });
       }
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Marks save karne mein error aayi' });
+      console.error("Save Marks Error:", err.response?.data || err.message);
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Marks save failed' });
     } finally {
+      setLoading(false);
       setSaving(false);
     }
-  };
-
-  const handleMasterMarkChange = (studentId, subjectId, val) => {
-    setMasterMarksData(prev => ({
-      ...prev,
-      [studentId]: {
-        ...(prev[studentId] || {}),
-        [subjectId]: {
-          ...((prev[studentId] || {})[subjectId] || {}),
-          obtained: parseFloat(val) || 0
-        }
-      }
-    }));
   };
 
   const handleGenerateResult = async (examId) => {
@@ -259,14 +301,37 @@ const ExamManagement = () => {
     }
   };
 
+  const handleMarkChange = (studentId, subject, field, value) => {
+    setMarksData(prev => {
+      const student = prev[studentId] || {};
+      const subjectData = student[subject] || { theory: '', practical: '', total: 0 };
+      
+      const updatedSubject = { ...subjectData, [field]: value };
+      
+      // Calculate total for this subject
+      const theoryVal = parseFloat(updatedSubject.theory) || 0;
+      const practicalVal = parseFloat(updatedSubject.practical) || 0;
+      updatedSubject.total = theoryVal + practicalVal;
+      
+      return {
+        ...prev,
+        [studentId]: {
+          ...student,
+          [subject]: updatedSubject
+        }
+      };
+    });
+  };
+
   const handleDeleteExam = async (examId) => {
     try {
       const res = await axios.delete(`${BASE_URL}/api/exams/${examId}`);
       if (res.data.success) {
         fetchExams();
+        setMessage({ type: 'success', text: '✅ Exam deleted successfully!' });
       }
     } catch (err) {
-      console.error("Delete error:", err);
+      setMessage({ type: 'error', text: 'Delete failed' });
     }
   };
 
@@ -281,6 +346,7 @@ const ExamManagement = () => {
     }
   };
 
+  // 📥 Excel Download Function
   const downloadExcel = () => {
     if (results.length === 0) {
       setMessage({ type: 'error', text: 'Export karne ke liye koi result nahi hai!' });
@@ -288,7 +354,7 @@ const ExamManagement = () => {
       return;
     }
     
-    let csvContent = "data:text/csv;charset=utf-8,Roll No,Student Name,Marks Obtained,Percentage,Grade\n";
+    let csvContent = "data:text/csv;charset=utf-8,Roll No,Student Name,Total Marks,Percentage,Grade\n";
     results.forEach(r => {
       csvContent += `${r.roll_no || ''},"${r.name}",${r.obtained_marks},${r.percentage}%,${r.grade}\n`;
     });
@@ -302,6 +368,7 @@ const ExamManagement = () => {
     document.body.removeChild(link);
   };
 
+  // 🖨️ PDF / Print Function
   const downloadPDF = () => {
     window.print();
   };
@@ -314,6 +381,20 @@ const ExamManagement = () => {
       }
     }
     return percentage >= 40 ? 'D' : 'F';
+  };
+
+  // Calculate total marks for a student across all subjects
+  const getStudentTotalMarks = (studentId) => {
+    const studentMarks = marksData[studentId] || {};
+    let total = 0;
+    selectedSubjects.forEach(subject => {
+      total += studentMarks[subject]?.total || 0;
+    });
+    return total;
+  };
+
+  const getMaxMarks = () => {
+    return selectedSubjects.length * 100; // Assuming each subject is 100 marks
   };
 
   // ==============================
@@ -359,16 +440,10 @@ const ExamManagement = () => {
           📚 Setup Exam
         </button>
         <button 
-          onClick={() => setActiveTab('subjects')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'subjects' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
-          📖 Subjects
-        </button>
-        <button 
           onClick={() => setActiveTab('marks')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'marks' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
-          ✏️ Enter Marks (Master Sheet)
+          ✏️ Enter Marks
         </button>
         <button 
           onClick={() => setActiveTab('results')}
@@ -412,7 +487,26 @@ const ExamManagement = () => {
                   <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Class</label>
                   <select 
                     value={examForm.class}
-                    onChange={(e) => setExamForm({...examForm, class: e.target.value})}
+                    onChange={(e) => {
+                      const className = e.target.value;
+                      setExamForm({...examForm, class: className});
+                      // Auto-populate subjects for selected class
+                      const classSubjects = getSubjectsForClass(className);
+                      if (classSubjects.length > 0) {
+                        const subjectNames = classSubjects.map(s => s.name);
+                        setSelectedSubjects(subjectNames);
+                        setExamForm(prev => ({
+                          ...prev,
+                          subjects: subjectNames
+                        }));
+                      } else {
+                        setSelectedSubjects([]);
+                        setExamForm(prev => ({
+                          ...prev,
+                          subjects: []
+                        }));
+                      }
+                    }}
                     className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold bg-white"
                     required
                   >
@@ -433,36 +527,48 @@ const ExamManagement = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Subject</label>
-                <select 
-                  value={examForm.subject}
-                  onChange={(e) => setExamForm({...examForm, subject: e.target.value})}
-                  className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold bg-white"
-                  required
-                >
-                  <option value="">-- Select Subject --</option>
-                  {subjectsList.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Max Marks</label>
-                  <input 
-                    type="number" 
-                    value={examForm.max_marks}
-                    onChange={(e) => setExamForm({...examForm, max_marks: parseInt(e.target.value)})}
-                    className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
-                  />
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Subjects for Class {examForm.class || ''}</label>
+                
+                {/* Selected Subjects Display */}
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {selectedSubjects.map(subject => (
+                    <span key={subject} className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-bold">
+                      {subject}
+                      <button 
+                        type="button"
+                        onClick={() => handleRemoveSubject(subject)}
+                        className="hover:text-red-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Passing Marks</label>
+
+                {/* Add Subject Input */}
+                <div className="flex gap-2">
                   <input 
-                    type="number" 
-                    value={examForm.passing_marks}
-                    onChange={(e) => setExamForm({...examForm, passing_marks: parseInt(e.target.value)})}
-                    className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
+                    type="text"
+                    value={newSubject}
+                    onChange={(e) => setNewSubject(e.target.value)}
+                    placeholder="Add new subject..."
+                    className="flex-1 p-2 border border-gray-200 rounded-xl text-xs font-bold bg-white"
+                    list="subjectSuggestions"
                   />
+                  <datalist id="subjectSuggestions">
+                    {allSubjectsList
+                      .filter(s => !selectedSubjects.includes(s.name))
+                      .map(s => (
+                        <option key={s.name} value={s.name} />
+                      ))}
+                  </datalist>
+                  <button 
+                    type="button"
+                    onClick={handleAddSubject}
+                    className="px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
@@ -480,7 +586,7 @@ const ExamManagement = () => {
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition cursor-pointer"
+                className="w-full py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition cursor-pointer disabled:opacity-50"
               >
                 {loading ? 'Creating...' : '📚 Create Exam'}
               </button>
@@ -500,7 +606,7 @@ const ExamManagement = () => {
                   <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
                     <th className="p-3">Exam</th>
                     <th className="p-3">Class</th>
-                    <th className="p-3">Subject</th>
+                    <th className="p-3">Subjects</th>
                     <th className="p-3">Date</th>
                     <th className="p-3 text-center">Actions</th>
                   </tr>
@@ -513,10 +619,32 @@ const ExamManagement = () => {
                       <tr key={exam.id} className="hover:bg-gray-50">
                         <td className="p-3 font-bold">{exam.exam_name}</td>
                         <td className="p-3">Class {exam.class} - {exam.section}</td>
-                        <td className="p-3">{exam.subject}</td>
+                        <td className="p-3">
+                          <div className="flex flex-wrap gap-1">
+                            {(exam.subjects || []).map((subject, idx) => (
+                              <span key={idx} className="px-1.5 py-0.5 bg-gray-100 rounded text-[9px] font-medium">
+                                {subject}
+                              </span>
+                            ))}
+                          </div>
+                        </td>
                         <td className="p-3">{exam.date}</td>
                         <td className="p-3">
                           <div className="flex items-center justify-center gap-1">
+                            <button 
+                              onClick={() => { setActiveTab('marks'); fetchStudentsForExam(exam.id); }}
+                              className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
+                              title="Enter Marks"
+                            >
+                              ✏️
+                            </button>
+                            <button 
+                              onClick={() => handleGenerateResult(exam.id)}
+                              className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition"
+                              title="Generate Result"
+                            >
+                              📊
+                            </button>
                             <button 
                               onClick={() => handleDeleteExam(exam.id)}
                               className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
@@ -536,120 +664,117 @@ const ExamManagement = () => {
         </div>
       )}
 
-      {/* TAB 2: SUBJECTS */}
-      {activeTab === 'subjects' && (
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-          <h3 className="text-sm font-black text-gray-800 mb-4">📚 Subject Setup</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-medium">
-              <thead className="bg-gray-50">
-                <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-                  <th className="p-3">Subject</th>
-                  <th className="p-3">Code</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {subjectsList.map((subject, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="p-3 font-bold">{subject.name}</td>
-                    <td className="p-3">{subject.code || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: MARKS (CLASS-WISE MASTER GRID ENTRY) */}
+      {/* TAB 2: MARKS */}
       {activeTab === 'marks' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
             <div>
-              <h3 className="text-base font-black text-gray-800">✏️ Class-Wise Master Marks Entry Hub</h3>
-              <p className="text-xs text-gray-500">Class aur Exam Type select karein. Ek hi table mein saare subjects aur saare bachchon ke marks enter karein.</p>
+              <h3 className="text-base font-black text-gray-800">✏️ Marks Entry</h3>
+              <p className="text-xs text-gray-500">Select an exam and enter marks for all subjects</p>
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
-              {/* Class Selector */}
               <select 
-                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-white"
-                value={masterClass}
-                onChange={(e) => setMasterClass(e.target.value)}
+                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50 min-w-[200px]"
+                onChange={(e) => fetchStudentsForExam(e.target.value)}
               >
-                <option value="">-- Select Class --</option>
-                {classesList.map(c => <option key={c} value={c}>Class {c}</option>)}
+                <option value="">-- Select Exam --</option>
+                {exams.map(e => (
+                  <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class}</option>
+                ))}
               </select>
-
-              {/* Exam Type Selector */}
-              <select 
-                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-white"
-                value={masterExamType}
-                onChange={(e) => setMasterExamType(e.target.value)}
-              >
-                {examTypes.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-
-              <button 
-                onClick={fetchMasterExamSheet}
-                disabled={loading}
-                className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition cursor-pointer"
-              >
-                {loading ? 'Loading...' : 'Load Students & Subjects ⚡'}
-              </button>
             </div>
           </div>
 
-          {masterStudents.length === 0 ? (
+          {students.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="font-bold">Upar dropdown se Class aur Exam Type select karke "Load" button dabayein</p>
+              <p className="font-bold">Select an exam from above dropdown to enter marks</p>
             </div>
           ) : (
             <>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-medium border-collapse">
-                  <thead className="bg-gray-100">
-                    <tr className="text-gray-700 uppercase tracking-wider text-[10px]">
-                      <th className="p-3 border">Roll No</th>
-                      <th className="p-3 border">Student Name</th>
-                      {masterSubjects.map(sub => (
-                        <th key={sub.id} className="p-3 border text-center">{sub.name}</th>
+                <table className="w-full text-left text-xs font-medium">
+                  <thead className="bg-gray-50">
+                    <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
+                      <th className="p-3 w-16">Roll No</th>
+                      <th className="p-3 min-w-[120px]">Student Name</th>
+                      {selectedSubjects.map(subject => (
+                        <th key={subject} className="p-3 text-center min-w-[140px]">
+                          {subject}
+                          <div className="flex gap-1 justify-center mt-1">
+                            <span className="text-[8px] text-blue-600">Theory</span>
+                            <span className="text-[8px] text-green-600">Practical</span>
+                            <span className="text-[8px] text-purple-600">Total</span>
+                          </div>
+                        </th>
                       ))}
-                      <th className="p-3 border text-center font-black text-indigo-700">Grand Total</th>
+                      <th className="p-3 text-center font-black text-purple-700">Grand Total</th>
+                      <th className="p-3 text-center">Percentage</th>
+                      <th className="p-3 text-center">Grade</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {masterStudents.map((student) => {
-                      let rowTotal = 0;
-                      return (
-                        <tr key={student.student_id} className="hover:bg-gray-50">
-                          <td className="p-3 border font-bold">{student.roll_no || '-'}</td>
-                          <td className="p-3 border font-medium">
-                            <div className="font-bold text-gray-900">{student.name}</div>
-                            <div className="text-[10px] text-gray-500">Father: {student.father_name || 'N/A'}</div>
-                          </td>
+                  <tbody className="divide-y divide-gray-100">
+                    {students.map((student) => {
+                      const studentTotal = getStudentTotalMarks(student.id);
+                      const maxMarks = getMaxMarks();
+                      const percentage = maxMarks > 0 ? (studentTotal / maxMarks) * 100 : 0;
+                      const grade = getGrade(studentTotal, maxMarks);
 
-                          {masterSubjects.map(sub => {
-                            const subMark = (masterMarksData[student.student_id]?.[sub.id]?.obtained) || 0;
-                            rowTotal += subMark;
+                      return (
+                        <tr key={student.id} className="hover:bg-gray-50">
+                          <td className="p-3 font-bold">{student.roll_no || '-'}</td>
+                          <td className="p-3 font-medium">{student.name}</td>
+
+                          {selectedSubjects.map(subject => {
+                            const marks = marksData[student.id]?.[subject] || { theory: '', practical: '', total: 0 };
                             return (
-                              <td key={sub.id} className="p-2 border text-center">
-                                <input 
-                                  type="number" 
-                                  min="0"
-                                  max="100"
-                                  value={subMark || ''}
-                                  onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, e.target.value)}
-                                  className="w-16 p-1.5 border border-gray-300 rounded-lg text-center text-xs font-bold bg-white"
-                                  placeholder="Marks"
-                                />
+                              <td key={subject} className="p-2">
+                                <div className="flex gap-1 justify-center">
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    max="100"
+                                    value={marks.theory}
+                                    onChange={(e) => handleMarkChange(student.id, subject, 'theory', e.target.value)}
+                                    className="w-14 p-1 border border-blue-200 rounded text-center text-xs font-bold bg-blue-50/30"
+                                    placeholder="T"
+                                  />
+                                  <input 
+                                    type="number" 
+                                    min="0"
+                                    max="100"
+                                    value={marks.practical}
+                                    onChange={(e) => handleMarkChange(student.id, subject, 'practical', e.target.value)}
+                                    className="w-14 p-1 border border-green-200 rounded text-center text-xs font-bold bg-green-50/30"
+                                    placeholder="P"
+                                  />
+                                  <span className="w-12 text-center font-bold text-purple-600 text-xs flex items-center justify-center">
+                                    {marks.total || 0}
+                                  </span>
+                                </div>
                               </td>
                             );
                           })}
 
-                          <td className="p-3 border text-center font-black text-indigo-700 text-sm">
-                            {rowTotal}
+                          <td className="p-3 text-center font-black text-purple-700">
+                            {studentTotal}
+                          </td>
+
+                          <td className="p-3 text-center font-bold text-gray-600">
+                            {percentage.toFixed(1)}%
+                          </td>
+
+                          <td className="p-3 text-center">
+                            <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
+                              grade === 'A+' || grade === 'A' ? 'bg-green-100 text-green-700' :
+                              grade === 'B+' || grade === 'B' ? 'bg-blue-100 text-blue-700' :
+                              grade === 'C' ? 'bg-yellow-100 text-yellow-700' :
+                              grade === 'D' ? 'bg-orange-100 text-orange-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {grade}
+                            </span>
                           </td>
                         </tr>
                       );
@@ -660,11 +785,11 @@ const ExamManagement = () => {
 
               <div className="mt-4 flex justify-end">
                 <button 
-                  onClick={handleSaveMasterMarks}
+                  onClick={handleSaveMarks}
                   disabled={saving}
-                  className="px-6 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  {saving ? 'Saving...' : '💾 Save Master Sheet Marks'}
+                  {saving ? 'Saving...' : '💾 Save All Marks'}
                 </button>
               </div>
             </>
@@ -672,7 +797,7 @@ const ExamManagement = () => {
         </div>
       )}
 
-      {/* TAB 4: RESULTS */}
+      {/* TAB 3: RESULTS */}
       {activeTab === 'results' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
@@ -685,11 +810,11 @@ const ExamManagement = () => {
                   setSelectedResultExam(e.target.value);
                   fetchResultsForExam(e.target.value);
                 }}
-                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50"
+                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50 min-w-[200px]"
               >
-                <option value="">-- Select Exam to View Result --</option>
+                <option value="">-- Select Exam --</option>
                 {exams.map(e => (
-                  <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class} [{e.subject}]</option>
+                  <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class}</option>
                 ))}
               </select>
 
@@ -698,12 +823,14 @@ const ExamManagement = () => {
                   <button 
                     onClick={downloadExcel}
                     className="px-3 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-1 cursor-pointer"
+                    title="Download Excel"
                   >
                     <FileSpreadsheet className="w-4 h-4" /> Excel
                   </button>
                   <button 
                     onClick={downloadPDF}
                     className="px-3 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-700 transition flex items-center gap-1 cursor-pointer"
+                    title="Print / Save PDF"
                   >
                     <Printer className="w-4 h-4" /> PDF/Print
                   </button>
@@ -716,6 +843,7 @@ const ExamManagement = () => {
             <div className="text-center py-12 text-gray-400">
               <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p className="font-bold">No results found or result not generated yet</p>
+              <p className="text-xs">Click "Generate Result" (📊) from the Setup Exam list</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -723,8 +851,11 @@ const ExamManagement = () => {
                 <thead className="bg-gray-50">
                   <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
                     <th className="p-3">Roll No</th>
-                    <th className="p-3">Student Name & Father's Name</th>
-                    <th className="p-3 text-center">Marks Obtained</th>
+                    <th className="p-3">Student Name</th>
+                    {results[0]?.subject_wise_marks && Object.keys(results[0].subject_wise_marks).map(subject => (
+                      <th key={subject} className="p-3 text-center">{subject}</th>
+                    ))}
+                    <th className="p-3 text-center">Total Marks</th>
                     <th className="p-3 text-center">Percentage</th>
                     <th className="p-3 text-center">Grade</th>
                   </tr>
@@ -733,12 +864,16 @@ const ExamManagement = () => {
                   {results.map((res, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="p-3 font-bold">{res.roll_no || '-'}</td>
-                      <td className="p-3">
-                        <div className="font-bold text-gray-900">{res.name}</div>
-                        <div className="text-[10px] text-gray-500">Father: {res.father_name || 'N/A'}</div>
-                      </td>
+                      <td className="p-3 font-medium">{res.name}</td>
+                      
+                      {res.subject_wise_marks && Object.keys(res.subject_wise_marks).map(subject => (
+                        <td key={subject} className="p-3 text-center font-bold">
+                          {res.subject_wise_marks[subject] || 0}
+                        </td>
+                      ))}
+                      
                       <td className="p-3 text-center font-bold text-indigo-600">
-                        {res.obtained_marks} / {res.max_marks || 500}
+                        {res.obtained_marks}
                       </td>
                       <td className="p-3 text-center font-bold">{res.percentage}%</td>
                       <td className="p-3 text-center">
@@ -755,18 +890,29 @@ const ExamManagement = () => {
         </div>
       )}
 
-      {/* TAB 5: REPORT CARDS */}
+      {/* TAB 4: REPORT CARDS */}
       {activeTab === 'reports' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <h3 className="text-sm font-black text-gray-800 mb-4">📄 Report Cards</h3>
+          
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            {marksheetTemplates.map((t) => (
+              <div key={t.id} className={`p-3 border-2 rounded-xl text-center cursor-pointer transition hover:border-indigo-400 ${t.id === 'classic_blue' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'}`}>
+                <div className="text-3xl mb-1">{t.preview}</div>
+                <div className="text-[10px] font-bold">{t.name}</div>
+              </div>
+            ))}
+          </div>
+          
           <div className="text-center py-12 text-gray-400">
             <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p className="font-bold">Report card generation module active</p>
+            <p className="font-bold">Report card generation coming soon</p>
+            <p className="text-xs">Select a template and class to generate</p>
           </div>
         </div>
       )}
       
-      {/* TAB 6: GRADE SYSTEM */}
+      {/* TAB 5: GRADE SYSTEM */}
       {activeTab === 'grades' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <h3 className="text-sm font-black text-gray-800 mb-4">📊 Grade System</h3>
