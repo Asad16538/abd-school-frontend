@@ -26,13 +26,10 @@ const ExamManagement = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  const [classFilter, setClassFilter] = useState('');
-  const [boardFilter, setBoardFilter] = useState('CBSE');
-  const [streamFilter, setStreamFilter] = useState('');
   const [selectedSubjects, setSelectedSubjects] = useState([]);
-  const [subjectMarks, setSubjectMarks] = useState({});
+  const [newSubject, setNewSubject] = useState('');
 
-  // Grade System
+  // Grade System (Default)
   const [gradeSystem, setGradeSystem] = useState([
     { grade: 'A+', min: 90, max: 100, description: 'Outstanding' },
     { grade: 'A', min: 80, max: 89, description: 'Excellent' },
@@ -78,11 +75,6 @@ const ExamManagement = () => {
     date: new Date().toISOString().split('T')[0]
   });
 
-  // New subject input
-  const [newSubject, setNewSubject] = useState('');
-  const [newSubjectCode, setNewSubjectCode] = useState('');
-
-  // Marksheet Templates
   const marksheetTemplates = [
     { id: 'classic_blue', name: 'Classic Blue', preview: '🔵' },
     { id: 'modern_green', name: 'Modern Green', preview: '🟢' },
@@ -100,12 +92,20 @@ const ExamManagement = () => {
     fetchGradeSystem();
   }, []);
 
+  // ✅ FIXED: Use grouped exams API
   const fetchExams = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/api/exams`);
+      const res = await axios.get(`${BASE_URL}/api/exams/grouped`);
       setExams(res.data.exams || []);
     } catch (err) {
-      console.log("Exam fetch error");
+      console.log("Exam fetch error", err);
+      // Fallback
+      try {
+        const res2 = await axios.get(`${BASE_URL}/api/exams`);
+        setExams(res2.data.exams || []);
+      } catch (err2) {
+        setMessage({ type: 'error', text: 'Failed to fetch exams' });
+      }
     }
   };
 
@@ -114,7 +114,6 @@ const ExamManagement = () => {
       const res = await axios.get(`${BASE_URL}/api/board-settings`);
       if (res.data) {
         setBoard(res.data.board_name || 'CBSE');
-        setBoardFilter(res.data.board_name || 'CBSE');
       }
     } catch (err) {
       console.log("Board settings fetch error");
@@ -132,45 +131,51 @@ const ExamManagement = () => {
     }
   };
 
+  // ✅ FIXED: Use multi-subject students API
   const fetchStudentsForExam = async (examId) => {
     setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/api/exams/${examId}/students`);
-      setStudents(res.data.students || []);
-      setSelectedExam(res.data.exam);
+      const res = await axios.get(`${BASE_URL}/api/exams/${examId}/students-multi`);
       
-      // Initialize marks data with subjects
-      const marks = {};
-      const subjectMarksData = {};
-      
-      res.data.students.forEach(student => {
-        marks[student.id] = {};
-        res.data.exam.subjects.forEach(subject => {
-          const existingMarks = student.subject_marks?.find(sm => sm.subject === subject) || {};
-          marks[student.id][subject] = {
-            theory: existingMarks.theory || '',
-            practical: existingMarks.practical || '',
-            total: existingMarks.total || 0
-          };
+      if (res.data.success) {
+        setStudents(res.data.students || []);
+        setSelectedExam(res.data.exam);
+        setSelectedSubjects(res.data.exam?.subjects || []);
+        
+        // Initialize marks data
+        const marks = {};
+        res.data.students.forEach(student => {
+          marks[student.id] = {};
+          if (student.marks) {
+            Object.keys(student.marks).forEach(subject => {
+              marks[student.id][subject] = {
+                theory: student.marks[subject]?.theory || '',
+                practical: student.marks[subject]?.practical || '',
+                total: student.marks[subject]?.total || 0
+              };
+            });
+          }
         });
-      });
-      
-      setMarksData(marks);
-      setSubjectMarks(marks);
-      setSelectedSubjects(res.data.exam.subjects || []);
+        setMarksData(marks);
+      }
     } catch (err) {
+      console.error("Students fetch error", err);
       setMessage({ type: 'error', text: 'Students fetch error' });
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ FIXED: Use multi-subject results API
   const fetchResultsForExam = async (examId) => {
     if (!examId) return;
     setLoading(true);
     try {
       const res = await axios.get(`${BASE_URL}/api/exams/results-list/${examId}`);
-      setResults(res.data.results || []);
+      if (res.data.success) {
+        setResults(res.data.results || []);
+        setSelectedExam(res.data);
+      }
     } catch (err) {
       console.log("Results fetch error");
       setResults([]);
@@ -209,6 +214,7 @@ const ExamManagement = () => {
     });
   };
 
+  // ✅ FIXED: Use create-multi API
   const handleCreateExam = async (e) => {
     e.preventDefault();
     
@@ -225,14 +231,17 @@ const ExamManagement = () => {
     setLoading(true);
     try {
       const payload = {
-        ...examForm,
-        exam_name: examForm.exam_type,
-        subjects: selectedSubjects
+        exam_type: examForm.exam_type,
+        class: examForm.class,
+        section: examForm.section,
+        subjects: selectedSubjects,
+        date: examForm.date
       };
       
-      const res = await axios.post(`${BASE_URL}/api/exams/create`, payload);
+      const res = await axios.post(`${BASE_URL}/api/exams/create-multi`, payload);
+      
       if (res.data.success) {
-        setMessage({ type: 'success', text: '✅ Exam created successfully!' });
+        setMessage({ type: 'success', text: `✅ Exam created with ${res.data.subjects?.length || 0} subjects!` });
         setExamForm({
           exam_type: 'Unit Test - 1',
           class: '',
@@ -250,30 +259,37 @@ const ExamManagement = () => {
     }
   };
 
+  // ✅ FIXED: Use save-multi-marks API
   const handleSaveMarks = async () => {
     setLoading(true);
     setSaving(true);
     try {
-      const payload = {
-        exam_id: selectedExam.id,
-        marks: Object.keys(marksData).map(studentId => {
-          const studentMarks = marksData[studentId];
-          const subjectMarksArray = selectedSubjects.map(subject => ({
-            subject: subject,
-            theory: parseFloat(studentMarks[subject]?.theory) || 0,
-            practical: parseFloat(studentMarks[subject]?.practical) || 0,
-            total: parseFloat(studentMarks[subject]?.theory) || 0 + parseFloat(studentMarks[subject]?.practical) || 0
-          }));
-          
-          return {
-            student_id: parseInt(studentId),
-            subject_marks: subjectMarksArray,
-            total_marks: subjectMarksArray.reduce((sum, sm) => sum + sm.total, 0)
+      const studentsData = Object.keys(marksData).map(studentId => {
+        const studentMarks = marksData[studentId] || {};
+        const marks = {};
+        
+        selectedSubjects.forEach(subject => {
+          const mark = studentMarks[subject] || { theory: '', practical: '', total: 0 };
+          marks[subject] = {
+            theory: parseFloat(mark.theory) || 0,
+            practical: parseFloat(mark.practical) || 0,
+            total: parseFloat(mark.theory) || 0 + parseFloat(mark.practical) || 0
           };
-        })
+        });
+        
+        return {
+          student_id: parseInt(studentId),
+          marks: marks
+        };
+      });
+
+      const payload = {
+        exam_id: selectedExam?.exam_id,
+        students: studentsData
       };
       
-      const res = await axios.post(`${BASE_URL}/api/exams/save-marks`, payload);
+      const res = await axios.post(`${BASE_URL}/api/exams/save-multi-marks`, payload);
+      
       if (res.data.success) {
         setMessage({ type: 'success', text: '✅ Marks saved successfully!' });
       }
@@ -286,18 +302,46 @@ const ExamManagement = () => {
     }
   };
 
+  // ✅ FIXED: Use generate-complete-result API
   const handleGenerateResult = async (examId) => {
     setLoading(true);
     try {
-      const res = await axios.post(`${BASE_URL}/api/exams/generate-result/${examId}`);
+      const res = await axios.post(`${BASE_URL}/api/exams/generate-complete-result/${examId}`);
       if (res.data.success) {
         setMessage({ type: 'success', text: '✅ Result generated successfully!' });
         setActiveTab('results');
+        fetchResultsForExam(examId);
       }
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.error || 'Result generation failed' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ FIXED: Use delete-multi API
+  const handleDeleteExam = async (examId) => {
+    if (!window.confirm('Are you sure you want to delete this exam?')) return;
+    
+    try {
+      const res = await axios.delete(`${BASE_URL}/api/exams/delete-multi/${examId}`);
+      if (res.data.success) {
+        setMessage({ type: 'success', text: '✅ Exam deleted successfully!' });
+        fetchExams();
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      setMessage({ type: 'error', text: 'Delete failed' });
+    }
+  };
+
+  const handleBoardChange = async (newBoard) => {
+    setBoard(newBoard);
+    try {
+      await axios.post(`${BASE_URL}/api/board-settings`, { board_name: newBoard });
+      setMessage({ type: 'success', text: `✅ Switched to ${newBoard} pattern!` });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Board update failed' });
     }
   };
 
@@ -308,7 +352,6 @@ const ExamManagement = () => {
       
       const updatedSubject = { ...subjectData, [field]: value };
       
-      // Calculate total for this subject
       const theoryVal = parseFloat(updatedSubject.theory) || 0;
       const practicalVal = parseFloat(updatedSubject.practical) || 0;
       updatedSubject.total = theoryVal + practicalVal;
@@ -321,29 +364,6 @@ const ExamManagement = () => {
         }
       };
     });
-  };
-
-  const handleDeleteExam = async (examId) => {
-    try {
-      const res = await axios.delete(`${BASE_URL}/api/exams/${examId}`);
-      if (res.data.success) {
-        fetchExams();
-        setMessage({ type: 'success', text: '✅ Exam deleted successfully!' });
-      }
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Delete failed' });
-    }
-  };
-
-  const handleBoardChange = async (newBoard) => {
-    setBoard(newBoard);
-    setBoardFilter(newBoard);
-    try {
-      await axios.post(`${BASE_URL}/api/board-settings`, { board_name: newBoard });
-      setMessage({ type: 'success', text: `✅ Switched to ${newBoard} pattern!` });
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Board update failed' });
-    }
   };
 
   // 📥 Excel Download Function
@@ -383,7 +403,6 @@ const ExamManagement = () => {
     return percentage >= 40 ? 'D' : 'F';
   };
 
-  // Calculate total marks for a student across all subjects
   const getStudentTotalMarks = (studentId) => {
     const studentMarks = marksData[studentId] || {};
     let total = 0;
@@ -394,7 +413,7 @@ const ExamManagement = () => {
   };
 
   const getMaxMarks = () => {
-    return selectedSubjects.length * 100; // Assuming each subject is 100 marks
+    return selectedSubjects.length * 100;
   };
 
   // ==============================
@@ -490,7 +509,6 @@ const ExamManagement = () => {
                     onChange={(e) => {
                       const className = e.target.value;
                       setExamForm({...examForm, class: className});
-                      // Auto-populate subjects for selected class
                       const classSubjects = getSubjectsForClass(className);
                       if (classSubjects.length > 0) {
                         const subjectNames = classSubjects.map(s => s.name);
@@ -498,12 +516,6 @@ const ExamManagement = () => {
                         setExamForm(prev => ({
                           ...prev,
                           subjects: subjectNames
-                        }));
-                      } else {
-                        setSelectedSubjects([]);
-                        setExamForm(prev => ({
-                          ...prev,
-                          subjects: []
                         }));
                       }
                     }}
@@ -529,7 +541,6 @@ const ExamManagement = () => {
               <div>
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Subjects for Class {examForm.class || ''}</label>
                 
-                {/* Selected Subjects Display */}
                 <div className="flex flex-wrap gap-1 mb-2">
                   {selectedSubjects.map(subject => (
                     <span key={subject} className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-bold">
@@ -545,7 +556,6 @@ const ExamManagement = () => {
                   ))}
                 </div>
 
-                {/* Add Subject Input */}
                 <div className="flex gap-2">
                   <input 
                     type="text"
@@ -616,7 +626,7 @@ const ExamManagement = () => {
                     <tr><td colSpan="5" className="p-6 text-center text-gray-400">No exams created yet</td></tr>
                   ) : (
                     exams.map((exam) => (
-                      <tr key={exam.id} className="hover:bg-gray-50">
+                      <tr key={exam.exam_id || exam.id} className="hover:bg-gray-50">
                         <td className="p-3 font-bold">{exam.exam_name}</td>
                         <td className="p-3">Class {exam.class} - {exam.section}</td>
                         <td className="p-3">
@@ -632,21 +642,21 @@ const ExamManagement = () => {
                         <td className="p-3">
                           <div className="flex items-center justify-center gap-1">
                             <button 
-                              onClick={() => { setActiveTab('marks'); fetchStudentsForExam(exam.id); }}
+                              onClick={() => { setActiveTab('marks'); fetchStudentsForExam(exam.exam_id || exam.id); }}
                               className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
                               title="Enter Marks"
                             >
                               ✏️
                             </button>
                             <button 
-                              onClick={() => handleGenerateResult(exam.id)}
+                              onClick={() => handleGenerateResult(exam.exam_id || exam.id)}
                               className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition"
                               title="Generate Result"
                             >
                               📊
                             </button>
                             <button 
-                              onClick={() => handleDeleteExam(exam.id)}
+                              onClick={() => handleDeleteExam(exam.exam_id || exam.id)}
                               className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
                               title="Delete"
                             >
@@ -680,7 +690,9 @@ const ExamManagement = () => {
               >
                 <option value="">-- Select Exam --</option>
                 {exams.map(e => (
-                  <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class}</option>
+                  <option key={e.exam_id || e.id} value={e.exam_id || e.id}>
+                    {e.exam_name} - Class {e.class}
+                  </option>
                 ))}
               </select>
             </div>
@@ -757,14 +769,8 @@ const ExamManagement = () => {
                             );
                           })}
 
-                          <td className="p-3 text-center font-black text-purple-700">
-                            {studentTotal}
-                          </td>
-
-                          <td className="p-3 text-center font-bold text-gray-600">
-                            {percentage.toFixed(1)}%
-                          </td>
-
+                          <td className="p-3 text-center font-black text-purple-700">{studentTotal}</td>
+                          <td className="p-3 text-center font-bold text-gray-600">{percentage.toFixed(1)}%</td>
                           <td className="p-3 text-center">
                             <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
                               grade === 'A+' || grade === 'A' ? 'bg-green-100 text-green-700' :
@@ -801,7 +807,7 @@ const ExamManagement = () => {
       {activeTab === 'results' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
-            <h3 className="text-sm font-black text-gray-800">📊 Exam Results & Scorecard</h3>
+            <h3 className="text-sm font-black text-gray-800">📊 Exam Results</h3>
             
             <div className="flex flex-wrap items-center gap-2">
               <select 
@@ -814,7 +820,9 @@ const ExamManagement = () => {
               >
                 <option value="">-- Select Exam --</option>
                 {exams.map(e => (
-                  <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class}</option>
+                  <option key={e.exam_id || e.id} value={e.exam_id || e.id}>
+                    {e.exam_name} - Class {e.class}
+                  </option>
                 ))}
               </select>
 
@@ -823,14 +831,12 @@ const ExamManagement = () => {
                   <button 
                     onClick={downloadExcel}
                     className="px-3 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-1 cursor-pointer"
-                    title="Download Excel"
                   >
                     <FileSpreadsheet className="w-4 h-4" /> Excel
                   </button>
                   <button 
                     onClick={downloadPDF}
                     className="px-3 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-700 transition flex items-center gap-1 cursor-pointer"
-                    title="Print / Save PDF"
                   >
                     <Printer className="w-4 h-4" /> PDF/Print
                   </button>
@@ -842,8 +848,7 @@ const ExamManagement = () => {
           {results.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="font-bold">No results found or result not generated yet</p>
-              <p className="text-xs">Click "Generate Result" (📊) from the Setup Exam list</p>
+              <p className="font-bold">No results found</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -855,8 +860,8 @@ const ExamManagement = () => {
                     {results[0]?.subject_wise_marks && Object.keys(results[0].subject_wise_marks).map(subject => (
                       <th key={subject} className="p-3 text-center">{subject}</th>
                     ))}
-                    <th className="p-3 text-center">Total Marks</th>
-                    <th className="p-3 text-center">Percentage</th>
+                    <th className="p-3 text-center">Total</th>
+                    <th className="p-3 text-center">%</th>
                     <th className="p-3 text-center">Grade</th>
                   </tr>
                 </thead>
@@ -865,16 +870,10 @@ const ExamManagement = () => {
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="p-3 font-bold">{res.roll_no || '-'}</td>
                       <td className="p-3 font-medium">{res.name}</td>
-                      
                       {res.subject_wise_marks && Object.keys(res.subject_wise_marks).map(subject => (
-                        <td key={subject} className="p-3 text-center font-bold">
-                          {res.subject_wise_marks[subject] || 0}
-                        </td>
+                        <td key={subject} className="p-3 text-center font-bold">{res.subject_wise_marks[subject] || 0}</td>
                       ))}
-                      
-                      <td className="p-3 text-center font-bold text-indigo-600">
-                        {res.obtained_marks}
-                      </td>
+                      <td className="p-3 text-center font-bold text-indigo-600">{res.obtained_marks}</td>
                       <td className="p-3 text-center font-bold">{res.percentage}%</td>
                       <td className="p-3 text-center">
                         <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-green-100 text-green-700">
@@ -894,7 +893,6 @@ const ExamManagement = () => {
       {activeTab === 'reports' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <h3 className="text-sm font-black text-gray-800 mb-4">📄 Report Cards</h3>
-          
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             {marksheetTemplates.map((t) => (
               <div key={t.id} className={`p-3 border-2 rounded-xl text-center cursor-pointer transition hover:border-indigo-400 ${t.id === 'classic_blue' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'}`}>
@@ -903,11 +901,9 @@ const ExamManagement = () => {
               </div>
             ))}
           </div>
-          
           <div className="text-center py-12 text-gray-400">
             <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p className="font-bold">Report card generation coming soon</p>
-            <p className="text-xs">Select a template and class to generate</p>
           </div>
         </div>
       )}
