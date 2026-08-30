@@ -19,12 +19,17 @@ const ExamManagement = () => {
   const [exams, setExams] = useState([]);
   const [results, setResults] = useState([]);
   const [selectedResultExam, setSelectedResultExam] = useState('');
-  const [students, setStudents] = useState([]);
-  const [selectedExam, setSelectedExam] = useState(null);
-  const [marksData, setMarksData] = useState({});
+  
+  // 🎯 Class-wise Master Marks Entry States
+  const [masterClass, setMasterClass] = useState('');
+  const [masterExamType, setMasterExamType] = useState('Unit Test - 1');
+  const [masterSubjects, setMasterSubjects] = useState([]);
+  const [masterStudents, setMasterStudents] = useState([]);
+  const [masterMarksData, setMasterMarksData] = useState({});
+  
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  // 🎯 Dynamic Activity Dropdown State
+  
   const [practicalType, setPracticalType] = useState('20 Marks Practical');
   const activityOptions = ['20 Marks Practical', 'Project', 'N.B. (Notebook)', 'S.E. (Internal)', 'Oral Test', 'Internal Assessment'];
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -127,26 +132,27 @@ const ExamManagement = () => {
     }
   };
 
-  const fetchStudentsForExam = async (examId) => {
+  const fetchMasterExamSheet = async () => {
+    if (!masterClass || !masterExamType) {
+      setMessage({ type: 'error', text: 'Kripya Class aur Exam Type dono select karein!' });
+      return;
+    }
     setLoading(true);
+    setMessage({ type: '', text: '' });
     try {
-      const res = await axios.get(`${BASE_URL}/api/exams/${examId}/students`);
-      setStudents(res.data.students || []);
-      setSelectedExam(res.data.exam);
-      
-      const marks = {};
-      res.data.students.forEach(s => {
-        marks[s.id] = { 
-          theory: s.theory_marks !== undefined ? s.theory_marks : (s.marks_obtained !== null ? s.marks_obtained : ''), 
-          practical: s.practical_marks !== undefined ? s.practical_marks : '',
-          attendance: s.attendance !== undefined ? s.attendance : '',
-          total: s.marks_obtained !== null ? s.marks_obtained : 0,
-          grade: s.grade || '' 
-        };
-      });
-      setMarksData(marks);
+      const res = await axios.get(`${BASE_URL}/api/exams/master-sheet?class=${masterClass}&exam_type=${masterExamType}`);
+      if (res.data.success) {
+        setMasterSubjects(res.data.subjects || []);
+        setMasterStudents(res.data.students || []);
+        
+        const initialMarks = {};
+        res.data.students.forEach(st => {
+          initialMarks[st.student_id] = st.marks || {};
+        });
+        setMasterMarksData(initialMarks);
+      }
     } catch (err) {
-      setMessage({ type: 'error', text: 'Students fetch error' });
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Master sheet load failed' });
     } finally {
       setLoading(false);
     }
@@ -198,48 +204,44 @@ const ExamManagement = () => {
     }
   };
 
-  const handleSaveMarks = async () => {
-    setLoading(true);
+  const handleSaveMasterMarks = async () => {
+    if (!masterClass || !masterExamType) {
+      setMessage({ type: 'error', text: 'Kripya Class aur Exam Type select karein!' });
+      return;
+    }
     setSaving(true);
     try {
-      const isAnnualExam = selectedExam?.exam_name?.includes('Annual');
-
       const payload = {
-        exam_id: selectedExam.id,
-        practical_category: practicalType,
-        marks: Object.keys(marksData).map(studentId => {
-          const studentMark = marksData[studentId];
-          const isSingleField = selectedExam?.exam_name?.includes('Unit Test') || selectedExam?.exam_name?.includes('Monthly');
-          const theoryVal = parseFloat(studentMark.theory) || 0;
-          const practicalVal = isSingleField ? 0 : (parseFloat(studentMark.practical) || 0);
-          
-          const dataObj = {
-            student_id: parseInt(studentId),
-            theory_marks: theoryVal,
-            practical_marks: practicalVal,
-            marks_obtained: theoryVal + practicalVal
-          };
-
-          // 🎯 Sirf Annual Exam ke time hi attendance bhejo
-          if (isAnnualExam) {
-            dataObj.attendance = parseFloat(studentMark.attendance) || 0;
-          }
-
-          return dataObj;
-        })
+        class_name: masterClass,
+        exam_type: masterExamType,
+        records: Object.keys(masterMarksData).map(studentId => ({
+          student_id: parseInt(studentId),
+          subjects: masterMarksData[studentId]
+        }))
       };
-      
-      const res = await axios.post(`${BASE_URL}/api/exams/save-marks`, payload);
+
+      const res = await axios.post(`${BASE_URL}/api/exams/save-master-marks`, payload);
       if (res.data.success) {
-        setMessage({ type: 'success', text: '✅ Marks saved successfully!' });
+        setMessage({ type: 'success', text: '✅ Saare subjects ke marks successfully save ho gaye!' });
       }
     } catch (err) {
-      console.error("Save Marks Error:", err.response?.data || err.message);
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Marks save failed' });
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Marks save karne mein error aayi' });
     } finally {
-      setLoading(false);
       setSaving(false);
     }
+  };
+
+  const handleMasterMarkChange = (studentId, subjectId, val) => {
+    setMasterMarksData(prev => ({
+      ...prev,
+      [studentId]: {
+        ...(prev[studentId] || {}),
+        [subjectId]: {
+          ...((prev[studentId] || {})[subjectId] || {}),
+          obtained: parseFloat(val) || 0
+        }
+      }
+    }));
   };
 
   const handleGenerateResult = async (examId) => {
@@ -257,30 +259,10 @@ const ExamManagement = () => {
     }
   };
 
-  const handleMarkChange = (studentId, field, value) => {
-    setMarksData(prev => {
-      const student = prev[studentId] || { theory: '', practical: '', attendance: '', total: 0 };
-      const updatedStudent = { ...student, [field]: value };
-      
-      const isSingleField = selectedExam?.exam_name?.includes('Unit Test') || selectedExam?.exam_name?.includes('Monthly');
-      const theoryVal = parseFloat(updatedStudent.theory) || 0;
-      const practicalVal = isSingleField ? 0 : (parseFloat(updatedStudent.practical) || 0);
-      
-      updatedStudent.total = theoryVal + practicalVal;
-
-      return {
-        ...prev,
-        [studentId]: updatedStudent
-      };
-    });
-  };
-
   const handleDeleteExam = async (examId) => {
-    // 🎯 window.confirm hata kar seedha API call ya state trigger karein
     try {
       const res = await axios.delete(`${BASE_URL}/api/exams/${examId}`);
       if (res.data.success) {
-        // Success message ya list refresh ka code
         fetchExams();
       }
     } catch (err) {
@@ -299,7 +281,6 @@ const ExamManagement = () => {
     }
   };
 
-  // 📥 Excel Download Function (CSV format)
   const downloadExcel = () => {
     if (results.length === 0) {
       setMessage({ type: 'error', text: 'Export karne ke liye koi result nahi hai!' });
@@ -321,7 +302,6 @@ const ExamManagement = () => {
     document.body.removeChild(link);
   };
 
-  // 🖨️ PDF / Print Function
   const downloadPDF = () => {
     window.print();
   };
@@ -388,7 +368,7 @@ const ExamManagement = () => {
           onClick={() => setActiveTab('marks')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'marks' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
-          ✏️ Enter Marks
+          ✏️ Enter Marks (Master Sheet)
         </button>
         <button 
           onClick={() => setActiveTab('results')}
@@ -538,20 +518,6 @@ const ExamManagement = () => {
                         <td className="p-3">
                           <div className="flex items-center justify-center gap-1">
                             <button 
-                              onClick={() => { setActiveTab('marks'); fetchStudentsForExam(exam.id); }}
-                              className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
-                              title="Enter Marks"
-                            >
-                              ✏️
-                            </button>
-                            <button 
-                              onClick={() => handleGenerateResult(exam.id)}
-                              className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition"
-                              title="Generate Result"
-                            >
-                              📊
-                            </button>
-                            <button 
                               onClick={() => handleDeleteExam(exam.id)}
                               className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
                               title="Delete"
@@ -574,278 +540,131 @@ const ExamManagement = () => {
       {activeTab === 'subjects' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <h3 className="text-sm font-black text-gray-800 mb-4">📚 Subject Setup</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Class</label>
-              <select 
-                className="w-full p-2.5 border border-gray-200 rounded-xl text-sm font-bold"
-                value={classFilter}
-                onChange={(e) => setClassFilter(e.target.value)}
-              >
-                <option value="">All Classes</option>
-                {classesList.map(c => <option key={c} value={c}>Class {c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Board</label>
-              <select 
-                className="w-full p-2.5 border border-gray-200 rounded-xl text-sm font-bold"
-                value={boardFilter}
-                onChange={(e) => setBoardFilter(e.target.value)}
-              >
-                <option value="CBSE">CBSE</option>
-                <option value="MP Board">MP Board</option>
-                <option value="UP Board">UP Board</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Stream (11-12)</label>
-              <select 
-                className="w-full p-2.5 border border-gray-200 rounded-xl text-sm font-bold"
-                value={streamFilter}
-                onChange={(e) => setStreamFilter(e.target.value)}
-              >
-                <option value="">Select Stream</option>
-                <option value="Science">Science</option>
-                <option value="Commerce">Commerce</option>
-                <option value="Arts">Arts</option>
-              </select>
-            </div>
-          </div>
-          
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs font-medium">
               <thead className="bg-gray-50">
                 <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
                   <th className="p-3">Subject</th>
                   <th className="p-3">Code</th>
-                  <th className="p-3">Theory</th>
-                  <th className="p-3">Internal</th>
-                  <th className="p-3">Total</th>
-                  <th className="p-3 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {subjectsList.slice(0, 7).map((subject, index) => (
+                {subjectsList.map((subject, index) => (
                   <tr key={index} className="hover:bg-gray-50">
                     <td className="p-3 font-bold">{subject.name}</td>
                     <td className="p-3">{subject.code || '-'}</td>
-                    <td className="p-3">{board === 'CBSE' ? 80 : board === 'MP Board' ? 75 : 100}</td>
-                    <td className="p-3">{board === 'CBSE' ? 20 : board === 'MP Board' ? 25 : 0}</td>
-                    <td className="p-3 font-bold">{board === 'CBSE' ? 100 : board === 'MP Board' ? 100 : 100}</td>
-                    <td className="p-3 text-center">
-                      <button className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition">
-                        🗑️
-                      </button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          
-          <div className="mt-4">
-            <button 
-              onClick={() => setShowAddSubject(true)}
-              className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" /> Add Subject
-            </button>
-          </div>
         </div>
       )}
 
-      {/* TAB 3: MARKS */}
+      {/* TAB 3: MARKS (CLASS-WISE MASTER GRID ENTRY) */}
       {activeTab === 'marks' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
             <div>
-              <h3 className="text-base font-black text-gray-800">✏️ Dynamic Board Exam Marks Entry Hub</h3>
-              <p className="text-xs text-gray-500">Exam format ke mutabik fields automatic adjust honge (Unit Test/Monthly = 20 Marks, Quarterly/Half Yearly = Split, Annual = Attendance included).</p>
+              <h3 className="text-base font-black text-gray-800">✏️ Class-Wise Master Marks Entry Hub</h3>
+              <p className="text-xs text-gray-500">Class aur Exam Type select karein. Ek hi table mein saare subjects aur saare bachchon ke marks enter karein.</p>
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
-              {/* Exam Selector */}
+              {/* Class Selector */}
               <select 
-                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50"
-                onChange={(e) => fetchStudentsForExam(e.target.value)}
+                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-white"
+                value={masterClass}
+                onChange={(e) => setMasterClass(e.target.value)}
               >
-                <option value="">-- Select Exam Format --</option>
-                {exams.map(e => (
-                  <option key={e.id} value={e.id}>{e.exam_name} - Class {e.class} [{e.subject}]</option>
-                ))}
+                <option value="">-- Select Class --</option>
+                {classesList.map(c => <option key={c} value={c}>Class {c}</option>)}
               </select>
 
-              {/* 🎯 Practical Type Dropdown (Sirf Quarterly/Half Yearly/Annual ke liye) */}
-              {selectedExam && !selectedExam.exam_name?.includes('Unit Test') && !selectedExam.exam_name?.includes('Monthly') && (
-                <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
-                  <span className="text-[10px] font-black text-amber-800 uppercase">Practical Type:</span>
-                  <select 
-                    value={practicalType} 
-                    onChange={(e) => setPracticalType(e.target.value)} 
-                    className="bg-transparent text-xs font-bold text-amber-900 focus:outline-none cursor-pointer"
-                  >
-                    {activityOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                  </select>
-                </div>
-              )}
+              {/* Exam Type Selector */}
+              <select 
+                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-white"
+                value={masterExamType}
+                onChange={(e) => setMasterExamType(e.target.value)}
+              >
+                {examTypes.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+
+              <button 
+                onClick={fetchMasterExamSheet}
+                disabled={loading}
+                className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition cursor-pointer"
+              >
+                {loading ? 'Loading...' : 'Load Students & Subjects ⚡'}
+              </button>
             </div>
           </div>
 
-          {/* 📅 Annual Exam ke liye Session Total Working Days field */}
-          {selectedExam && selectedExam.exam_name?.includes('Annual') && (
-            <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-xl flex items-center justify-between">
-              <span className="text-xs font-black text-purple-900 uppercase">📅 Session Total Working Days (Annual Only):</span>
-              <input 
-                type="number" 
-                defaultValue="220" 
-                className="w-24 p-1.5 border border-purple-300 rounded-lg text-center text-xs font-bold bg-white text-purple-900" 
-                placeholder="e.g. 220"
-              />
-            </div>
-          )}
-
-          {students.length === 0 ? (
+          {masterStudents.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="font-bold">Select an exam from above dropdown to enter marks</p>
+              <p className="font-bold">Upar dropdown se Class aur Exam Type select karke "Load" button dabayein</p>
             </div>
           ) : (
             <>
-              {(() => {
-                const isSingleFieldExam = selectedExam?.exam_name?.includes('Unit Test') || selectedExam?.exam_name?.includes('Monthly');
-                return (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs font-medium">
-                      <thead className="bg-gray-50">
-                        <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-                          <th className="p-3 w-16">Roll No</th>
-                          <th className="p-3">Student Name</th>
-                          
-                          {isSingleFieldExam ? (
-                            <th className="p-3 text-center">Marks (Max 20)</th>
-                          ) : (
-                            <>
-                              <th className="p-3 text-center">Theory Marks</th>
-                              <th className="p-3 text-center">{practicalType}</th>
-                            </>
-                          )}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs font-medium border-collapse">
+                  <thead className="bg-gray-100">
+                    <tr className="text-gray-700 uppercase tracking-wider text-[10px]">
+                      <th className="p-3 border">Roll No</th>
+                      <th className="p-3 border">Student Name</th>
+                      {masterSubjects.map(sub => (
+                        <th key={sub.id} className="p-3 border text-center">{sub.name}</th>
+                      ))}
+                      <th className="p-3 border text-center font-black text-indigo-700">Grand Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {masterStudents.map((student) => {
+                      let rowTotal = 0;
+                      return (
+                        <tr key={student.student_id} className="hover:bg-gray-50">
+                          <td className="p-3 border font-bold">{student.roll_no || '-'}</td>
+                          <td className="p-3 border font-medium">
+                            <div className="font-bold text-gray-900">{student.name}</div>
+                            <div className="text-[10px] text-gray-500">Father: {student.father_name || 'N/A'}</div>
+                          </td>
 
-                          {selectedExam?.exam_name?.includes('Annual') && (
-                            <th className="p-3 text-center text-purple-700">Days Attended</th>
-                          )}
+                          {masterSubjects.map(sub => {
+                            const subMark = (masterMarksData[student.student_id]?.[sub.id]?.obtained) || 0;
+                            rowTotal += subMark;
+                            return (
+                              <td key={sub.id} className="p-2 border text-center">
+                                <input 
+                                  type="number" 
+                                  min="0"
+                                  max="100"
+                                  value={subMark || ''}
+                                  onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, e.target.value)}
+                                  className="w-16 p-1.5 border border-gray-300 rounded-lg text-center text-xs font-bold bg-white"
+                                  placeholder="Marks"
+                                />
+                              </td>
+                            );
+                          })}
 
-                          <th className="p-3 text-center font-black text-purple-700">Total Marks</th>
-                          <th className="p-3 text-center">Percentage</th>
-                          <th className="p-3 text-center">Grade</th>
+                          <td className="p-3 border text-center font-black text-indigo-700 text-sm">
+                            {rowTotal}
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {students.map((student) => {
-                          const studentMark = marksData[student.id] || { theory: '', practical: '', total: 0 };
-                          const maxLimit = isSingleFieldExam ? 20 : (selectedExam?.max_marks || 100);
-                          const totalM = studentMark.total || 0;
-                          const percentage = maxLimit > 0 ? (totalM / maxLimit) * 100 : 0;
-                          const grade = getGrade(totalM, maxLimit);
-
-                          return (
-                            <tr key={student.id} className="hover:bg-gray-50">
-                              <td className="p-3 font-bold">{student.roll_no || '-'}</td>
-                              <td className="p-3 font-medium">{student.name}</td>
-
-                              {isSingleFieldExam ? (
-                                <td className="p-3 text-center">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    max="20"
-                                    value={studentMark.theory}
-                                    onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
-                                    className="w-24 p-2 border border-indigo-200 rounded-lg text-center text-xs font-bold bg-indigo-50/30"
-                                    placeholder="Marks"
-                                  />
-                                </td>
-                              ) : (
-                                <>
-                                  <td className="p-3 text-center">
-                                    <input 
-                                      type="number" 
-                                      min="0"
-                                      max={maxLimit}
-                                      value={studentMark.theory}
-                                      onChange={(e) => handleMarkChange(student.id, 'theory', e.target.value)}
-                                      className="w-20 p-2 border border-blue-200 rounded-lg text-center text-xs font-bold bg-blue-50/30"
-                                      placeholder="Theory"
-                                    />
-                                  </td>
-                                  <td className="p-3 text-center">
-                                    <input 
-                                      type="number" 
-                                      min="0"
-                                      max={maxLimit}
-                                      value={studentMark.practical}
-                                      onChange={(e) => handleMarkChange(student.id, 'practical', e.target.value)}
-                                      className="w-20 p-2 border border-emerald-200 rounded-lg text-center text-xs font-bold bg-emerald-50/30"
-                                      placeholder="Practical"
-                                    />
-                                  </td>
-                                </>
-                              )}
-
-                              {selectedExam?.exam_name?.includes('Annual') && (
-                                <td className="p-3 text-center">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    value={studentMark.attendance || ''}
-                                    onChange={(e) => {
-                                      setMarksData(prev => ({
-                                        ...prev,
-                                        [student.id]: { ...prev[student.id], attendance: e.target.value }
-                                      }));
-                                    }}
-                                    className="w-20 p-2 border border-purple-200 rounded-lg text-center text-xs font-bold bg-purple-50/30"
-                                    placeholder="Days"
-                                  />
-                                </td>
-                              )}
-
-                              <td className="p-3 text-center font-black text-purple-700 text-sm">
-                                {isSingleFieldExam ? (studentMark.theory || 0) : totalM} / {maxLimit}
-                              </td>
-
-                              <td className="p-3 text-center font-bold text-gray-600">
-                                {percentage.toFixed(1)}%
-                              </td>
-
-                              <td className="p-3 text-center">
-                                <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
-                                  grade === 'A+' || grade === 'A' ? 'bg-green-100 text-green-700' :
-                                  grade === 'B+' || grade === 'B' ? 'bg-blue-100 text-blue-700' :
-                                  grade === 'C' ? 'bg-yellow-100 text-yellow-700' :
-                                  grade === 'D' ? 'bg-orange-100 text-orange-700' :
-                                  'bg-red-100 text-red-700'
-                                }`}>
-                                  {grade}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                );
-              })()}
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
               <div className="mt-4 flex justify-end">
                 <button 
-                  onClick={handleSaveMarks}
+                  onClick={handleSaveMasterMarks}
                   disabled={saving}
                   className="px-6 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 cursor-pointer"
                 >
-                  {saving ? 'Saving...' : '💾 Save All Marks'}
+                  {saving ? 'Saving...' : '💾 Save Master Sheet Marks'}
                 </button>
               </div>
             </>
@@ -874,20 +693,17 @@ const ExamManagement = () => {
                 ))}
               </select>
 
-              {/* 📥 Excel & PDF Download Buttons */}
               {results.length > 0 && (
                 <>
                   <button 
                     onClick={downloadExcel}
                     className="px-3 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-1 cursor-pointer"
-                    title="Download Excel"
                   >
                     <FileSpreadsheet className="w-4 h-4" /> Excel
                   </button>
                   <button 
                     onClick={downloadPDF}
                     className="px-3 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-700 transition flex items-center gap-1 cursor-pointer"
-                    title="Print / Save PDF"
                   >
                     <Printer className="w-4 h-4" /> PDF/Print
                   </button>
@@ -900,7 +716,6 @@ const ExamManagement = () => {
             <div className="text-center py-12 text-gray-400">
               <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p className="font-bold">No results found or result not generated yet</p>
-              <p className="text-xs">First click "Generate Result" (📊) from the Setup Exam list</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -908,7 +723,7 @@ const ExamManagement = () => {
                 <thead className="bg-gray-50">
                   <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
                     <th className="p-3">Roll No</th>
-                    <th className="p-3">Student Name & Father's Name</th> {/* 🎯 Updated Header */}
+                    <th className="p-3">Student Name & Father's Name</th>
                     <th className="p-3 text-center">Marks Obtained</th>
                     <th className="p-3 text-center">Percentage</th>
                     <th className="p-3 text-center">Grade</th>
@@ -918,18 +733,13 @@ const ExamManagement = () => {
                   {results.map((res, index) => (
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="p-3 font-bold">{res.roll_no || '-'}</td>
-                      
-                      {/* 🎯 Student Name ke sath Father's Name */}
                       <td className="p-3">
                         <div className="font-bold text-gray-900">{res.name}</div>
                         <div className="text-[10px] text-gray-500">Father: {res.father_name || 'N/A'}</div>
                       </td>
-
-                      {/* 🎯 Max Marks ke sath Display */}
                       <td className="p-3 text-center font-bold text-indigo-600">
-                        {res.obtained_marks} / {res.max_marks || 20}
+                        {res.obtained_marks} / {res.max_marks || 500}
                       </td>
-
                       <td className="p-3 text-center font-bold">{res.percentage}%</td>
                       <td className="p-3 text-center">
                         <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-green-100 text-green-700">
@@ -949,20 +759,9 @@ const ExamManagement = () => {
       {activeTab === 'reports' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <h3 className="text-sm font-black text-gray-800 mb-4">📄 Report Cards</h3>
-          
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            {marksheetTemplates.map((t) => (
-              <div key={t.id} className={`p-3 border-2 rounded-xl text-center cursor-pointer transition hover:border-indigo-400 ${t.id === 'classic_blue' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'}`}>
-                <div className="text-3xl mb-1">{t.preview}</div>
-                <div className="text-[10px] font-bold">{t.name}</div>
-              </div>
-            ))}
-          </div>
-          
           <div className="text-center py-12 text-gray-400">
             <FileText className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-            <p className="font-bold">Report card generation coming soon</p>
-            <p className="text-xs">Select a template and class to generate</p>
+            <p className="font-bold">Report card generation module active</p>
           </div>
         </div>
       )}
