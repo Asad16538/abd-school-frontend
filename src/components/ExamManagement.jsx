@@ -77,6 +77,8 @@ const ExamManagement = () => {
     exam_type: 'Unit Test - 1',
     class: '',
     section: 'A',
+    max_marks: 100,      // 👈 Naya field (Default 100)
+    passing_marks: 33,   // 👈 Naya field (Default 33)
     subjects: [],
     date: new Date().toISOString().split('T')[0]
   });
@@ -179,17 +181,25 @@ const ExamManagement = () => {
     }
   };
 
-  const handleMasterMarkChange = (studentId, subjectId, val) => {
-    setMasterMarksData(prev => ({
-      ...prev,
-      [studentId]: {
-        ...(prev[studentId] || {}),
-        [subjectId]: {
-          ...((prev[studentId] || {})[subjectId] || {}),
-          obtained: parseFloat(val) || 0
+  const handleMasterMarkChange = (studentId, subjectId, field, val) => {
+    setMasterMarksData(prev => {
+      const studentObj = prev[studentId] || {};
+      const subjectsMap = studentObj.subjects || studentObj;
+      const subData = subjectsMap[subjectId] || { theory: '', practical: '', total: 0 };
+      
+      const updatedSub = { ...subData, [field]: val };
+      
+      return {
+        ...prev,
+        [studentId]: {
+          ...studentObj,
+          subjects: {
+            ...subjectsMap,
+            [subjectId]: updatedSub
+          }
         }
-      }
-    }));
+      };
+    });
   };
 
   const fetchGradeSystem = async () => {
@@ -306,6 +316,8 @@ const ExamManagement = () => {
         exam_type: examForm.exam_type,
         class: examForm.class,
         section: examForm.section,
+        max_marks: examForm.max_marks || 100,      // 👈 Yeh add karein
+        passing_marks: examForm.passing_marks || 33, // 👈 Yeh add karein
         subjects: selectedSubjects,
         date: examForm.date
       };
@@ -318,6 +330,8 @@ const ExamManagement = () => {
           exam_type: 'Unit Test - 1',
           class: '',
           section: 'A',
+          max_marks: 100,     // Reset default
+          passing_marks: 33,  // Reset default
           subjects: [],
           date: new Date().toISOString().split('T')[0]
         });
@@ -854,55 +868,58 @@ const ExamManagement = () => {
                               </td>
 
                               {masterSubjects.map(sub => {
-                                const subEntry = subsMarksMap[sub.id] || subsMarksMap[sub.name] || { theory: 0, practical: 0, total: 0 };
-                                const th = parseFloat(subEntry.theory) || parseFloat(subEntry.obtained) || 0;
-                                const pr = parseFloat(subEntry.practical) || 0;
-                                const subTot = isUnitTest ? th : (th + pr);
-                                rowTotal += subTot;
+  const subEntry = subsMarksMap[sub.id] || subsMarksMap[sub.name] || { theory: '', practical: '', total: 0 };
+  const th = subEntry.theory !== undefined && subEntry.theory !== '' ? subEntry.theory : (subEntry.obtained || '');
+  const pr = subEntry.practical !== undefined && subEntry.practical !== '' ? subEntry.practical : '';
+  
+  const thNum = parseFloat(th) || 0;
+  const prNum = parseFloat(pr) || 0;
+  const subTot = isUnitTest ? thNum : (thNum + prNum);
+  rowTotal += subTot;
 
-                                return (
-                                  <React.Fragment key={sub.id}>
-                                    {isUnitTest ? (
-                                      <td className="p-1.5 border text-center">
-                                        <input 
-                                          type="number" 
-                                          min="0"
-                                          max="100"
-                                          value={th !== 0 ? th : ''}
-                                          onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
-                                          className="w-16 p-1 border rounded text-center font-bold text-xs bg-white"
-                                          placeholder="Marks"
-                                        />
-                                      </td>
-                                    ) : (
-                                      <>
-                                        <td className="p-1.5 border text-center">
-                                          <input 
-                                            type="number" 
-                                            min="0"
-                                            max="100"
-                                            value={th !== 0 ? th : ''}
-                                            onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
-                                            className="w-14 p-1 border border-blue-300 rounded text-center font-bold text-xs bg-white"
-                                            placeholder="Th"
-                                          />
-                                        </td>
-                                        <td className="p-1.5 border text-center">
-                                          <input 
-                                            type="number" 
-                                            min="0"
-                                            max="100"
-                                            value={pr !== 0 ? pr : ''}
-                                            onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'practical', e.target.value)}
-                                            className="w-14 p-1 border border-green-300 rounded text-center font-bold text-xs bg-white"
-                                            placeholder="Pr"
-                                          />
-                                        </td>
-                                      </>
-                                    )}
-                                  </React.Fragment>
-                                );
-                              })}
+  return (
+    <React.Fragment key={sub.id}>
+      {isUnitTest ? (
+        <td className="p-1.5 border text-center">
+          <input 
+            type="number" 
+            min="0"
+            max="100"
+            value={th}
+            onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
+            className="w-16 p-1 border rounded text-center font-bold text-xs bg-white"
+            placeholder="Marks"
+          />
+        </td>
+      ) : (
+        <>
+          <td className="p-1.5 border text-center">
+            <input 
+              type="number" 
+              min="0"
+              max="100"
+              value={th}
+              onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
+              className="w-14 p-1 border border-blue-300 rounded text-center font-bold text-xs bg-white"
+              placeholder="Th"
+            />
+          </td>
+          <td className="p-1.5 border text-center">
+            <input 
+              type="number" 
+              min="0"
+              max="100"
+              value={pr}
+              onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'practical', e.target.value)}
+              className="w-14 p-1 border border-green-300 rounded text-center font-bold text-xs bg-white"
+              placeholder="Pr"
+            />
+          </td>
+        </>
+      )}
+    </React.Fragment>
+  );
+})}
 
                               {/* Grand Total */}
                               <td className="p-3 border text-center font-black text-indigo-700 text-sm">
