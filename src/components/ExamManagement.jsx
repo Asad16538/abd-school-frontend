@@ -816,18 +816,20 @@ const ExamManagement = () => {
                           </td>
 
                           {masterSubjects.map(sub => {
-                            const subMark = (masterMarksData[student.student_id]?.[sub.id]?.obtained) || 0;
-                            rowTotal += subMark;
+                            const subMark = masterMarksData[student.student_id]?.[sub.id]?.obtained 
+                                          ?? masterMarksData[student.student_id]?.[sub.name]?.obtained 
+                                          ?? 0;
+                            rowTotal += Number(subMark) || 0;
                             return (
                               <td key={sub.id} className="p-2 border text-center">
                                 <input 
                                   type="number" 
                                   min="0"
                                   max="100"
-                                  value={subMark || ''}
+                                  value={subMark !== 0 ? subMark : ''}
                                   onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, e.target.value)}
                                   className="w-16 p-1.5 border border-gray-300 rounded-lg text-center text-xs font-bold bg-white"
-                                  placeholder="Marks"
+                                  placeholder="0"
                                 />
                               </td>
                             );
