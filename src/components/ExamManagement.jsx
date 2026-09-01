@@ -752,7 +752,7 @@ const ExamManagement = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
             <div>
               <h3 className="text-base font-black text-gray-800">✏️ Class-Wise Master Marks Entry Hub</h3>
-              <p className="text-xs text-gray-500">Class aur Exam Type select karein. Ek hi table mein saare subjects aur saare bachchon ke marks enter karein.</p>
+              <p className="text-xs text-gray-500">Unit Test = Single Box | Quarterly/Half-Yearly = Theory & Practical Split | Annual = Attendance Included.</p>
             </div>
             
             <div className="flex flex-wrap items-center gap-3">
@@ -792,58 +792,165 @@ const ExamManagement = () => {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-medium border-collapse">
-                  <thead className="bg-gray-100">
-                    <tr className="text-gray-700 uppercase tracking-wider text-[10px]">
-                      <th className="p-3 border">Roll No</th>
-                      <th className="p-3 border">Student Name</th>
-                      {masterSubjects.map(sub => (
-                        <th key={sub.id} className="p-3 border text-center">{sub.name}</th>
-                      ))}
-                      <th className="p-3 border text-center font-black text-indigo-700">Grand Total</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {masterStudents.map((student) => {
-                      let rowTotal = 0;
-                      return (
-                        <tr key={student.student_id} className="hover:bg-gray-50">
-                          <td className="p-3 border font-bold">{student.roll_no || '-'}</td>
-                          <td className="p-3 border font-medium">
-                            <div className="font-bold text-gray-900">{student.name}</div>
-                            <div className="text-[10px] text-gray-500">Father: {student.father_name || 'N/A'}</div>
-                          </td>
+              {(() => {
+                const isUnitTest = masterExamType.toLowerCase().includes('unit');
+                const isAnnual = masterExamType.toLowerCase().includes('annual');
 
-                          {masterSubjects.map(sub => {
-                            const subMark = masterMarksData[student.student_id]?.[sub.id]?.obtained 
-                                          ?? masterMarksData[student.student_id]?.[sub.name]?.obtained 
-                                          ?? 0;
-                            rowTotal += Number(subMark) || 0;
-                            return (
-                              <td key={sub.id} className="p-2 border text-center">
-                                <input 
-                                  type="number" 
-                                  min="0"
-                                  max="100"
-                                  value={subMark !== 0 ? subMark : ''}
-                                  onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, e.target.value)}
-                                  className="w-16 p-1.5 border border-gray-300 rounded-lg text-center text-xs font-bold bg-white"
-                                  placeholder="0"
-                                />
-                              </td>
-                            );
-                          })}
-
-                          <td className="p-3 border text-center font-black text-indigo-700 text-sm">
-                            {rowTotal}
-                          </td>
+                return (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-medium border-collapse">
+                      <thead className="bg-gray-100 text-[10px] uppercase">
+                        <tr>
+                          <th className="p-3 border" rowSpan="2">Roll No</th>
+                          <th className="p-3 border" rowSpan="2">Student Name</th>
+                          {masterSubjects.map(sub => (
+                            <th key={sub.id} className="p-2 border text-center" colSpan={isUnitTest ? 1 : 2}>
+                              {sub.name}
+                            </th>
+                          ))}
+                          <th className="p-3 border text-center font-black text-indigo-700" rowSpan="2">Grand Total</th>
+                          <th className="p-3 border text-center font-black text-green-700" rowSpan="2">%</th>
+                          <th className="p-3 border text-center font-black text-purple-700" rowSpan="2">Grade</th>
+                          {isAnnual && <th className="p-3 border text-center text-orange-700 font-black" rowSpan="2">Present Days</th>}
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                        <tr className="bg-gray-50 text-[9px]">
+                          {masterSubjects.map(sub => (
+                            isUnitTest ? (
+                              <th key={sub.id + '-u'} className="p-1 border text-center">Marks</th>
+                            ) : (
+                              <React.Fragment key={sub.id + '-split'}>
+                                <th className="p-1 border text-center text-blue-600">Theory</th>
+                                <th className="p-1 border text-center text-green-600">Practical</th>
+                              </React.Fragment>
+                            )
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {masterStudents.map((student) => {
+                          let rowTotal = 0;
+                          const studentRecord = masterMarksData[student.student_id] || {};
+                          const subsMarksMap = studentRecord.subjects || studentRecord;
+                          const attendanceVal = studentRecord.attendance || '';
+
+                          // Percentage & Grade Calculation
+                          const maxPossibleMarks = masterSubjects.length * 100;
+                          const percentage = maxPossibleMarks > 0 ? ((rowTotal / maxPossibleMarks) * 100).toFixed(1) : 0;
+                          
+                          let grade = 'F';
+                          for (let g of gradeSystem) {
+                            if (percentage >= g.min && percentage <= g.max) {
+                              grade = g.grade;
+                              break;
+                            }
+                          }
+
+                          return (
+                            <tr key={student.student_id} className="hover:bg-gray-50">
+                              <td className="p-3 border font-bold">{student.roll_no || '-'}</td>
+                              <td className="p-3 border font-medium">
+                                <div className="font-bold text-gray-900">{student.name}</div>
+                                <div className="text-[10px] text-gray-500">Father: {student.father_name || 'N/A'}</div>
+                              </td>
+
+                              {masterSubjects.map(sub => {
+                                const subEntry = subsMarksMap[sub.id] || subsMarksMap[sub.name] || { theory: 0, practical: 0, total: 0 };
+                                const th = parseFloat(subEntry.theory) || parseFloat(subEntry.obtained) || 0;
+                                const pr = parseFloat(subEntry.practical) || 0;
+                                const subTot = isUnitTest ? th : (th + pr);
+                                rowTotal += subTot;
+
+                                return (
+                                  <React.Fragment key={sub.id}>
+                                    {isUnitTest ? (
+                                      <td className="p-1.5 border text-center">
+                                        <input 
+                                          type="number" 
+                                          min="0"
+                                          max="100"
+                                          value={th !== 0 ? th : ''}
+                                          onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
+                                          className="w-16 p-1 border rounded text-center font-bold text-xs bg-white"
+                                          placeholder="Marks"
+                                        />
+                                      </td>
+                                    ) : (
+                                      <>
+                                        <td className="p-1.5 border text-center">
+                                          <input 
+                                            type="number" 
+                                            min="0"
+                                            max="100"
+                                            value={th !== 0 ? th : ''}
+                                            onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
+                                            className="w-14 p-1 border border-blue-300 rounded text-center font-bold text-xs bg-white"
+                                            placeholder="Th"
+                                          />
+                                        </td>
+                                        <td className="p-1.5 border text-center">
+                                          <input 
+                                            type="number" 
+                                            min="0"
+                                            max="100"
+                                            value={pr !== 0 ? pr : ''}
+                                            onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'practical', e.target.value)}
+                                            className="w-14 p-1 border border-green-300 rounded text-center font-bold text-xs bg-white"
+                                            placeholder="Pr"
+                                          />
+                                        </td>
+                                      </>
+                                    )}
+                                  </React.Fragment>
+                                );
+                              })}
+
+                              {/* Grand Total */}
+                              <td className="p-3 border text-center font-black text-indigo-700 text-sm">
+                                {rowTotal}
+                              </td>
+
+                              {/* Percentage */}
+                              <td className="p-3 border text-center font-bold text-green-700 text-xs">
+                                {maxPossibleMarks > 0 ? ((rowTotal / maxPossibleMarks) * 100).toFixed(1) : 0}%
+                              </td>
+
+                              {/* Grade */}
+                              <td className="p-3 border text-center font-black text-purple-700 text-xs">
+                                <span className="px-2 py-0.5 bg-purple-100 rounded">
+                                  {(() => {
+                                    const pct = maxPossibleMarks > 0 ? (rowTotal / maxPossibleMarks) * 100 : 0;
+                                    let calculatedGrade = 'F';
+                                    for (let g of gradeSystem) {
+                                      if (pct >= g.min && pct <= g.max) {
+                                        calculatedGrade = g.grade;
+                                        break;
+                                      }
+                                    }
+                                    return calculatedGrade;
+                                  })()}
+                                </span>
+                              </td>
+
+                              {/* Annual Attendance */}
+                              {isAnnual && (
+                                <td className="p-3 border text-center">
+                                  <input 
+                                    type="number" 
+                                    value={attendanceVal !== 0 ? attendanceVal : ''}
+                                    onChange={(e) => handleMasterAttendanceChange(student.student_id, e.target.value)}
+                                    className="w-16 p-1.5 border border-orange-400 bg-orange-50 rounded text-center font-bold text-xs"
+                                    placeholder="Days"
+                                  />
+                                </td>
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
 
               <div className="mt-4 flex justify-end">
                 <button 
