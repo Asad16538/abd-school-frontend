@@ -181,25 +181,17 @@ const ExamManagement = () => {
     }
   };
 
-  const handleMasterMarkChange = (studentId, subjectId, field, val) => {
-    setMasterMarksData(prev => {
-      const studentObj = prev[studentId] || {};
-      const subjectsMap = studentObj.subjects || studentObj;
-      const subData = subjectsMap[subjectId] || { theory: '', practical: '', total: 0 };
-      
-      const updatedSub = { ...subData, [field]: val };
-      
-      return {
-        ...prev,
-        [studentId]: {
-          ...studentObj,
-          subjects: {
-            ...subjectsMap,
-            [subjectId]: updatedSub
-          }
+  const handleMasterMarkChange = (studentId, subjectId, val) => {
+    setMasterMarksData(prev => ({
+      ...prev,
+      [studentId]: {
+        ...(prev[studentId] || {}),
+        [subjectId]: {
+          ...((prev[studentId] || {})[subjectId] || {}),
+          obtained: parseFloat(val) || 0
         }
-      };
-    });
+      }
+    }));
   };
 
   const fetchGradeSystem = async () => {
@@ -316,8 +308,6 @@ const ExamManagement = () => {
         exam_type: examForm.exam_type,
         class: examForm.class,
         section: examForm.section,
-        max_marks: examForm.max_marks || 100,      // 👈 Yeh add karein
-        passing_marks: examForm.passing_marks || 33, // 👈 Yeh add karein
         subjects: selectedSubjects,
         date: examForm.date
       };
@@ -330,8 +320,6 @@ const ExamManagement = () => {
           exam_type: 'Unit Test - 1',
           class: '',
           section: 'A',
-          max_marks: 100,     // Reset default
-          passing_marks: 33,  // Reset default
           subjects: [],
           date: new Date().toISOString().split('T')[0]
         });
