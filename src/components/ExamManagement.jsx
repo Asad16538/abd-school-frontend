@@ -181,17 +181,25 @@ const ExamManagement = () => {
     }
   };
 
-  const handleMasterMarkChange = (studentId, subjectId, val) => {
-    setMasterMarksData(prev => ({
-      ...prev,
-      [studentId]: {
-        ...(prev[studentId] || {}),
-        [subjectId]: {
-          ...((prev[studentId] || {})[subjectId] || {}),
-          obtained: parseFloat(val) || 0
+  const handleMasterMarkChange = (studentId, subjectId, field, val) => {
+    setMasterMarksData(prev => {
+      const studentObj = prev[studentId] || {};
+      const subjectsMap = studentObj.subjects || studentObj;
+      const subData = subjectsMap[subjectId] || { theory: '', practical: '', total: 0 };
+      
+      const updatedSub = { ...subData, [field]: val };
+      
+      return {
+        ...prev,
+        [studentId]: {
+          ...studentObj,
+          subjects: {
+            ...subjectsMap,
+            [subjectId]: updatedSub
+          }
         }
-      }
-    }));
+      };
+    });
   };
 
   const fetchGradeSystem = async () => {
