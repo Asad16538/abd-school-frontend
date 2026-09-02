@@ -445,9 +445,16 @@ function App() {
     );
   }
 
+  // App.jsx - Conditional Returns mein ye add karo
+  if (window.location.pathname === '/qr-attendance' || 
+      window.location.pathname === '/staff-attendance-terminal') {
+    return <StaffAttendanceTerminal />;
+  }
+
   if (window.location.pathname === '/attendance-form') {
     return <AttendanceForm />;
   }
+
 
   // ============================================================
   // ✅ STEP 5: MAIN RETURN
