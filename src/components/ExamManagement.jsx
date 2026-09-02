@@ -1,6 +1,7 @@
 // src/components/ExamManagement.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import ExamAdmitCardSixPerPage from './ExamAdmitCardSixPerPage';
 import { 
   Plus, Edit, Trash2, Eye, FileText, Download, 
   Printer, Calendar, BookOpen, Users, TrendingUp,
@@ -541,6 +542,12 @@ const ExamManagement = () => {
           📚 Setup Exam
         </button>
         <button 
+          onClick={() => setActiveTab('admit_card')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'admit_card' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
+        >
+          🎫 Admit Card
+        </button>
+        <button 
           onClick={() => setActiveTab('marks')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'marks' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
@@ -567,6 +574,9 @@ const ExamManagement = () => {
       </div>
 
       {/* TAB 1: SETUP EXAM */}
+      {activeTab === 'admit_card' && (
+        <ExamAdmitCardSixPerPage />
+      )}
       {activeTab === 'setup' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
