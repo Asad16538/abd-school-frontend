@@ -90,16 +90,26 @@ const StaffAttendanceTerminal = () => {
 };
 
   const handleMarkAttendance = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!mobileNumber || mobileNumber.trim().length < 10) {
-      alert("Please enter a valid 10-digit registered mobile number!");
-      return;
-    }
-    if (!location.lat || !location.lng) {
-      alert("GPS coordinates missing! Kripya location reload/allow karein.");
-      return;
-    }
+  // ✅ Mobile number validation
+  if (!mobileNumber || mobileNumber.trim().length < 10) {
+    alert("Please enter a valid 10-digit registered mobile number!");
+    return;
+  }
+  
+  // ✅ Clean mobile number (remove leading zeros)
+  const cleanMobile = mobileNumber.trim().replace(/^0+/, '');
+  if (cleanMobile.length !== 10) {
+    alert("Please enter a valid 10-digit mobile number!");
+    return;
+  }
+
+  if (!location.lat || !location.lng) {
+    alert("GPS coordinates missing! Kripya location reload/allow karein.");
+    return;
+  }
+
 
     setLoading(true);
     setStatusMsg({ type: '', text: '' });
