@@ -896,7 +896,7 @@ const handleAddStaff = async (e) => {
 
   // ========== WALL QR ==========
   const myComputerIp = window.location.hostname;
-  const wallQrDataString = `https://ab-digital-work.vercel.app/staff-attendance-terminal`;
+  const wallQrDataString = `https://erp-api.aapschool.in/qr-attendance`;
   const generatedWallQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(wallQrDataString)}`;
 
   // ========== LOADING ==========
