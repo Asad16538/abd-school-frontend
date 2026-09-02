@@ -751,36 +751,26 @@ const StaffPayrollAttendance = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-        const formData = new FormData();
-        formData.append('name', editFormData.name);
-        formData.append('designation', editFormData.designation);
-        formData.append('mobile', editFormData.mobile);
-        formData.append('base_salary', editFormData.base_salary);
-        formData.append('epf_enabled', editFormData.epf_enabled ? 1 : 0);
-        
-        if (editFormData.staff_photo) {
-            formData.append('student_photo', editFormData.staff_photo); // Backend same key support karega
-        }
-
-        const response = await fetch(`${BASE_URL}/api/staff/${editingStaff.id}`, {
-            method: 'PUT',
-            body: formData
+        // Sending data as JSON
+        const response = await axios.put(`${BASE_URL}/api/staff/${editingStaff.id}`, {
+            name: editFormData.name,
+            designation: editFormData.designation,
+            mobile: editFormData.mobile,
+            base_salary: editFormData.base_salary,
+            epf_enabled: editFormData.epf_enabled ? 1 : 0
         });
-        const data = await response.json();
 
-        if (response.ok && data.success) {
+        if (response.data.success) {
             setShowEditModal(false);
-            setUiMessage("✅ Staff Profile & Photo Updated Successfully!");
+            setUiMessage("✅ Staff Updated Successfully!");
             fetchStaff();
             setTimeout(() => setUiMessage(''), 3000);
-        } else {
-            setUiMessage("❌ Error updating staff: " + (data.error || "Unknown error"));
         }
     } catch (err) {
-        setUiMessage("❌ Error updating staff: " + err.message);
+        setUiMessage("❌ Error updating staff: " + (err.response?.data?.error || err.message));
         setTimeout(() => setUiMessage(''), 4000);
     }
-  };
+};
 
   const handleUpdateRules = async (e) => {
     e.preventDefault();
@@ -903,7 +893,7 @@ const StaffPayrollAttendance = () => {
 
   // ========== WALL QR ==========
   const myComputerIp = window.location.hostname;
-  const wallQrDataString = `https://${myComputerIp}/staff-attendance-terminal`;
+  const wallQrDataString = `https://erp-api.aapschool.in/staff-attendance-terminal`;
   const generatedWallQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(wallQrDataString)}`;
 
   // ========== LOADING ==========
