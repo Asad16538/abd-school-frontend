@@ -556,58 +556,61 @@ const StaffPayrollAttendance = () => {
     return name.replace(/^(Mr\.|Mrs\.|Miss|Dr\.|Prof\.)\s*/gi, '').trim();
   };
 
-  const handleAddStaff = async (e) => {
-    e.preventDefault();
+  // StaffPayrollAttendance.jsx - handleAddStaff function
+
+const handleAddStaff = async (e) => {
+  e.preventDefault();
+  
+  if (!staffName || !staffName.trim()) {
+    setUiMessage("❌ Staff Name zaroori hai!");
+    return;
+  }
+  if (!mobile || !mobile.trim()) {
+    setUiMessage("❌ Mobile Number zaroori hai!");
+    return;
+  }
+  
+  const rawName = cleanStaffName(staffName);
+  const fullStaffName = `${staffPrefix} ${rawName}`;
+  
+  // FormData ka use karenge taaki text aur photo dono backend par ja sakein
+  const formData = new FormData();
+  formData.append('name', fullStaffName);
+  formData.append('designation', designation.trim() || 'Teacher');
+  formData.append('mobile', mobile.trim());
+  formData.append('base_salary', parseFloat(baseSalary) || 0);
+  formData.append('pf_enabled', pfEnabled ? 1 : 0);
+  formData.append('telegram_id', ''); // ✅ Empty telegram_id, baad mein link karenge
+  
+  if (staffPhoto) {
+    formData.append('student_photo', staffPhoto);
+  }
+  
+  try {
+    const res = await fetch(`${BASE_URL}/api/staff/register-manual`, {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
     
-    if (!staffName || !staffName.trim()) {
-      setUiMessage("❌ Staff Name zaroori hai!");
-      return;
+    if (res.ok && data.success) {
+      setUiMessage('🎉 New Staff Member Registered with Photo!');
+      setStaffPrefix('Mr.');
+      setStaffName('');
+      setDesignation('');
+      setMobile('');
+      setBaseSalary('');
+      setPfEnabled(0);
+      setStaffPhoto(null);
+      fetchStaff();
+      setTimeout(() => setUiMessage(''), 3000);
+    } else {
+      setUiMessage("❌ Error: " + (data.error || "Unknown error"));
     }
-    if (!mobile || !mobile.trim()) {
-      setUiMessage("❌ Mobile Number zaroori hai!");
-      return;
-    }
-    
-    const rawName = cleanStaffName(staffName);
-    const fullStaffName = `${staffPrefix} ${rawName}`;
-    
-    // FormData ka use karenge taaki text aur photo dono backend par ja sakein
-    const formData = new FormData();
-    formData.append('name', fullStaffName);
-    formData.append('designation', designation.trim() || 'Teacher');
-    formData.append('mobile', mobile.trim());
-    formData.append('base_salary', parseFloat(baseSalary) || 0);
-    formData.append('pf_enabled', pfEnabled ? 1 : 0);
-    
-    if (staffPhoto) {
-      formData.append('student_photo', staffPhoto); // Backend is field name ko read karega
-    }
-    
-    try {
-      const res = await fetch(`${BASE_URL}/api/staff/register-manual`, { // ya aap apna staff registration endpoint yahan use karein
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      
-      if (res.ok && data.success) {
-        setUiMessage('🎉 New Staff Member Registered with Photo!');
-        setStaffPrefix('Mr.');
-        setStaffName('');
-        setDesignation('');
-        setMobile('');
-        setBaseSalary('');
-        setPfEnabled(0);
-        setStaffPhoto(null);
-        fetchStaff();
-        setTimeout(() => setUiMessage(''), 3000);
-      } else {
-        setUiMessage("❌ Error: " + (data.error || "Unknown error"));
-      }
-    } catch (err) {
-      setUiMessage("❌ Server connection failed!");
-    }
-  };
+  } catch (err) {
+    setUiMessage("❌ Server connection failed!");
+  }
+};
 
   const handleOpenTelegramModal = (mobile) => {
     setSelectedStaffMobile(mobile);
