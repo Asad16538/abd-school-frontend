@@ -203,14 +203,14 @@ const ExamAdmitCardSixPerPage = () => {
                     <img src={schoolLogo} alt="Watermark" className="w-36 h-36 object-contain" />
                   </div>
 
-                  {/* Top Header: Logo on right, School Name beside it */}
-                  <div className="relative z-10 flex items-center justify-between border-b border-gray-400 pb-1.5 mb-1.5">
-                    <div className="flex-1 pr-2">
-                      <h2 className="text-xs font-black text-indigo-900 uppercase leading-tight">{schoolName}</h2>
-                      <p className="text-[9px] text-gray-600">Official Examination Session</p>
-                    </div>
-                    <div className="w-9 h-9 border border-gray-300 rounded-lg overflow-hidden bg-white shrink-0 flex items-center justify-center">
+                  {/* Top Header: Logo on left, School Name beside it with larger font */}
+                  <div className="relative z-10 flex items-center gap-2 border-b border-gray-400 pb-1.5 mb-1.5">
+                    <div className="w-10 h-10 border border-gray-300 rounded-lg overflow-hidden bg-white shrink-0 flex items-center justify-center">
                       <img src={schoolLogo} alt="Logo" className="w-full h-full object-contain" />
+                    </div>
+                    <div className="flex-1">
+                      <h2 className="text-sm font-black text-indigo-900 uppercase leading-tight">{schoolName}</h2>
+                      <p className="text-[9px] text-gray-600">Official Examination Session</p>
                     </div>
                   </div>
 
