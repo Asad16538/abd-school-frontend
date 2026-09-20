@@ -35,21 +35,49 @@ const StaffPayrollAttendance = () => {
   // Teacher Profile fetch karne ka function
   useEffect(() => {
     if (userRole === 'Teacher') {
-      const staffId = localStorage.getItem('staff_id') || 1;
+      const staffId = localStorage.getItem('staff_id');   // ✅ `|| 1` hata diya
+      
+      // ✅ Agar staff_id nahi hai toh error dikhao
+      if (!staffId) {
+        console.error("❌ Teacher staff_id not found in localStorage. Please logout and login again.");
+        setTeacherProfile({ 
+          name: 'Session Error', 
+          designation: 'Please re-login', 
+          image_url: '' 
+        });
+        return;
+      }
+      
       axios.get(`${BASE_URL}/api/staff`)
         .then(res => {
           if (Array.isArray(res.data)) {
-            const currentTeacher = res.data.find(s => s.id.toString() === staffId.toString()) || res.data[0];
+            // ✅ Exact match dhundo, fallback nahi
+            const currentTeacher = res.data.find(s => s.id.toString() === staffId.toString());
+            
             if (currentTeacher) {
               setTeacherProfile({
                 name: currentTeacher.name,
                 designation: currentTeacher.designation || 'Teacher',
                 image_url: currentTeacher.image_url || `${BASE_URL}/static/teacher_photos/${currentTeacher.id}.jpg`
               });
+            } else {
+              console.error(`❌ Teacher with id ${staffId} not found in staff list.`);
+              setTeacherProfile({ 
+                name: 'Profile Not Found', 
+                designation: 'Contact Admin', 
+                image_url: '' 
+              });
             }
           }
         })
-        .catch(err => console.log("Teacher profile fetch error:", err));
+        .catch(err => {
+          console.error("Teacher profile fetch error:", err);
+          setTeacherProfile({ 
+            name: 'Network Error', 
+            designation: 'Check connection', 
+            image_url: '' 
+          });
+        });
     }
   }, [userRole]);
 
@@ -144,10 +172,14 @@ const StaffPayrollAttendance = () => {
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             <button
               onClick={() => {
-                const staffId = localStorage.getItem('staff_id') || 1;
+                const staffId = localStorage.getItem('staff_id');
+                if (!staffId) {
+                  alert("❌ Session error! Please logout and login again.");
+                  return;
+                }
                 fetchIndividualPaySlip(staffId);
               }}
-              style={{ padding: '10px 18px', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
+              style={{ ... }}
             >
               📄 Download My Pay Slip (PDF/Text)
             </button>
