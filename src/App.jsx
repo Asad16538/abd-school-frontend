@@ -185,6 +185,26 @@ function App() {
         localStorage.setItem('token', response.data.token);
         const activeRole = response.data.role || loginRole;
         localStorage.setItem('role', activeRole);
+        
+        // ✅ YEH BLOCK ADD KARO - Teacher ke liye staff_id save karo
+        if (loginRole === 'Teacher' || activeRole === 'Teacher') {
+          if (response.data.staff_id) {
+            localStorage.setItem('staff_id', response.data.staff_id);
+          } else if (response.data.staff && response.data.staff.id) {
+            localStorage.setItem('staff_id', response.data.staff.id);
+          }
+        }
+        
+        // ✅ Parent ke liye parent_id save karo (agar future mein chahiye)
+        if (loginRole === 'Parent' || activeRole === 'Parent') {
+          if (response.data.parent && response.data.parent.id) {
+            localStorage.setItem('parent_id', response.data.parent.id);
+          }
+          if (response.data.parent && response.data.parent.student) {
+            localStorage.setItem('student_id', response.data.parent.student.id);
+          }
+        }
+        
         setRole(activeRole);
         setIsLoggedIn(true);
         await fetchSettings();
@@ -753,7 +773,20 @@ function App() {
             </nav>
 
             <div className="p-4 border-t border-slate-800 bg-slate-950/40">
-              <button onClick={() => { localStorage.removeItem('token');  localStorage.removeItem('role'); setIsLoggedIn(false); }} className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 cursor-pointer"><LogOut className="w-4 h-4" /><span>Secure Logout</span></button>
+              <button 
+                onClick={() => { 
+                  localStorage.removeItem('token');  
+                  localStorage.removeItem('role'); 
+                  localStorage.removeItem('staff_id');    // 👈 Yeh add karo
+                  localStorage.removeItem('parent_id');   // 👈 Yeh add karo
+                  localStorage.removeItem('student_id');  // 👈 Yeh add karo
+                  setIsLoggedIn(false); 
+                }} 
+                className="w-full flex items-center gap-3 px-4 py-2 rounded-xl text-xs font-bold text-red-400 hover:bg-red-500/10 cursor-pointer"
+                >
+                <LogOut className="w-4 h-4" />
+                <span>Secure Logout</span>
+              </button>
             </div>
           </aside>
 
