@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, CheckCircle, XCircle, ShieldCheck, RefreshCw, Send } from 'lucide-react';
 
-// 🎯 SECURE BASE URL: Aapka live local secure IP address
+// 🎯 SECURE BASE URL: Aapka live live secure API endpoint
 const BASE_URL = 'https://erp-api.aapschool.in';
 
 const StaffAttendanceTerminal = () => {
@@ -20,96 +20,57 @@ const StaffAttendanceTerminal = () => {
       localStorage.setItem('ab_school_device_fingerprint', deviceToken);
     }
 
-    // 2. Load hotey hi live telemetry fetch trigger karo
+    // Load hote hi fast GPS telemetry fetch trigger karo
     requestGpsLocation();
   }, []);
 
   const requestGpsLocation = () => {
-  if (!navigator.geolocation) {
-    setLocError("🚨 Aapka browser GPS Location support nahi karta.");
-    return;
-  }
-  
-  setLoading(true);
-  
-  // 🎯 FIRST READING LO
-  navigator.geolocation.getCurrentPosition(
-    (position1) => {
-      const accuracy1 = position1.coords.accuracy;
-      const lat1 = position1.coords.latitude;
-      const lng1 = position1.coords.longitude;
-      
-      // 🎯 2 SECOND BAAD SECOND READING LO
-      setTimeout(() => {
-        navigator.geolocation.getCurrentPosition(
-          (position2) => {
-            const accuracy2 = position2.coords.accuracy;
-            const lat2 = position2.coords.latitude;
-            const lng2 = position2.coords.longitude;
-            
-            // 🛡️ FAKE GPS DETECTION
-            const diff = Math.abs(lat1 - lat2) + Math.abs(lng1 - lng2);
-            
-            // Agar accuracy perfect hai (< 5) YA dono readings same hain -> FAKE GPS
-            if ((accuracy1 < 5 || accuracy2 < 5) || diff < 0.000001) {
-              setLocError("🚨 Fake GPS Detected! Aap real location se attendance nahi laga sakte.");
-              setLocation({ lat: 0.0, lng: 0.0 });
-              setLoading(false);
-              return;
-            }
-            
-            // ✅ REAL GPS - Second reading use karo
-            setLocation({
-              lat: lat2,
-              lng: lng2
-            });
-            setLocError(null);
-            setLoading(false);
-          },
-          (err) => {
-            // 🎯 SECOND READING FAIL - First reading use karo
-            console.warn("Second GPS reading failed, using first:", err);
-            setLocation({
-              lat: lat1,
-              lng: lng1
-            });
-            setLocError(null);
-            setLoading(false);
-          },
-          { enableHighAccuracy: true, timeout: 5000 }
-        );
-      }, 2000); // 2 second delay
-    },
-    (err) => {
-      console.error(err);
-      setLocError("❌ GPS Access Denied! Kripya mobile settings me jaakar browser ko Location Permission allow karein.");
-      setLoading(false);
-    },
-    { enableHighAccuracy: true, timeout: 15000 }
-  );
-};
+    if (!navigator.geolocation) {
+      setLocError("🚨 Aapka browser GPS Location support nahi karta.");
+      return;
+    }
+    
+    setLoading(true);
+    
+    // ⚡ INSTANT & FAST GPS READING (Bina kisi delay ke ek baar me accurate location)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setLocError(null);
+        setLoading(false);
+      },
+      (err) => {
+        console.error(err);
+        setLocError("❌ GPS Access Denied! Kripya mobile settings me jaakar browser ko Location Permission allow karein.");
+        setLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
 
   const handleMarkAttendance = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // ✅ Mobile number validation
-  if (!mobileNumber || mobileNumber.trim().length < 10) {
-    alert("Please enter a valid 10-digit registered mobile number!");
-    return;
-  }
-  
-  // ✅ Clean mobile number (remove leading zeros)
-  const cleanMobile = mobileNumber.trim().replace(/^0+/, '');
-  if (cleanMobile.length !== 10) {
-    alert("Please enter a valid 10-digit mobile number!");
-    return;
-  }
+    // ✅ Mobile number validation
+    if (!mobileNumber || mobileNumber.trim().length < 10) {
+      alert("Please enter a valid 10-digit registered mobile number!");
+      return;
+    }
+    
+    // ✅ Clean mobile number (remove leading zeros)
+    const cleanMobile = mobileNumber.trim().replace(/^0+/, '');
+    if (cleanMobile.length !== 10) {
+      alert("Please enter a valid 10-digit mobile number!");
+      return;
+    }
 
-  if (!location.lat || !location.lng) {
-    alert("GPS coordinates missing! Kripya location reload/allow karein.");
-    return;
-  }
-
+    if (!location.lat || !location.lng) {
+      alert("GPS coordinates missing! Kripya location reload/allow karein.");
+      return;
+    }
 
     setLoading(true);
     setStatusMsg({ type: '', text: '' });
@@ -119,7 +80,7 @@ const StaffAttendanceTerminal = () => {
 
     try {
       // 🕵️‍♂️ STEP A: Mobile number ke sath check lagakar staff profile dhoondho
-      const staffCheckRes = await fetch(`${BASE_URL}/api/staff?mobile=${mobileNumber.trim()}`);
+      const staffCheckRes = await fetch(`${BASE_URL}/api/staff?mobile=${cleanMobile}`);
       if (!staffCheckRes.ok) throw new Error("Server communication fail.");
       
       const staffData = await staffCheckRes.json();
