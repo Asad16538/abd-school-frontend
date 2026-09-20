@@ -179,7 +179,7 @@ const StaffPayrollAttendance = () => {
                 }
                 fetchIndividualPaySlip(staffId);
               }}
-              style={{ ... }}
+              style={{ padding: '10px 18px', backgroundColor: '#4f46e5', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: '13px' }}
             >
               📄 Download My Pay Slip (PDF/Text)
             </button>
