@@ -1,3 +1,4 @@
+// src/components/QRCodeAttendance.jsx
 import React, { useState, useEffect } from 'react';
 import { MapPin, CheckCircle, XCircle, ShieldCheck, RefreshCw } from 'lucide-react';
 
@@ -11,8 +12,14 @@ const QRCodeAttendance = () => {
   const [locError, setLocError] = useState(null);
   const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
 
-  // 1. Safe useEffect without top-level await violation
   useEffect(() => {
+    // 📱 ANTI-PROXY DEVICE TOKEN HARDWARE LOCK
+    let deviceToken = localStorage.getItem('ab_school_device_fingerprint');
+    if (!deviceToken) {
+      deviceToken = 'DEV-' + Math.random().toString(36).substring(2, 15) + '-' + Date.now();
+      localStorage.setItem('ab_school_device_fingerprint', deviceToken);
+    }
+
     const loadStaff = async () => {
       try {
         const res = await fetch(`${BASE_URL}/api/staff`);
@@ -28,73 +35,34 @@ const QRCodeAttendance = () => {
   }, []);
 
   const requestGpsLocation = () => {
-  setLoading(true);
-  if (!navigator.geolocation) {
-    setLocError("🚨 Aapka browser GPS Location support nahi karta.");
-    setLocation({ lat: 0.0, lng: 0.0 });
-    setLoading(false);
-    return;
-  }
-
-  // 🎯 FIRST READING LO
-  navigator.geolocation.getCurrentPosition(
-    (position1) => {
-      const accuracy1 = position1.coords.accuracy;
-      const lat1 = position1.coords.latitude;
-      const lng1 = position1.coords.longitude;
-      
-      // 🎯 2 SECOND BAAD SECOND READING LO
-      setTimeout(() => {
-        navigator.geolocation.getCurrentPosition(
-          (position2) => {
-            const accuracy2 = position2.coords.accuracy;
-            const lat2 = position2.coords.latitude;
-            const lng2 = position2.coords.longitude;
-            
-            // 🛡️ FAKE GPS DETECTION
-            const diff = Math.abs(lat1 - lat2) + Math.abs(lng1 - lng2);
-            
-            // Agar accuracy perfect hai (< 5) YA dono readings same hain -> FAKE GPS
-            if ((accuracy1 < 5 || accuracy2 < 5) || diff < 0.000001) {
-              setLocError("🚨 Fake GPS Detected! Aap real location se attendance nahi laga sakte.");
-              setLocation({ lat: 0.0, lng: 0.0 });
-              setLoading(false);
-              return;
-            }
-            
-            // ✅ REAL GPS - Second reading use karo
-            setLocation({
-              lat: lat2,
-              lng: lng2
-            });
-            setLocError(null);
-            setLoading(false);
-          },
-          (err) => {
-            // 🎯 SECOND READING FAIL - First reading use karo
-            console.warn("Second GPS reading failed, using first:", err);
-            setLocation({
-              lat: lat1,
-              lng: lng1
-            });
-            setLocError(null);
-            setLoading(false);
-          },
-          { enableHighAccuracy: true, timeout: 5000 }
-        );
-      }, 2000); // 2 second delay
-    },
-    (err) => {
-      console.error("GPS Error handled safely:", err);
-      setLocation({ lat: 0.0, lng: 0.0 });
-      setLocError("❌ GPS Access Denied! Kripya permission allow karein.");
+    if (!navigator.geolocation) {
+      setLocError("🚨 Aapka browser GPS Location support nahi karta.");
       setLoading(false);
-    },
-    { enableHighAccuracy: true, timeout: 15000 }
-  );
-};
+      return;
+    }
 
-  // 🎯 STRICTLY ASYNC BINDING: Ab compiler line 33 par kabhi error nahi dega!
+    setLoading(true);
+
+    // ⚡ INSTANT & FAST GPS READING (Bina kisi delay ke ek baar me accurate location)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        setLocError(null);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("GPS Error handled safely:", err);
+        setLocation({ lat: 0.0, lng: 0.0 });
+        setLocError("❌ GPS Access Denied! Kripya permission allow karein.");
+        setLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
   const handleMarkAttendance = async () => {
     if (!selectedStaffId) {
       alert("Please select your name first!");
@@ -108,14 +76,17 @@ const QRCodeAttendance = () => {
     setLoading(true);
     setStatusMsg({ type: '', text: '' });
 
+    const deviceToken = localStorage.getItem('ab_school_device_fingerprint');
+
     try {
-      const res = await fetch('https://erp-api.aapschool.in/api/staff/mark-attendance', {
+      const res = await fetch(`${BASE_URL}/api/staff/mark-attendance`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           staff_id: parseInt(selectedStaffId),
           latitude: location.lat,
-          longitude: location.lng
+          longitude: location.lng,
+          device_token: deviceToken
         })
       });
 
@@ -133,8 +104,6 @@ const QRCodeAttendance = () => {
       setLoading(false);
     }
   };
-
-  // Niche ka return statement jaisa hai waisa hi chalne dein...
 
   return (
     <div style={{ maxWidth: '450px', margin: '30px auto', padding: '20px', fontFamily: 'Arial, sans-serif', boxSizing: 'border-box' }}>
@@ -187,7 +156,7 @@ const QRCodeAttendance = () => {
           {loading ? "Verifying Matrix Range..." : "🎯 Punch Attendance (IN / OUT)"}
         </button>
 
-        {/* FEEDBACK BANNER ALERTS (Yahan aayega success ya scope error box) */}
+        {/* FEEDBACK BANNER ALERTS */}
         {statusMsg.text && (
           <div style={{ marginTop: '20px', padding: '14px', borderRadius: '10px', border: '1px dashed', textAlign: 'left', display: 'flex', gap: '8px', alignItems: 'flex-start', backgroundColor: statusMsg.type === 'success' ? '#f0fdf4' : '#fef2f2', color: statusMsg.type === 'success' ? '#16a34a' : '#ef4444', borderColor: statusMsg.type === 'success' ? '#10b981' : '#f87171' }}>
             {statusMsg.type === 'success' ? <CheckCircle size={20} style={{ flexShrink: 0 }} /> : <XCircle size={20} style={{ flexShrink: 0 }} />}
