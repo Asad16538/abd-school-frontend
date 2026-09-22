@@ -439,8 +439,8 @@ function App() {
   }
 
   if (window.location.pathname === '/staff-link-telegram') {
-    return <StaffTelegramLink />;
-  }
+  return <StaffTelegramLink />;
+}
 
   if (window.location.pathname === '/link-telegram') {
     return (
@@ -975,125 +975,191 @@ function App() {
                 )}
 
                 {activeTab === 'settings' && (
-                  <div className="max-w-2xl bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-                    <h3 className="text-base font-black text-gray-800 border-b border-gray-100 pb-3 mb-4">Complete System & Branding Settings</h3>
-                    <form onSubmit={handleSaveSettings} className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">School Name</label>
-                          <input
-                            type="text"
-                            required
-                            value={schoolData?.school_name || ''}
-                            onChange={(e) => setSchoolData({...schoolData, school_name: e.target.value})}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Verified Admin Mobile</label>
-                          <input
-                            type="text"
-                            required
-                            value={schoolData?.school_mobile || ''}
-                            onChange={(e) => setSchoolData({...schoolData, school_mobile: e.target.value})}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-indigo-600"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Official Email Address</label>
-                          <input
-                            type="email"
-                            required
-                            value={schoolData?.school_email || ''}
-                            onChange={(e) => setSchoolData({...schoolData, school_email: e.target.value})}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Complete Physical Address</label>
-                          <input
-                            type="text"
-                            required
-                            value={schoolData?.school_address || ''}
-                            onChange={(e) => setSchoolData({...schoolData, school_address: e.target.value})}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-gray-100">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">📍 School Latitude</label>
-                          <input
-                            type="number"
-                            step="any"
-                            value={schoolData?.school_latitude || 23.2599}
-                            onChange={(e) => setSchoolData({...schoolData, school_latitude: parseFloat(e.target.value)})}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">📍 School Longitude</label>
-                          <input
-                            type="number"
-                            step="any"
-                            value={schoolData?.school_longitude || 77.4126}
-                            onChange={(e) => setSchoolData({...schoolData, school_longitude: parseFloat(e.target.value)})}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">📏 Attendance Radius (meters)</label>
-                          <input
-                            type="number"
-                            value={schoolData?.school_location_radius || 100}
-                            onChange={(e) => setSchoolData({...schoolData, school_location_radius: parseInt(e.target.value)})}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 gap-4 pt-2 border-t border-gray-100">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">🤖 Admin Telegram ID</label>
-                          <input
-                            type="text"
-                            placeholder="e.g., 1989970458"
-                            value={schoolData?.telegram_admin_id || ''}
-                            onChange={(e) => setSchoolData({...schoolData, telegram_admin_id: e.target.value})}
-                            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
-                          />
-                          <p className="text-[8px] text-gray-400 mt-1">
-                            ⚡ @userinfobot se apni Telegram ID nikalein. Saare admin notifications yahan aayenge.
-                          </p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Upload System Brand Logo</label>
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 border border-dashed border-gray-200 rounded-xl h-20">
-                            <div className="w-12 h-12 bg-white border rounded-xl flex items-center justify-center overflow-hidden shrink-0">
-                              {schoolData?.school_logo ? <img src={schoolData.school_logo} alt="Preview" className="w-full h-full object-cover" /> : <Sparkles className="w-5 h-5 text-indigo-500" />}
-                            </div>
-                            <input type="file" accept="image/*" onChange={handleLogoChange} className="text-[10px] flex-grow" />
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Upload Principal Digital Signature</label>
-                          <div className="flex items-center gap-3 p-3 bg-gray-50 border border-dashed border-gray-200 rounded-xl h-20">
-                            <div className="w-16 h-12 bg-white border rounded-xl flex items-center justify-center overflow-hidden shrink-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px]">
-                              {schoolData?.school_signature ? <img src={schoolData.school_signature} alt="Signature Preview" className="w-full h-full object-contain p-1" /> : <Signature className="w-5 h-5 text-amber-500" />}
-                            </div>
-                            <input type="file" accept="image/*" onChange={handleSignatureChange} className="text-[10px] flex-grow" />
-                          </div>
-                        </div>
-                      </div>
-                      <button type="submit" className="w-full mt-4 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer uppercase tracking-wider">
-                        Save All Enterprise Configurations
-                      </button>
-                    </form>
-                  </div>
-                )}
+  <div className="max-w-2xl bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+    <h3 className="text-base font-black text-gray-800 border-b border-gray-100 pb-3 mb-4">Complete System & Branding Settings</h3>
+    <form onSubmit={handleSaveSettings} className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">School Name</label>
+          <input
+            type="text"
+            required
+            value={schoolData?.school_name || ''}
+            onChange={(e) => setSchoolData({...schoolData, school_name: e.target.value})}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Verified Admin Mobile</label>
+          <input
+            type="text"
+            required
+            value={schoolData?.school_mobile || ''}
+            onChange={(e) => setSchoolData({...schoolData, school_mobile: e.target.value})}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-indigo-600"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Official Email Address</label>
+          <input
+            type="email"
+            required
+            value={schoolData?.school_email || ''}
+            onChange={(e) => setSchoolData({...schoolData, school_email: e.target.value})}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Complete Physical Address</label>
+          <input
+            type="text"
+            required
+            value={schoolData?.school_address || ''}
+            onChange={(e) => setSchoolData({...schoolData, school_address: e.target.value})}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-gray-100">
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">📍 School Latitude</label>
+          <input
+            type="number"
+            step="any"
+            value={schoolData?.school_latitude || 23.2599}
+            onChange={(e) => setSchoolData({...schoolData, school_latitude: parseFloat(e.target.value)})}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">📍 School Longitude</label>
+          <input
+            type="number"
+            step="any"
+            value={schoolData?.school_longitude || 77.4126}
+            onChange={(e) => setSchoolData({...schoolData, school_longitude: parseFloat(e.target.value)})}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">📏 Attendance Radius (meters)</label>
+          <input
+            type="number"
+            value={schoolData?.school_location_radius || 100}
+            onChange={(e) => setSchoolData({...schoolData, school_location_radius: parseInt(e.target.value)})}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
+          />
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* ✅ NAYA SECTION: TELEGRAM BOT CONFIGURATION (SCHOOL-WISE) */}
+      {/* ============================================================ */}
+      <div className="pt-4 border-t border-gray-100">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-black text-gray-800 uppercase tracking-wider">
+            🤖 School Telegram Bot Setup
+          </h4>
+          <span className="text-[9px] bg-amber-50 text-amber-700 px-2 py-1 rounded-md font-bold">
+            Optional • White-Label Setup
+          </span>
+        </div>
+
+        <div className="bg-indigo-50/60 border border-indigo-100 rounded-xl p-3 mb-4">
+          <p className="text-[10px] text-indigo-900 font-bold leading-relaxed">
+            📌 <b>Setup Guide:</b> Telegram par <b>@BotFather</b> kholo → <b>/newbot</b> bhejo → Bot ka naam do (e.g., "ABC School ERP") → Username do (e.g., <code>abcschool_erp_bot</code>) → Token milega. Woh token aur username yahan paste karein.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">🔑 School Bot Token</label>
+            <input
+              type="text"
+              placeholder="e.g., 8793915550:AAGK..."
+              value={schoolData?.telegram_bot_token || ''}
+              onChange={(e) => setSchoolData({...schoolData, telegram_bot_token: e.target.value})}
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-semibold"
+            />
+            <p className="text-[8px] text-gray-400 mt-1">
+              ⚡ @BotFather se /newbot karke token lein
+            </p>
+          </div>
+          <div>
+            <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">📱 Bot Username</label>
+            <input
+              type="text"
+              placeholder="e.g., abcschool_erp_bot"
+              value={schoolData?.telegram_bot_username || ''}
+              onChange={(e) => setSchoolData({...schoolData, telegram_bot_username: e.target.value})}
+              className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-semibold"
+            />
+            <p className="text-[8px] text-gray-400 mt-1">
+              Staff isi username se bot search karega (e.g., @abcschool_erp_bot)
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-green-50/60 border border-green-100 rounded-xl p-3 mt-3">
+          <p className="text-[10px] text-green-900 font-bold leading-relaxed">
+            ✅ <b>Fallback Active:</b> Agar school ne apna bot nahi banaya, toh by default <b>@abd_digital_work_bot</b> use hoga. School ka apna bot configure karne par wahi automatically apply ho jayega.
+          </p>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* ADMIN TELEGRAM ID */}
+      {/* ============================================================ */}
+      <div className="grid grid-cols-1 gap-4 pt-2 border-t border-gray-100">
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">👑 Admin Telegram ID</label>
+          <input
+            type="text"
+            placeholder="e.g., 1989970458"
+            value={schoolData?.telegram_admin_id || ''}
+            onChange={(e) => setSchoolData({...schoolData, telegram_admin_id: e.target.value})}
+            className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold"
+          />
+          <p className="text-[8px] text-gray-400 mt-1">
+            ⚡ @userinfobot se apni Telegram ID nikalein. Saare admin notifications yahan aayenge.
+          </p>
+        </div>
+      </div>
+
+      {/* ============================================================ */}
+      {/* LOGO & SIGNATURE UPLOAD */}
+      {/* ============================================================ */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Upload System Brand Logo</label>
+          <div className="flex items-center gap-3 p-3 bg-gray-50 border border-dashed border-gray-200 rounded-xl h-20">
+            <div className="w-12 h-12 bg-white border rounded-xl flex items-center justify-center overflow-hidden shrink-0">
+              {schoolData?.school_logo ? <img src={schoolData.school_logo} alt="Preview" className="w-full h-full object-cover" /> : <Sparkles className="w-5 h-5 text-indigo-500" />}
+            </div>
+            <input type="file" accept="image/*" onChange={handleLogoChange} className="text-[10px] flex-grow" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-[10px] font-black text-gray-600 uppercase mb-1">Upload Principal Digital Signature</label>
+          <div className="flex items-center gap-3 p-3 bg-gray-50 border border-dashed border-gray-200 rounded-xl h-20">
+            <div className="w-16 h-12 bg-white border rounded-xl flex items-center justify-center overflow-hidden shrink-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:16px_16px]">
+              {schoolData?.school_signature ? <img src={schoolData.school_signature} alt="Signature Preview" className="w-full h-full object-contain p-1" /> : <Signature className="w-5 h-5 text-amber-500" />}
+            </div>
+            <input type="file" accept="image/*" onChange={handleSignatureChange} className="text-[10px] flex-grow" />
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" className="w-full mt-4 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow-sm cursor-pointer uppercase tracking-wider">
+        Save All School Configurations
+      </button>
+    </form>
+  </div>
+)}
 
                 {activeTab === 'registration' && <StudentRegistration />}
                 {activeTab === 'search_pay' && <SearchPayFees />}
