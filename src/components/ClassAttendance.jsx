@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Calendar, ShieldAlert, CheckCircle, Search, Save, AlertCircle, RefreshCw } from 'lucide-react';
+import { Calendar, ShieldAlert, CheckCircle, Search, Save, AlertCircle, RefreshCw, Download, FileSpreadsheet } from 'lucide-react';
 
 const ClassAttendance = () => {
     const BASE_URL = 'https://erp-api.aapschool.in';
@@ -17,6 +17,12 @@ const ClassAttendance = () => {
     const [dayStatus, setDayStatus] = useState('INIT'); 
     const [lockMessage, setLockMessage] = useState('');
     const [message, setMessage] = useState({ type: '', text: '' });
+
+    // ✅ Excel Download States
+    const [showExcelMenu, setShowExcelMenu] = useState(false);
+    const [downloadType, setDownloadType] = useState('today');
+    const [downloadMonth, setDownloadMonth] = useState(new Date().toISOString().slice(0, 7));
+    const [downloading, setDownloading] = useState(false);
 
     const classesList = [
         'Nursery', 'LKG', 'UKG',
@@ -40,7 +46,6 @@ const ClassAttendance = () => {
         setStudents([]);
         setDayStatus('INIT');
 
-        // ✅ RETRY LOGIC: 3 attempts with 2-second delay
         let lastError = null;
         let success = false;
 
@@ -50,22 +55,18 @@ const ClassAttendance = () => {
 
                 const response = await axios.get(`${BASE_URL}/api/attendance/students`, {
                     params: { class: className, section: sectionName, date: selectedDate },
-                    timeout: 15000  // 15 second timeout
+                    timeout: 15000
                 });
 
-                // ✅ SUCCESS - Handle response
                 if (response.data.status === 'LOCKED') {
-                    // Sunday ya Holiday hai
                     setDayStatus('LOCKED');
                     setLockMessage(response.data.message);
                     setMessage({ type: 'info', text: response.data.message });
                 } else {
-                    // Normal Working Day
                     setDayStatus('OPEN');
                     const fetchedStudents = response.data.students || [];
                     setStudents(fetchedStudents);
 
-                    // Default status everyone 'Present'
                     const initialAttendance = {};
                     fetchedStudents.forEach(student => {
                         initialAttendance[student.id] = 'Present';
@@ -75,7 +76,7 @@ const ClassAttendance = () => {
                     if (fetchedStudents.length === 0) {
                         setMessage({ 
                             type: 'info', 
-                            text: `Is Class (${className} - ${sectionName}) mein koi student register nahi hai. Pehle student register karo.` 
+                            text: `Is Class (${className} - ${sectionName}) mein koi student register nahi hai.` 
                         });
                     } else {
                         setMessage({ 
@@ -86,20 +87,18 @@ const ClassAttendance = () => {
                 }
 
                 success = true;
-                break;  // ✅ Exit retry loop on success
+                break;
 
             } catch (error) {
                 lastError = error;
                 console.warn(`❌ Attempt ${attempt} failed:`, error.message);
 
-                // Agar last attempt nahi hai, toh 2 second wait karo
                 if (attempt < 3) {
                     await new Promise(resolve => setTimeout(resolve, 2000));
                 }
             }
         }
 
-        // ✅ Agar teeno attempt fail ho gaye
         if (!success) {
             let errorMsg = 'Server se connect nahi ho paya. ';
 
@@ -136,7 +135,6 @@ const ClassAttendance = () => {
             status: attendanceRecords[id]
         }));
 
-        // ✅ RETRY LOGIC for submit
         let lastError = null;
         let success = false;
 
@@ -181,15 +179,155 @@ const ClassAttendance = () => {
         setLoading(false);
     };
 
+    // 📥 4. Download Excel File
+    const handleDownloadExcel = async (type) => {
+        if (!className || !sectionName) {
+            setMessage({ type: 'error', text: 'Bhai, pehle Class aur Section select karo!' });
+            setShowExcelMenu(false);
+            return;
+        }
+
+        setDownloading(true);
+        setMessage({ type: '', text: '' });
+
+        try {
+            let url = `${BASE_URL}/api/attendance/download-excel?class=${encodeURIComponent(className)}&section=${encodeURIComponent(sectionName)}&type=${type}`;
+
+            if (type === 'month') {
+                url += `&month=${downloadMonth}`;
+            }
+
+            console.log('📥 Downloading from:', url);
+
+            const response = await axios.get(url, {
+                responseType: 'blob',
+                timeout: 30000
+            });
+
+            // ✅ File download karo
+            const blob = new Blob([response.data], { 
+                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+            });
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            
+            const safeClass = className.replace(/\s+/g, '_');
+            const filename = type === 'today' 
+                ? `Attendance_${safeClass}_${sectionName}_${selectedDate}.xlsx`
+                : `Attendance_${safeClass}_${sectionName}_${downloadMonth}.xlsx`;
+            
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+
+            setMessage({ type: 'success', text: '✅ Excel file download ho gayi!' });
+            setShowExcelMenu(false);
+            setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+
+        } catch (error) {
+            console.error('❌ Download error:', error);
+            
+            let errorMsg = 'Excel download nahi ho payi. ';
+            if (error.response?.data?.error) {
+                errorMsg = error.response.data.error;
+            } else if (error.response?.status === 404) {
+                errorMsg = 'Is class ki koi attendance record nahi mili!';
+            } else {
+                errorMsg += 'Server check karo ya dobara try karo.';
+            }
+            
+            setMessage({ type: 'error', text: errorMsg });
+        } finally {
+            setDownloading(false);
+        }
+    };
+
     return (
         <div className="p-4 max-w-5xl mx-auto">
             {/* Module Banner */}
-            <div className="mb-6 bg-gradient-to-r from-slate-800 to-indigo-900 p-5 rounded-2xl text-white shadow-md flex items-center justify-between">
+            <div className="mb-6 bg-gradient-to-r from-slate-800 to-indigo-900 p-5 rounded-2xl text-white shadow-md flex items-center justify-between flex-wrap gap-3">
                 <div>
                     <h2 className="text-xl font-black tracking-tight flex items-center gap-2">📋 Student Attendance Panel</h2>
                     <p className="text-[11px] text-indigo-200 font-bold uppercase tracking-wider">A.B.Digital Work • Live Operational Gateway</p>
                 </div>
-                <Calendar className="w-8 h-8 text-indigo-300 opacity-60" />
+
+                {/* ✅ EXCEL DOWNLOAD BUTTON WITH DROPDOWN */}
+                <div className="relative">
+                    <button
+                        onClick={() => setShowExcelMenu(!showExcelMenu)}
+                        disabled={downloading}
+                        className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-emerald-300 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                        {downloading ? (
+                            <>
+                                <RefreshCw className="w-4 h-4 animate-spin" /> Downloading...
+                            </>
+                        ) : (
+                            <>
+                                <FileSpreadsheet className="w-4 h-4" /> Excel ▾
+                            </>
+                        )}
+                    </button>
+
+                    {/* Dropdown Menu */}
+                    {showExcelMenu && (
+                        <>
+                            <div 
+                                className="fixed inset-0 z-40" 
+                                onClick={() => setShowExcelMenu(false)}
+                            />
+
+                            <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 overflow-hidden">
+                                {/* Header */}
+                                <div className="p-3 bg-slate-50 border-b border-gray-200">
+                                    <h4 className="text-xs font-black text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                                        <Download className="w-3.5 h-3.5" /> Download Attendance
+                                    </h4>
+                                    <p className="text-[10px] text-gray-500 mt-1">
+                                        Class: <strong className="text-indigo-600">{className || 'Not Selected'}</strong> | 
+                                        Section: <strong className="text-indigo-600">{sectionName || 'Not Selected'}</strong>
+                                    </p>
+                                </div>
+
+                                <div className="p-3 space-y-2">
+                                    {/* Today's Option */}
+                                    <button
+                                        onClick={() => handleDownloadExcel('today')}
+                                        disabled={!className || !sectionName}
+                                        className="w-full text-left px-3 py-2.5 bg-blue-50 hover:bg-blue-100 disabled:bg-gray-100 disabled:text-gray-400 text-blue-900 rounded-lg transition-all flex items-center gap-2 text-xs font-bold cursor-pointer"
+                                    >
+                                        📅 Today's Attendance
+                                    </button>
+
+                                    {/* Month-wise Option */}
+                                    <div className="border border-amber-200 rounded-lg overflow-hidden">
+                                        <div className="px-3 py-2 bg-amber-50 text-amber-900 text-xs font-bold flex items-center gap-2">
+                                            📊 Month-wise Attendance
+                                        </div>
+                                        <div className="p-2 bg-white">
+                                            <input
+                                                type="month"
+                                                value={downloadMonth}
+                                                onChange={(e) => setDownloadMonth(e.target.value)}
+                                                className="w-full px-2 py-1.5 text-xs border border-gray-200 rounded-md mb-2 font-bold text-gray-700"
+                                            />
+                                            <button
+                                                onClick={() => handleDownloadExcel('month')}
+                                                disabled={!className || !sectionName}
+                                                className="w-full px-3 py-2 bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-md text-xs font-bold transition-all cursor-pointer"
+                                            >
+                                                ⬇️ Download Month
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* Filter Panel */}
@@ -319,7 +457,7 @@ const ClassAttendance = () => {
                     </div>
 
                     {/* Table Submit Panel Footer */}
-                    <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                    <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
                         <button
                             onClick={handleSubmitAttendance}
                             disabled={loading}
