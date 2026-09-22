@@ -662,115 +662,218 @@ function App() {
             </div>
 
             <nav className="flex-grow p-4 space-y-1.5 overflow-y-auto">
-              {role !== 'Parent' && (
-                <button
-                  onClick={() => {
-                    setActiveTab('overview');
-                    loadDashboardData(true);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'overview' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
-                >
-                  <LayoutDashboard className="w-4 h-4 text-amber-300" />
-                  <span>Overview Panel</span>
-                </button>
-              )}
+  
+  {/* OVERVIEW - Blue */}
+  {role !== 'Parent' && (
+    <button
+      onClick={() => { setActiveTab('overview'); loadDashboardData(true); setIsMobileMenuOpen(false); }}
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'overview' 
+          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-blue-500/20 hover:text-blue-300 hover:scale-[1.01]'
+      }`}
+    >
+      <LayoutDashboard className={`w-4 h-4 ${activeTab === 'overview' ? 'text-white' : 'text-blue-400'}`} />
+      <span>Overview Panel</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('registration'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'registration' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <Users className={`w-4 h-4 ${activeTab === 'registration' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>Student Register</span>
-                </button>
-              )}
+  {/* STUDENT REGISTER - Green */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('registration'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'registration' 
+          ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-emerald-500/20 hover:text-emerald-300 hover:scale-[1.01]'
+      }`}
+    >
+      <Users className={`w-4 h-4 ${activeTab === 'registration' ? 'text-white' : 'text-emerald-400'}`} />
+      <span>Student Register</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('search_pay'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'search_pay' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <Search className={`w-4 h-4 ${activeTab === 'search_pay' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>🔍 Search & Pay Fees</span>
-                </button>
-              )}
+  {/* SEARCH & PAY FEES - Purple */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('search_pay'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'search_pay' 
+          ? 'bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-purple-500/20 hover:text-purple-300 hover:scale-[1.01]'
+      }`}
+    >
+      <Search className={`w-4 h-4 ${activeTab === 'search_pay' ? 'text-white' : 'text-purple-400'}`} />
+      <span>🔍 Search & Pay Fees</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('quick_fee_panel'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'quick_fee_panel' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <CreditCard className={`w-4 h-4 ${activeTab === 'quick_fee_panel' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>⚡ Quick Fee Panel</span>
-                </button>
-              )}
+  {/* QUICK FEE PANEL - Amber */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('quick_fee_panel'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'quick_fee_panel' 
+          ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-amber-500/20 hover:text-amber-300 hover:scale-[1.01]'
+      }`}
+    >
+      <CreditCard className={`w-4 h-4 ${activeTab === 'quick_fee_panel' ? 'text-white' : 'text-amber-400'}`} />
+      <span>⚡ Quick Fee Panel</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('class_management'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'class_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <IdCard className={`w-4 h-4 ${activeTab === 'class_management' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>🏫 Class Management</span>
-                </button>
-              )}
+  {/* CLASS MANAGEMENT - Cyan */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('class_management'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'class_management' 
+          ? 'bg-gradient-to-r from-cyan-500 to-cyan-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-cyan-500/20 hover:text-cyan-300 hover:scale-[1.01]'
+      }`}
+    >
+      <IdCard className={`w-4 h-4 ${activeTab === 'class_management' ? 'text-white' : 'text-cyan-400'}`} />
+      <span>🏫 Class Management</span>
+    </button>
+  )}
 
-              {(role === 'Admin' || role === 'Teacher') && (
-                <button onClick={() => { setActiveTab('student_attendance'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'student_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <CheckCircle2 className={`w-4 h-4 ${activeTab === 'student_attendance' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>📋 Student Attendance</span>
-                </button>
-              )}
+  {/* STUDENT ATTENDANCE - Teal */}
+  {(role === 'Admin' || role === 'Teacher') && (
+    <button 
+      onClick={() => { setActiveTab('student_attendance'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'student_attendance' 
+          ? 'bg-gradient-to-r from-teal-500 to-teal-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-teal-500/20 hover:text-teal-300 hover:scale-[1.01]'
+      }`}
+    >
+      <CheckCircle2 className={`w-4 h-4 ${activeTab === 'student_attendance' ? 'text-white' : 'text-teal-400'}`} />
+      <span>📋 Student Attendance</span>
+    </button>
+  )}
 
-              {(role === 'Admin' || role === 'Teacher') && (
-                <button onClick={() => { setActiveTab('exam_management'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'exam_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <FileText className={`w-4 h-4 ${activeTab === 'exam_management' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>📝 Exam Management</span>
-                </button>
-              )}
+  {/* EXAM MANAGEMENT - Orange */}
+  {(role === 'Admin' || role === 'Teacher') && (
+    <button 
+      onClick={() => { setActiveTab('exam_management'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'exam_management' 
+          ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-orange-500/20 hover:text-orange-300 hover:scale-[1.01]'
+      }`}
+    >
+      <FileText className={`w-4 h-4 ${activeTab === 'exam_management' ? 'text-white' : 'text-orange-400'}`} />
+      <span>📝 Exam Management</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('payroll_attendance'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'payroll_attendance' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <Users className={`w-4 h-4 ${activeTab === 'payroll_attendance' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>📅 Staff & Geo-Payroll</span>
-                </button>
-              )}
+  {/* STAFF & GEO-PAYROLL - Pink */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('payroll_attendance'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'payroll_attendance' 
+          ? 'bg-gradient-to-r from-pink-500 to-pink-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-pink-500/20 hover:text-pink-300 hover:scale-[1.01]'
+      }`}
+    >
+      <Users className={`w-4 h-4 ${activeTab === 'payroll_attendance' ? 'text-white' : 'text-pink-400'}`} />
+      <span>📅 Staff & Geo-Payroll</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('fee_report_center'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'fee_report_center' ? 'text-white bg-emerald-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <Coins className={`w-4 h-4 ${activeTab === 'fee_report_center' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>🚀 Fee Report Center</span>
-                </button>
-              )}
+  {/* FEE REPORT CENTER - Emerald */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('fee_report_center'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'fee_report_center' 
+          ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-emerald-500/20 hover:text-emerald-300 hover:scale-[1.01]'
+      }`}
+    >
+      <Coins className={`w-4 h-4 ${activeTab === 'fee_report_center' ? 'text-white' : 'text-emerald-400'}`} />
+      <span>🚀 Fee Report Center</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('expense_tracker'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'expense_tracker' ? 'text-white bg-rose-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <Coins className={`w-4 h-4 ${activeTab === 'expense_tracker' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>📊 Income & Expenses</span>
-                </button>
-              )}
+  {/* INCOME & EXPENSES - Red */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('expense_tracker'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'expense_tracker' 
+          ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-red-500/20 hover:text-red-300 hover:scale-[1.01]'
+      }`}
+    >
+      <Coins className={`w-4 h-4 ${activeTab === 'expense_tracker' ? 'text-white' : 'text-red-400'}`} />
+      <span>📊 Income & Expenses</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('balance_sheet'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'balance_sheet' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <Landmark className={`w-4 h-4 ${activeTab === 'balance_sheet' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>📊 Balance Sheet</span>
-                </button>
-              )}
+  {/* BALANCE SHEET - Indigo */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('balance_sheet'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'balance_sheet' 
+          ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-indigo-500/20 hover:text-indigo-300 hover:scale-[1.01]'
+      }`}
+    >
+      <Landmark className={`w-4 h-4 ${activeTab === 'balance_sheet' ? 'text-white' : 'text-indigo-400'}`} />
+      <span>📊 Balance Sheet</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button 
-                  onClick={() => { setActiveTab('role_management'); setIsMobileMenuOpen(false); }} 
-                  className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'role_management' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}
-                >
-                  <Users className="w-4 h-4 text-amber-300" />
-                  <span>🛡️ Role Management Hub</span>
-                </button>
-              )}
+  {/* ROLE MANAGEMENT - Violet */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('role_management'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'role_management' 
+          ? 'bg-gradient-to-r from-violet-500 to-violet-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-violet-500/20 hover:text-violet-300 hover:scale-[1.01]'
+      }`}
+    >
+      <Users className="w-4 h-4 text-violet-400" />
+      <span>🛡️ Role Management Hub</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'settings' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <Settings className={`w-4 h-4 ${activeTab === 'settings' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>Settings</span>
-                </button>
-              )}
+  {/* SETTINGS - Slate */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('settings'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'settings' 
+          ? 'bg-gradient-to-r from-slate-500 to-slate-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-slate-500/20 hover:text-slate-300 hover:scale-[1.01]'
+      }`}
+    >
+      <Settings className={`w-4 h-4 ${activeTab === 'settings' ? 'text-white' : 'text-slate-400'}`} />
+      <span>Settings</span>
+    </button>
+  )}
 
-              {role === 'Admin' && (
-                <button onClick={() => { setActiveTab('promotion_panel'); setIsMobileMenuOpen(false); }} className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left ${activeTab === 'promotion_panel' ? 'text-white bg-indigo-600 shadow-md' : 'hover:bg-slate-800/60 text-slate-400'}`}>
-                  <Sparkles className={`w-4 h-4 ${activeTab === 'promotion_panel' ? 'text-amber-300' : 'text-slate-400'}`} />
-                  <span>🚀 Session Promotion</span>
-                </button>
-              )}
+  {/* PROMOTION PANEL - Yellow */}
+  {role === 'Admin' && (
+    <button 
+      onClick={() => { setActiveTab('promotion_panel'); setIsMobileMenuOpen(false); }} 
+      className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-bold tracking-wide cursor-pointer text-left transition-all duration-200 ${
+        activeTab === 'promotion_panel' 
+          ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-white shadow-lg scale-[1.02]' 
+          : 'text-slate-400 hover:bg-yellow-500/20 hover:text-yellow-300 hover:scale-[1.01]'
+      }`}
+    >
+      <Sparkles className={`w-4 h-4 ${activeTab === 'promotion_panel' ? 'text-white' : 'text-yellow-400'}`} />
+      <span>🚀 Session Promotion</span>
+    </button>
+  )}
 
-            </nav>
+</nav>
 
             <div className="p-4 border-t border-slate-800 bg-slate-950/40">
               <button 
