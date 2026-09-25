@@ -987,120 +987,125 @@ const ExamManagement = () => {
       )}
 
       {/* TAB 3: RESULTS */}
-      {activeTab === 'results' && (
-        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
-            <h3 className="text-sm font-black text-gray-800">📊 Exam Results & Scorecard</h3>
+{activeTab === 'results' && (
+  <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+    <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
+      <h3 className="text-sm font-black text-gray-800">📊 Exam Results & Scorecard</h3>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={selectedResultExam}
-                onChange={(e) => {
-                  setSelectedResultExam(e.target.value);
-                  fetchResultsForExam(e.target.value);
-                }}
-                className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50 min-w-[200px]"
-              >
-                <option value="">-- Select Exam --</option>
-                {exams.map(e => (
-                  <option key={e.exam_id || e.id} value={e.exam_id || e.id}>
-                    {e.exam_name} - Class {e.class}
-                  </option>
-                ))}
-              </select>
+      <div className="flex flex-wrap items-center gap-2">
+        <select
+          value={selectedResultExam}
+          onChange={(e) => {
+            setSelectedResultExam(e.target.value);
+            fetchResultsForExam(e.target.value);
+          }}
+          className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50 min-w-[200px]"
+        >
+          <option value="">-- Select Exam --</option>
+          {exams.map(e => (
+            <option key={e.exam_id || e.id} value={e.exam_id || e.id}>
+              {e.exam_name} - Class {e.class}
+            </option>
+          ))}
+        </select>
 
-              {results.length > 0 && (
-                <>
+        {results.length > 0 && (
+          <>
+            <button
+              onClick={() => {
+                let csvContent = "data:text/csv;charset=utf-8,Roll No,Student Name,Max Marks,Marks Obtained,Status,Percentage,Grade\n";
+                results.forEach(r => {
+                  csvContent += `${r.roll_no || ''},"${r.name}",${r.max_marks},${r.obtained_marks},${r.status},${r.percentage}%,${r.grade}\n`;
+                });
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `exam_result_${selectedResultExam}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+              className="px-3 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-1 cursor-pointer"
+            >
+              <FileSpreadsheet className="w-4 h-4" /> Excel Export
+            </button>
+            <button
+              onClick={downloadPDF}
+              className="px-3 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-700 transition flex items-center gap-1 cursor-pointer"
+            >
+              <Printer className="w-4 h-4" /> PDF/Print
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+
+    {results.length === 0 ? (
+      <div className="text-center py-12 text-gray-400">
+        <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+        <p className="font-bold">No results found or result not generated yet</p>
+      </div>
+    ) : (
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs font-medium">
+          <thead className="bg-gray-50">
+            <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
+              <th className="p-3">Roll No</th>
+              <th className="p-3">Student Name</th>
+              <th className="p-3 text-center">Max Marks</th>
+              <th className="p-3 text-center">Marks Obtained</th>
+              <th className="p-3 text-center">Status</th>
+              <th className="p-3 text-center">Percentage</th>
+              <th className="p-3 text-center">Grade</th>
+              <th className="p-3 text-center">Marksheet</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {results.map((res, index) => (
+              <tr key={index} className="hover:bg-gray-50">
+                <td className="p-3 font-bold">{res.roll_no || '-'}</td>
+                <td className="p-3 font-medium">
+                  <div className="font-bold text-gray-900">{res.name}</div>
+                  <div className="text-[10px] text-gray-500">Father: {res.father_name || 'N/A'}</div>
+                </td>
+                <td className="p-3 text-center font-bold text-gray-600">{res.max_marks}</td>
+                <td className="p-3 text-center font-bold text-indigo-600">{res.obtained_marks}</td>
+                <td className="p-3 text-center">
+                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${res.status === 'Pass' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    {res.status}
+                  </span>
+                </td>
+                <td className="p-3 text-center font-bold">{res.percentage}%</td>
+                <td className="p-3 text-center">
+                  <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-indigo-100 text-indigo-700">
+                    {res.grade}
+                  </span>
+                </td>
+                <td className="p-3 text-center">
                   <button
                     onClick={() => {
-                      if (results.length === 0) return;
-                      let csvContent = "data:text/csv;charset=utf-8,Roll No,Student Name,Max Marks,Marks Obtained,Status,Percentage,Grade\n";
-                      results.forEach(r => {
-                        csvContent += `${r.roll_no || ''},"${r.name}",${r.max_marks},${r.obtained_marks},${r.status},${r.percentage}%,${r.grade}\n`;
-                      });
-                      const encodedUri = encodeURI(csvContent);
-                      const link = document.createElement("a");
-                      link.setAttribute("href", encodedUri);
-                      link.setAttribute("download", `exam_result_${selectedResultExam}.csv`);
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
+                      const sid = res.id || res.student_id || res.studentId;
+                      console.log("📄 Opening Marksheet:", { examId: selectedResultExam, studentId: sid });
+                      if (!sid) {
+                        alert("❌ Student ID missing in result data!");
+                        return;
+                      }
+                      setMarksheetExam(selectedResultExam);
+                      setMarksheetStudent(sid);
                     }}
-                    className="px-3 py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-1 cursor-pointer"
+                    className="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-bold rounded-lg hover:bg-indigo-700 transition cursor-pointer"
                   >
-                    <FileSpreadsheet className="w-4 h-4" /> Excel Export
+                    📄 View
                   </button>
-                  <button
-                    onClick={downloadPDF}
-                    className="px-3 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-700 transition flex items-center gap-1 cursor-pointer"
-                  >
-                    <Printer className="w-4 h-4" /> PDF/Print
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
-          {results.length === 0 ? (
-            <div className="text-center py-12 text-gray-400">
-              <TrendingUp className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="font-bold">No results found or result not generated yet</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-medium">
-                <thead className="bg-gray-50">
-                  <tr className="text-gray-500 uppercase tracking-wider text-[10px]">
-                    <th className="p-3">Roll No</th>
-                    <th className="p-3">Student Name</th>
-                    <th className="p-3 text-center">Max Marks</th>
-                    <th className="p-3 text-center">Marks Obtained</th>
-                    <th className="p-3 text-center">Status</th>
-                    <th className="p-3 text-center">Percentage</th>
-                    <th className="p-3 text-center">Grade</th>
-                    <th className="p-3 text-center">Marksheet</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {results.map((res, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
-                      <td className="p-3 font-bold">{res.roll_no || '-'}</td>
-                      <td className="p-3 font-medium">
-                        <div className="font-bold text-gray-900">{res.name}</div>
-                        <div className="text-[10px] text-gray-500">Father: {res.father_name || 'N/A'}</div>
-                      </td>
-                      <td className="p-3 text-center font-bold text-gray-600">{res.max_marks}</td>
-                      <td className="p-3 text-center font-bold text-indigo-600">{res.obtained_marks}</td>
-                      <td className="p-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${res.status === 'Pass' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                          {res.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center font-bold">{res.percentage}%</td>
-                      <td className="p-3 text-center">
-                        <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-indigo-100 text-indigo-700">
-                          {res.grade}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        <button
-                          onClick={() => {
-                            setMarksheetExam(selectedResultExam);
-                            setMarksheetStudent(res.id || res.student_id);
-                          }}
-                          className="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-bold rounded-lg hover:bg-indigo-700 transition cursor-pointer"
-                        >
-                          📄 View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+)}
 
       {/* TAB 4: REPORT CARDS */}
       {activeTab === 'reports' && (
