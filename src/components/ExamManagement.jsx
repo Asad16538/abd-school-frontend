@@ -1,9 +1,10 @@
 // src/components/ExamManagement.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import StudentMarksheet from './StudentMarksheet';
 import ExamAdmitCardSixPerPage from './ExamAdmitCardSixPerPage';
-import { 
-  Plus, Edit, Trash2, Eye, FileText, Download, 
+import {
+  Plus, Edit, Trash2, Eye, FileText, Download,
   Printer, Calendar, BookOpen, Users, TrendingUp,
   Award, CheckCircle, XCircle, AlertCircle, Search,
   Settings, Copy, RefreshCw, ChevronDown, FileSpreadsheet,
@@ -20,6 +21,8 @@ const ExamManagement = () => {
   const [board, setBoard] = useState('CBSE');
   const [exams, setExams] = useState([]);
   const [results, setResults] = useState([]);
+  const [marksheetStudent, setMarksheetStudent] = useState(null);
+  const [marksheetExam, setMarksheetExam] = useState(null);
   const [selectedResultExam, setSelectedResultExam] = useState('');
   const [students, setStudents] = useState([]);
   const [selectedExam, setSelectedExam] = useState(null);
@@ -29,6 +32,7 @@ const ExamManagement = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [newSubject, setNewSubject] = useState('');
+
   // 🎯 Class-wise Master Marks Entry States
   const [masterClass, setMasterClass] = useState('');
   const [masterExamType, setMasterExamType] = useState('Unit Test - 1');
@@ -53,7 +57,7 @@ const ExamManagement = () => {
   const classesList = ['Nursery', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
   const sectionsList = ['A', 'B', 'C'];
   const examTypes = ['Unit Test - 1', 'Quarterly Examination', 'Unit Test - 2', 'Half Yearly Examination', 'Unit Test - 3', 'Annual Examination'];
-  
+
   const allSubjectsList = [
     { name: 'Mathematics', code: 'MTH101', class: ['1','2','3','4','5','6','7','8','9','10','11','12'] },
     { name: 'Science', code: 'SCI101', class: ['1','2','3','4','5','6','7','8','9','10'] },
@@ -78,8 +82,8 @@ const ExamManagement = () => {
     exam_type: 'Unit Test - 1',
     class: '',
     section: 'A',
-    max_marks: 100,      // 👈 Naya field (Default 100)
-    passing_marks: 33,   // 👈 Naya field (Default 33)
+    max_marks: 100,
+    passing_marks: 33,
     subjects: [],
     date: new Date().toISOString().split('T')[0]
   });
@@ -101,14 +105,12 @@ const ExamManagement = () => {
     fetchGradeSystem();
   }, []);
 
-  // ✅ FIXED: Use grouped exams API
   const fetchExams = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/api/exams/grouped`);
       setExams(res.data.exams || []);
     } catch (err) {
       console.log("Exam fetch error", err);
-      // Fallback
       try {
         const res2 = await axios.get(`${BASE_URL}/api/exams`);
         setExams(res2.data.exams || []);
@@ -141,7 +143,7 @@ const ExamManagement = () => {
       if (res.data.success) {
         setMasterSubjects(res.data.subjects || []);
         setMasterStudents(res.data.students || []);
-        
+
         const initialMarks = {};
         res.data.students.forEach(st => {
           initialMarks[st.student_id] = st.marks || {};
@@ -183,21 +185,35 @@ const ExamManagement = () => {
   };
 
   const handleMasterMarkChange = (studentId, subjectId, field, val) => {
+  setMasterMarksData(prev => {
+    const studentObj = prev[studentId] || {};
+    const subjectsMap = studentObj.subjects || {};
+    const subData = subjectsMap[subjectId] || { theory: '', practical: '', total: 0 };
+
+    const updatedSub = { ...subData, [field]: val };
+
+    return {
+      ...prev,
+      [studentId]: {
+        ...studentObj,
+        subjects: {
+          ...subjectsMap,
+          [subjectId]: updatedSub
+        }
+      }
+    };
+  });
+};
+
+  // ✅ NEW: Attendance Change Handler (Ye missing tha!)
+  const handleMasterAttendanceChange = (studentId, val) => {
     setMasterMarksData(prev => {
       const studentObj = prev[studentId] || {};
-      const subjectsMap = studentObj.subjects || studentObj;
-      const subData = subjectsMap[subjectId] || { theory: '', practical: '', total: 0 };
-      
-      const updatedSub = { ...subData, [field]: val };
-      
       return {
         ...prev,
         [studentId]: {
           ...studentObj,
-          subjects: {
-            ...subjectsMap,
-            [subjectId]: updatedSub
-          }
+          attendance: val
         }
       };
     });
@@ -214,18 +230,16 @@ const ExamManagement = () => {
     }
   };
 
-  // ✅ FIXED: Use multi-subject students API
   const fetchStudentsForExam = async (examId) => {
     setLoading(true);
     try {
       const res = await axios.get(`${BASE_URL}/api/exams/${examId}/students-multi`);
-      
+
       if (res.data.success) {
         setStudents(res.data.students || []);
         setSelectedExam(res.data.exam);
         setSelectedSubjects(res.data.exam?.subjects || []);
-        
-        // Initialize marks data
+
         const marks = {};
         res.data.students.forEach(student => {
           marks[student.id] = {};
@@ -249,7 +263,6 @@ const ExamManagement = () => {
     }
   };
 
-  // ✅ FIXED: Use multi-subject results API
   const fetchResultsForExam = async (examId) => {
     if (!examId) return;
     setLoading(true);
@@ -272,7 +285,7 @@ const ExamManagement = () => {
   // ==============================
   const getSubjectsForClass = (className) => {
     if (!className) return [];
-    return allSubjectsList.filter(subject => 
+    return allSubjectsList.filter(subject =>
       subject.class.includes(className)
     );
   };
@@ -297,15 +310,14 @@ const ExamManagement = () => {
     });
   };
 
-  // ✅ FIXED: Use create-multi API
   const handleCreateExam = async (e) => {
     e.preventDefault();
-    
+
     if (!examForm.class) {
       setMessage({ type: 'error', text: '⚠️ Please select a class!' });
       return;
     }
-    
+
     if (selectedSubjects.length === 0) {
       setMessage({ type: 'error', text: '⚠️ Please add at least one subject!' });
       return;
@@ -320,9 +332,9 @@ const ExamManagement = () => {
         subjects: selectedSubjects,
         date: examForm.date
       };
-      
+
       const res = await axios.post(`${BASE_URL}/api/exams/create-multi`, payload);
-      
+
       if (res.data.success) {
         setMessage({ type: 'success', text: `✅ Exam created with ${res.data.subjects?.length || 0} subjects!` });
         setExamForm({
@@ -342,7 +354,6 @@ const ExamManagement = () => {
     }
   };
 
-  // ✅ FIXED: Use save-multi-marks API
   const handleSaveMarks = async () => {
     setLoading(true);
     setSaving(true);
@@ -350,7 +361,7 @@ const ExamManagement = () => {
       const studentsData = Object.keys(marksData).map(studentId => {
         const studentMarks = marksData[studentId] || {};
         const marks = {};
-        
+
         selectedSubjects.forEach(subject => {
           const mark = studentMarks[subject] || { theory: '', practical: '', total: 0 };
           marks[subject] = {
@@ -359,7 +370,7 @@ const ExamManagement = () => {
             total: parseFloat(mark.theory) || 0 + parseFloat(mark.practical) || 0
           };
         });
-        
+
         return {
           student_id: parseInt(studentId),
           marks: marks
@@ -370,9 +381,9 @@ const ExamManagement = () => {
         exam_id: selectedExam?.exam_id,
         students: studentsData
       };
-      
+
       const res = await axios.post(`${BASE_URL}/api/exams/save-multi-marks`, payload);
-      
+
       if (res.data.success) {
         setMessage({ type: 'success', text: '✅ Marks saved successfully!' });
       }
@@ -385,7 +396,6 @@ const ExamManagement = () => {
     }
   };
 
-  // ✅ FIXED: Use generate-complete-result API
   const handleGenerateResult = async (examId) => {
     setLoading(true);
     try {
@@ -402,10 +412,9 @@ const ExamManagement = () => {
     }
   };
 
-  // ✅ FIXED: Use delete-multi API
   const handleDeleteExam = async (examId) => {
     if (!window.confirm('Are you sure you want to delete this exam?')) return;
-    
+
     try {
       const res = await axios.delete(`${BASE_URL}/api/exams/delete-multi/${examId}`);
       if (res.data.success) {
@@ -432,13 +441,13 @@ const ExamManagement = () => {
     setMarksData(prev => {
       const student = prev[studentId] || {};
       const subjectData = student[subject] || { theory: '', practical: '', total: 0 };
-      
+
       const updatedSubject = { ...subjectData, [field]: value };
-      
+
       const theoryVal = parseFloat(updatedSubject.theory) || 0;
       const practicalVal = parseFloat(updatedSubject.practical) || 0;
       updatedSubject.total = theoryVal + practicalVal;
-      
+
       return {
         ...prev,
         [studentId]: {
@@ -449,19 +458,18 @@ const ExamManagement = () => {
     });
   };
 
-  // 📥 Excel Download Function
   const downloadExcel = () => {
     if (results.length === 0) {
       setMessage({ type: 'error', text: 'Export karne ke liye koi result nahi hai!' });
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
       return;
     }
-    
+
     let csvContent = "data:text/csv;charset=utf-8,Roll No,Student Name,Total Marks,Percentage,Grade\n";
     results.forEach(r => {
       csvContent += `${r.roll_no || ''},"${r.name}",${r.obtained_marks},${r.percentage}%,${r.grade}\n`;
     });
-    
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -471,7 +479,6 @@ const ExamManagement = () => {
     document.body.removeChild(link);
   };
 
-  // 🖨️ PDF / Print Function
   const downloadPDF = () => {
     window.print();
   };
@@ -512,7 +519,7 @@ const ExamManagement = () => {
             <p className="text-xs opacity-80">Create exams, enter marks, generate results | Current Board: <span className="font-bold">{board}</span></p>
           </div>
           <div className="flex items-center gap-2">
-            <select 
+            <select
               value={board}
               onChange={(e) => handleBoardChange(e.target.value)}
               className="bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg border border-white/30"
@@ -535,37 +542,37 @@ const ExamManagement = () => {
 
       {/* Tabs */}
       <div className="flex flex-wrap gap-2 mb-6 bg-white p-2 rounded-xl border border-gray-200 shadow-sm">
-        <button 
+        <button
           onClick={() => setActiveTab('setup')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'setup' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
           📚 Setup Exam
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('admit_card')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'admit_card' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
           🎫 Admit Card
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('marks')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'marks' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
           ✏️ Enter Marks
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('results')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'results' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
           📊 Results
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('reports')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'reports' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
           📄 Report Cards
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('grades')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'grades' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
@@ -573,10 +580,12 @@ const ExamManagement = () => {
         </button>
       </div>
 
-      {/* TAB 1: SETUP EXAM */}
+      {/* TAB: ADMIT CARD */}
       {activeTab === 'admit_card' && (
         <ExamAdmitCardSixPerPage />
       )}
+
+      {/* TAB 1: SETUP EXAM */}
       {activeTab === 'setup' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
@@ -584,9 +593,9 @@ const ExamManagement = () => {
             <form onSubmit={handleCreateExam} className="space-y-3">
               <div>
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Exam Type / Format</label>
-                <select 
+                <select
                   value={examForm.exam_type}
-                  onChange={(e) => setExamForm({...examForm, exam_type: e.target.value})}
+                  onChange={(e) => setExamForm({ ...examForm, exam_type: e.target.value })}
                   className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold bg-white"
                 >
                   {examTypes.map(t => <option key={t} value={t}>{t}</option>)}
@@ -596,11 +605,11 @@ const ExamManagement = () => {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Class</label>
-                  <select 
+                  <select
                     value={examForm.class}
                     onChange={(e) => {
                       const className = e.target.value;
-                      setExamForm({...examForm, class: className});
+                      setExamForm({ ...examForm, class: className });
                       const classSubjects = getSubjectsForClass(className);
                       if (classSubjects.length > 0) {
                         const subjectNames = classSubjects.map(s => s.name);
@@ -620,9 +629,9 @@ const ExamManagement = () => {
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Section</label>
-                  <select 
+                  <select
                     value={examForm.section}
-                    onChange={(e) => setExamForm({...examForm, section: e.target.value})}
+                    onChange={(e) => setExamForm({ ...examForm, section: e.target.value })}
                     className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold bg-white"
                   >
                     {sectionsList.map(s => <option key={s} value={s}>{s}</option>)}
@@ -632,12 +641,12 @@ const ExamManagement = () => {
 
               <div>
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Subjects for Class {examForm.class || ''}</label>
-                
+
                 <div className="flex flex-wrap gap-1 mb-2">
                   {selectedSubjects.map(subject => (
                     <span key={subject} className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 text-indigo-800 rounded-lg text-xs font-bold">
                       {subject}
-                      <button 
+                      <button
                         type="button"
                         onClick={() => handleRemoveSubject(subject)}
                         className="hover:text-red-600"
@@ -649,7 +658,7 @@ const ExamManagement = () => {
                 </div>
 
                 <div className="flex gap-2">
-                  <input 
+                  <input
                     type="text"
                     value={newSubject}
                     onChange={(e) => setNewSubject(e.target.value)}
@@ -664,7 +673,7 @@ const ExamManagement = () => {
                         <option key={s.name} value={s.name} />
                       ))}
                   </datalist>
-                  <button 
+                  <button
                     type="button"
                     onClick={handleAddSubject}
                     className="px-3 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition"
@@ -676,17 +685,17 @@ const ExamManagement = () => {
 
               <div>
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Date</label>
-                <input 
-                  type="date" 
+                <input
+                  type="date"
                   value={examForm.date}
-                  onChange={(e) => setExamForm({...examForm, date: e.target.value})}
+                  onChange={(e) => setExamForm({ ...examForm, date: e.target.value })}
                   className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold"
                   required
                 />
               </div>
 
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={loading}
                 className="w-full py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition cursor-pointer disabled:opacity-50"
               >
@@ -733,21 +742,21 @@ const ExamManagement = () => {
                         <td className="p-3">{exam.date}</td>
                         <td className="p-3">
                           <div className="flex items-center justify-center gap-1">
-                            <button 
+                            <button
                               onClick={() => { setActiveTab('marks'); fetchStudentsForExam(exam.exam_id || exam.id); }}
                               className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
                               title="Enter Marks"
                             >
                               ✏️
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleGenerateResult(exam.exam_id || exam.id)}
                               className="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition"
                               title="Generate Result"
                             >
                               📊
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDeleteExam(exam.exam_id || exam.id)}
                               className="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition"
                               title="Delete"
@@ -774,10 +783,9 @@ const ExamManagement = () => {
               <h3 className="text-base font-black text-gray-800">✏️ Class-Wise Master Marks Entry Hub</h3>
               <p className="text-xs text-gray-500">Unit Test = Single Box | Quarterly/Half-Yearly = Theory & Practical Split | Annual = Attendance Included.</p>
             </div>
-            
+
             <div className="flex flex-wrap items-center gap-3">
-              {/* Class Selector */}
-              <select 
+              <select
                 className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-white"
                 value={masterClass}
                 onChange={(e) => setMasterClass(e.target.value)}
@@ -786,8 +794,7 @@ const ExamManagement = () => {
                 {classesList.map(c => <option key={c} value={c}>Class {c}</option>)}
               </select>
 
-              {/* Exam Type Selector */}
-              <select 
+              <select
                 className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-white"
                 value={masterExamType}
                 onChange={(e) => setMasterExamType(e.target.value)}
@@ -795,7 +802,7 @@ const ExamManagement = () => {
                 {examTypes.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
 
-              <button 
+              <button
                 onClick={fetchMasterExamSheet}
                 disabled={loading}
                 className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition cursor-pointer"
@@ -853,17 +860,7 @@ const ExamManagement = () => {
                           const subsMarksMap = studentRecord.subjects || studentRecord;
                           const attendanceVal = studentRecord.attendance || '';
 
-                          // Percentage & Grade Calculation
                           const maxPossibleMarks = masterSubjects.length * 100;
-                          const percentage = maxPossibleMarks > 0 ? ((rowTotal / maxPossibleMarks) * 100).toFixed(1) : 0;
-                          
-                          let grade = 'F';
-                          for (let g of gradeSystem) {
-                            if (percentage >= g.min && percentage <= g.max) {
-                              grade = g.grade;
-                              break;
-                            }
-                          }
 
                           return (
                             <tr key={student.student_id} className="hover:bg-gray-50">
@@ -874,58 +871,58 @@ const ExamManagement = () => {
                               </td>
 
                               {masterSubjects.map(sub => {
-  const subEntry = subsMarksMap[sub.id] || subsMarksMap[sub.name] || { theory: '', practical: '', total: 0 };
-  const th = subEntry.theory !== undefined && subEntry.theory !== '' ? subEntry.theory : (subEntry.obtained || '');
-  const pr = subEntry.practical !== undefined && subEntry.practical !== '' ? subEntry.practical : '';
-  
-  const thNum = parseFloat(th) || 0;
-  const prNum = parseFloat(pr) || 0;
-  const subTot = isUnitTest ? thNum : (thNum + prNum);
-  rowTotal += subTot;
+                                const subEntry = subsMarksMap[sub.id] || subsMarksMap[sub.name] || { theory: '', practical: '', total: 0 };
+                                const th = subEntry.theory !== undefined && subEntry.theory !== '' ? subEntry.theory : (subEntry.obtained || '');
+                                const pr = subEntry.practical !== undefined && subEntry.practical !== '' ? subEntry.practical : '';
 
-  return (
-    <React.Fragment key={sub.id}>
-      {isUnitTest ? (
-        <td className="p-1.5 border text-center">
-          <input 
-            type="number" 
-            min="0"
-            max="100"
-            value={th}
-            onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
-            className="w-16 p-1 border rounded text-center font-bold text-xs bg-white"
-            placeholder="Marks"
-          />
-        </td>
-      ) : (
-        <>
-          <td className="p-1.5 border text-center">
-            <input 
-              type="number" 
-              min="0"
-              max="100"
-              value={th}
-              onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
-              className="w-14 p-1 border border-blue-300 rounded text-center font-bold text-xs bg-white"
-              placeholder="Th"
-            />
-          </td>
-          <td className="p-1.5 border text-center">
-            <input 
-              type="number" 
-              min="0"
-              max="100"
-              value={pr}
-              onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'practical', e.target.value)}
-              className="w-14 p-1 border border-green-300 rounded text-center font-bold text-xs bg-white"
-              placeholder="Pr"
-            />
-          </td>
-        </>
-      )}
-    </React.Fragment>
-  );
-})}
+                                const thNum = parseFloat(th) || 0;
+                                const prNum = parseFloat(pr) || 0;
+                                const subTot = isUnitTest ? thNum : (thNum + prNum);
+                                rowTotal += subTot;
+
+                                return (
+                                  <React.Fragment key={sub.id}>
+                                    {isUnitTest ? (
+                                      <td className="p-1.5 border text-center">
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max="100"
+                                          value={th}
+                                          onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
+                                          className="w-16 p-1 border rounded text-center font-bold text-xs bg-white"
+                                          placeholder="Marks"
+                                        />
+                                      </td>
+                                    ) : (
+                                      <>
+                                        <td className="p-1.5 border text-center">
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={th}
+                                            onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
+                                            className="w-14 p-1 border border-blue-300 rounded text-center font-bold text-xs bg-white"
+                                            placeholder="Th"
+                                          />
+                                        </td>
+                                        <td className="p-1.5 border text-center">
+                                          <input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={pr}
+                                            onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'practical', e.target.value)}
+                                            className="w-14 p-1 border border-green-300 rounded text-center font-bold text-xs bg-white"
+                                            placeholder="Pr"
+                                          />
+                                        </td>
+                                      </>
+                                    )}
+                                  </React.Fragment>
+                                );
+                              })}
 
                               {/* Grand Total */}
                               <td className="p-3 border text-center font-black text-indigo-700 text-sm">
@@ -957,8 +954,8 @@ const ExamManagement = () => {
                               {/* Annual Attendance */}
                               {isAnnual && (
                                 <td className="p-3 border text-center">
-                                  <input 
-                                    type="number" 
+                                  <input
+                                    type="number"
                                     value={attendanceVal !== 0 ? attendanceVal : ''}
                                     onChange={(e) => handleMasterAttendanceChange(student.student_id, e.target.value)}
                                     className="w-16 p-1.5 border border-orange-400 bg-orange-50 rounded text-center font-bold text-xs"
@@ -976,7 +973,7 @@ const ExamManagement = () => {
               })()}
 
               <div className="mt-4 flex justify-end">
-                <button 
+                <button
                   onClick={handleSaveMasterMarks}
                   disabled={saving}
                   className="px-6 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 cursor-pointer"
@@ -994,9 +991,9 @@ const ExamManagement = () => {
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-6 border-b pb-4">
             <h3 className="text-sm font-black text-gray-800">📊 Exam Results & Scorecard</h3>
-            
+
             <div className="flex flex-wrap items-center gap-2">
-              <select 
+              <select
                 value={selectedResultExam}
                 onChange={(e) => {
                   setSelectedResultExam(e.target.value);
@@ -1014,7 +1011,7 @@ const ExamManagement = () => {
 
               {results.length > 0 && (
                 <>
-                  <button 
+                  <button
                     onClick={() => {
                       if (results.length === 0) return;
                       let csvContent = "data:text/csv;charset=utf-8,Roll No,Student Name,Max Marks,Marks Obtained,Status,Percentage,Grade\n";
@@ -1033,7 +1030,7 @@ const ExamManagement = () => {
                   >
                     <FileSpreadsheet className="w-4 h-4" /> Excel Export
                   </button>
-                  <button 
+                  <button
                     onClick={downloadPDF}
                     className="px-3 py-2 bg-rose-600 text-white text-xs font-bold rounded-xl hover:bg-rose-700 transition flex items-center gap-1 cursor-pointer"
                   >
@@ -1061,6 +1058,7 @@ const ExamManagement = () => {
                     <th className="p-3 text-center">Status</th>
                     <th className="p-3 text-center">Percentage</th>
                     <th className="p-3 text-center">Grade</th>
+                    <th className="p-3 text-center">Marksheet</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -1083,6 +1081,17 @@ const ExamManagement = () => {
                         <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-indigo-100 text-indigo-700">
                           {res.grade}
                         </span>
+                      </td>
+                      <td className="p-3 text-center">
+                        <button
+                          onClick={() => {
+                            setMarksheetExam(selectedResultExam);
+                            setMarksheetStudent(res.id || res.student_id);
+                          }}
+                          className="px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-bold rounded-lg hover:bg-indigo-700 transition cursor-pointer"
+                        >
+                          📄 View
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -1111,7 +1120,7 @@ const ExamManagement = () => {
           </div>
         </div>
       )}
-      
+
       {/* TAB 5: GRADE SYSTEM */}
       {activeTab === 'grades' && (
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
@@ -1139,6 +1148,18 @@ const ExamManagement = () => {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Marksheet Modal */}
+      {marksheetStudent && marksheetExam && (
+        <StudentMarksheet
+          examId={marksheetExam}
+          studentId={marksheetStudent}
+          onClose={() => {
+            setMarksheetStudent(null);
+            setMarksheetExam(null);
+          }}
+        />
       )}
     </div>
   );
