@@ -56,11 +56,19 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
         setStudents(studentsList);
 
         const subjectsList = examData?.subjects || [];
-        setSubjects(subjectsList.map(s => ({
-          subject_name: s,
-          max_marks: 100,
-          id: s
-        })));
+        const subjectConfig = examData?.subject_config || {};  // ✅ Config lo
+
+        // ✅ FIX: Har subject ka actual theory_max / internal_max use karo
+        setSubjects(subjectsList.map(s => {
+          const config = subjectConfig[s] || {};
+          return {
+            subject_name: s,
+            id: s,
+            theory_max: config.theory_max || 80,
+            internal_max: config.internal_max || 20,
+            max_marks: config.total_max || 100
+          };
+        }));
 
         const initialMarks = {};
         studentsList.forEach(student => {
