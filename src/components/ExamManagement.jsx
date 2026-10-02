@@ -9,7 +9,7 @@ import {
   Printer, Calendar, BookOpen, Users, TrendingUp,
   Award, CheckCircle, XCircle, AlertCircle, Search,
   Settings, Copy, RefreshCw, ChevronDown, FileSpreadsheet,
-  X, Save
+  X, Save, Loader2
 } from 'lucide-react';
 
 const BASE_URL = 'https://erp-api.aapschool.in';
@@ -33,6 +33,10 @@ const ExamManagement = () => {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [newSubject, setNewSubject] = useState('');
+
+  // ✅ NAYA: Class-wise subjects state (backend se aayenge)
+  const [classSubjects, setClassSubjects] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
 
   // 🎯 Class-wise Master Marks Entry States
   const [masterClass, setMasterClass] = useState('');
@@ -59,24 +63,7 @@ const ExamManagement = () => {
   const sectionsList = ['A', 'B', 'C'];
   const examTypes = ['Unit Test - 1', 'Quarterly Examination', 'Unit Test - 2', 'Half Yearly Examination', 'Unit Test - 3', 'Annual Examination'];
 
-  const allSubjectsList = [
-    { name: 'Mathematics', code: 'MTH101', class: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
-    { name: 'Science', code: 'SCI101', class: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
-    { name: 'English', code: 'ENG101', class: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
-    { name: 'Hindi', code: 'HIN101', class: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
-    { name: 'Social Studies', code: 'SST101', class: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'] },
-    { name: 'Computer', code: 'COM101', class: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'] },
-    { name: 'Sanskrit', code: 'SAN101', class: ['6', '7', '8', '9', '10'] },
-    { name: 'Physics', code: 'PHY101', class: ['11', '12'] },
-    { name: 'Chemistry', code: 'CHE101', class: ['11', '12'] },
-    { name: 'Biology', code: 'BIO101', class: ['11', '12'] },
-    { name: 'Accountancy', code: 'ACC101', class: ['11', '12'] },
-    { name: 'Business Studies', code: 'BST101', class: ['11', '12'] },
-    { name: 'Economics', code: 'ECO101', class: ['11', '12'] },
-    { name: 'History', code: 'HIS101', class: ['11', '12'] },
-    { name: 'Political Science', code: 'POL101', class: ['11', '12'] },
-    { name: 'Geography', code: 'GEO101', class: ['11', '12'] }
-  ];
+  // ❌ PURANA allSubjectsList HATA DIYA - ab backend se aayega
 
   // Exam Setup Form
   const [examForm, setExamForm] = useState({
@@ -146,6 +133,49 @@ const ExamManagement = () => {
     }
   };
 
+  // ✅ NAYA: Class select hone par backend se subjects fetch karo
+  const fetchSubjectsForClass = async (className) => {
+    if (!className) {
+      setClassSubjects([]);
+      setSelectedSubjects([]);
+      return;
+    }
+    setLoadingSubjects(true);
+    setMessage({ type: '', text: '' });
+    try {
+      const res = await axios.get(`${BASE_URL}/api/subjects/class/${encodeURIComponent(className)}`);
+      if (res.data.success) {
+        const subjects = res.data.subjects || [];
+        setClassSubjects(subjects);
+        const subjectNames = subjects.map(s => s.subject_name);
+        setSelectedSubjects(subjectNames);
+        setExamForm(prev => ({ ...prev, subjects: subjectNames }));
+        
+        if (subjects.length === 0) {
+          setMessage({ 
+            type: 'error', 
+            text: `Class ${className} ke liye koi subject nahi mila. Neeche se manually subject add karein.` 
+          });
+        } else {
+          setMessage({ 
+            type: 'success', 
+            text: `Class ${className} ke ${subjects.length} subjects load ho gaye` 
+          });
+          setTimeout(() => setMessage({ type: '', text: '' }), 2500);
+        }
+      } else {
+        setClassSubjects([]);
+        setSelectedSubjects([]);
+      }
+    } catch (err) {
+      console.log("Subjects fetch error:", err);
+      setClassSubjects([]);
+      setSelectedSubjects([]);
+    } finally {
+      setLoadingSubjects(false);
+    }
+  };
+
   // ==============================
   // CLASS-WISE MASTER SHEET
   // ==============================
@@ -157,7 +187,7 @@ const ExamManagement = () => {
     setLoading(true);
     setMessage({ type: '', text: '' });
     try {
-      const res = await axios.get(`${BASE_URL}/api/exams/master-sheet?class=${masterClass}&exam_type=${masterExamType}`);
+      const res = await axios.get(`${BASE_URL}/api/exams/master-sheet?class=${masterClass}&exam_type=${encodeURIComponent(masterExamType)}`);
       if (res.data.success) {
         setMasterSubjects(res.data.subjects || []);
         setMasterStudents(res.data.students || []);
@@ -167,6 +197,19 @@ const ExamManagement = () => {
           initialMarks[st.student_id] = st.marks || {};
         });
         setMasterMarksData(initialMarks);
+        
+        if ((res.data.subjects || []).length === 0) {
+          setMessage({ 
+            type: 'error', 
+            text: res.data.message || `Class ${masterClass} ke liye koi subject nahi mila` 
+          });
+        } else {
+          setMessage({ 
+            type: 'success', 
+            text: `Loaded ${res.data.subjects.length} subjects, ${res.data.students.length} students` 
+          });
+          setTimeout(() => setMessage({ type: '', text: '' }), 2500);
+        }
       }
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.error || 'Master sheet load failed' });
@@ -300,7 +343,10 @@ const ExamManagement = () => {
       };
 
       let rowTotal = 0;
-      const maxPossibleMarks = masterSubjects.length * 100;
+      // ✅ Actual max marks from subject config
+      const maxPossibleMarks = masterSubjects.reduce((sum, sub) => {
+        return sum + (sub.total_max || sub.max_marks || 100);
+      }, 0);
 
       masterSubjects.forEach(sub => {
         const subEntry = studentRecord[sub.id] || { theory: '', practical: '', obtained: 0 };
@@ -363,7 +409,7 @@ const ExamManagement = () => {
   };
 
   // ==============================
-  // STUDENT MARKS ENTRY (Table based - legacy)
+  // STUDENT MARKS ENTRY (Legacy table-based)
   // ==============================
   const fetchStudentsForExam = async (examId) => {
     setLoading(true);
@@ -420,21 +466,37 @@ const ExamManagement = () => {
   // ==============================
   // HANDLE FUNCTIONS
   // ==============================
-  const getSubjectsForClass = (className) => {
-    if (!className) return [];
-    return allSubjectsList.filter(subject =>
-      subject.class.includes(className)
-    );
-  };
+  const handleAddSubject = async () => {
+    const subName = newSubject.trim();
+    if (!subName) return;
+    if (!examForm.class) {
+      setMessage({ type: 'error', text: 'Pehle class select karein' });
+      return;
+    }
+    if (selectedSubjects.includes(subName)) {
+      setMessage({ type: 'error', text: 'Yeh subject already added hai' });
+      return;
+    }
 
-  const handleAddSubject = () => {
-    if (newSubject.trim() && !selectedSubjects.includes(newSubject.trim())) {
-      setSelectedSubjects([...selectedSubjects, newSubject.trim()]);
-      setExamForm({
-        ...examForm,
-        subjects: [...selectedSubjects, newSubject.trim()]
+    try {
+      // Backend mein class_subjects mein add karo
+      await axios.post(`${BASE_URL}/api/subjects/add-to-class`, {
+        class_name: examForm.class,
+        subject_name: subName,
+        max_marks: 100
       });
+      
+      const updated = [...selectedSubjects, subName];
+      setSelectedSubjects(updated);
+      setExamForm(prev => ({ ...prev, subjects: updated }));
       setNewSubject('');
+      
+      // Refresh class subjects from backend
+      fetchSubjectsForClass(examForm.class);
+      setMessage({ type: 'success', text: `'${subName}' Class ${examForm.class} mein add ho gaya` });
+      setTimeout(() => setMessage({ type: '', text: '' }), 2000);
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Subject add nahi hua' });
     }
   };
 
@@ -495,6 +557,7 @@ const ExamManagement = () => {
           date: new Date().toISOString().split('T')[0]
         });
         setSelectedSubjects([]);
+        setClassSubjects([]);
         fetchExams();
       }
     } catch (err) {
@@ -706,15 +769,8 @@ const ExamManagement = () => {
                     onChange={(e) => {
                       const className = e.target.value;
                       setExamForm({ ...examForm, class: className });
-                      const classSubjects = getSubjectsForClass(className);
-                      if (classSubjects.length > 0) {
-                        const subjectNames = classSubjects.map(s => s.name);
-                        setSelectedSubjects(subjectNames);
-                        setExamForm(prev => ({
-                          ...prev,
-                          subjects: subjectNames
-                        }));
-                      }
+                      // ✅ FIXED: Backend se subjects fetch karo
+                      fetchSubjectsForClass(className);
                     }}
                     className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold bg-white"
                     required
@@ -736,7 +792,16 @@ const ExamManagement = () => {
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Subjects for Class {examForm.class || ''}</label>
+                <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">
+                  Subjects for Class {examForm.class || ''}
+                  {loadingSubjects && <span className="ml-2 text-indigo-600 font-normal">(Loading...)</span>}
+                </label>
+
+                {examForm.class && classSubjects.length === 0 && !loadingSubjects && (
+                  <p className="text-xs text-red-500 font-bold p-2 bg-red-50 rounded-lg mb-2">
+                    ⚠️ Class {examForm.class} ke liye koi subject nahi mila. Neeche se manually add karein.
+                  </p>
+                )}
 
                 <div className="flex flex-wrap gap-1 mb-2">
                   {selectedSubjects.map(subject => (
@@ -760,15 +825,7 @@ const ExamManagement = () => {
                     onChange={(e) => setNewSubject(e.target.value)}
                     placeholder="Add new subject..."
                     className="flex-1 p-2 border border-gray-200 rounded-xl text-xs font-bold bg-white"
-                    list="subjectSuggestions"
                   />
-                  <datalist id="subjectSuggestions">
-                    {allSubjectsList
-                      .filter(s => !selectedSubjects.includes(s.name))
-                      .map(s => (
-                        <option key={s.name} value={s.name} />
-                      ))}
-                  </datalist>
                   <button
                     type="button"
                     onClick={handleAddSubject}
@@ -905,7 +962,7 @@ const ExamManagement = () => {
                         <td className="p-3">
                           <div className="flex items-center justify-center gap-1">
                             <button
-                              onClick={() => { setActiveTab('marks'); fetchStudentsForExam(exam.exam_id || exam.id); }}
+                              onClick={() => { setActiveTab('marks'); setMasterClass(exam.class); setMasterExamType(exam.exam_name); }}
                               className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
                               title="Enter Marks"
                             >
@@ -967,9 +1024,9 @@ const ExamManagement = () => {
               <button
                 onClick={fetchMasterExamSheet}
                 disabled={loading}
-                className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition cursor-pointer"
+                className="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition cursor-pointer flex items-center gap-2"
               >
-                {loading ? 'Loading...' : 'Load Students & Subjects ⚡'}
+                {loading ? <><Loader2 className="w-3 h-3 animate-spin" /> Loading...</> : 'Load Students & Subjects ⚡'}
               </button>
             </div>
           </div>
@@ -995,6 +1052,9 @@ const ExamManagement = () => {
                           {masterSubjects.map(sub => (
                             <th key={sub.id} className="p-2 border text-center" colSpan={isUnitTest ? 1 : 2}>
                               {sub.name}
+                              <div className="text-[8px] text-gray-500 font-normal">
+                                {isUnitTest ? `/${sub.total_max || sub.max_marks || 100}` : `Th:${sub.theory_max || 80} | Pr:${sub.internal_max || 20}`}
+                              </div>
                             </th>
                           ))}
                           <th className="p-3 border text-center font-black text-indigo-700" rowSpan="2">Grand Total</th>
@@ -1008,8 +1068,8 @@ const ExamManagement = () => {
                               <th key={sub.id + '-u'} className="p-1 border text-center">Marks</th>
                             ) : (
                               <React.Fragment key={sub.id + '-split'}>
-                                <th className="p-1 border text-center text-blue-600">Theory</th>
-                                <th className="p-1 border text-center text-green-600">Practical</th>
+                                <th className="p-1 border text-center text-blue-600">Theory/{sub.theory_max || 80}</th>
+                                <th className="p-1 border text-center text-green-600">Practical/{sub.internal_max || 20}</th>
                               </React.Fragment>
                             )
                           ))}
@@ -1021,7 +1081,10 @@ const ExamManagement = () => {
                           const studentRecord = masterMarksData[student.student_id] || {};
                           const attendanceVal = studentRecord.attendance || '';
 
-                          const maxPossibleMarks = masterSubjects.length * 100;
+                          // ✅ Actual max from subject config
+                          const maxPossibleMarks = masterSubjects.reduce((sum, sub) => {
+                            return sum + (isUnitTest ? (sub.total_max || sub.max_marks || 100) : ((sub.theory_max || 80) + (sub.internal_max || 20)));
+                          }, 0);
 
                           return (
                             <tr key={student.student_id} className="hover:bg-gray-50">
@@ -1048,11 +1111,11 @@ const ExamManagement = () => {
                                         <input
                                           type="number"
                                           min="0"
-                                          max="100"
+                                          max={sub.total_max || sub.max_marks || 100}
                                           value={th}
                                           onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
                                           className="w-16 p-1 border rounded text-center font-bold text-xs bg-white"
-                                          placeholder="Marks"
+                                          placeholder={`/${sub.total_max || 100}`}
                                         />
                                       </td>
                                     ) : (
@@ -1061,22 +1124,22 @@ const ExamManagement = () => {
                                           <input
                                             type="number"
                                             min="0"
-                                            max="100"
+                                            max={sub.theory_max || 80}
                                             value={th}
                                             onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'theory', e.target.value)}
                                             className="w-14 p-1 border border-blue-300 rounded text-center font-bold text-xs bg-white"
-                                            placeholder="Th"
+                                            placeholder={`/${sub.theory_max || 80}`}
                                           />
                                         </td>
                                         <td className="p-1.5 border text-center">
                                           <input
                                             type="number"
                                             min="0"
-                                            max="100"
+                                            max={sub.internal_max || 20}
                                             value={pr}
                                             onChange={(e) => handleMasterMarkChange(student.student_id, sub.id, 'practical', e.target.value)}
                                             className="w-14 p-1 border border-green-300 rounded text-center font-bold text-xs bg-white"
-                                            placeholder="Pr"
+                                            placeholder={`/${sub.internal_max || 20}`}
                                           />
                                         </td>
                                       </>
