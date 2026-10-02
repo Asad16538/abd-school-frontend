@@ -1,6 +1,7 @@
 // src/components/ExamManagement.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import * as XLSX from 'xlsx';
 import StudentMarksheet from './StudentMarksheet';
 import ExamAdmitCardSixPerPage from './ExamAdmitCardSixPerPage';
 import {
@@ -161,79 +162,183 @@ const ExamManagement = () => {
   };
 
   const handleSaveMasterMarks = async () => {
-  if (!masterClass || !masterExamType) {
-    setMessage({ type: 'error', text: 'Kripya Class aur Exam Type select karein!' });
-    return;
-  }
-  setSaving(true);
-  try {
-    const isUnitTest = masterExamType.toLowerCase().includes('unit');
+    if (!masterClass || !masterExamType) {
+      setMessage({ type: 'error', text: 'Kripya Class aur Exam Type select karein!' });
+      return;
+    }
+    setSaving(true);
+    try {
+      const isUnitTest = masterExamType.toLowerCase().includes('unit');
 
-    const records = Object.keys(masterMarksData).map(studentId => {
-      const studentData = masterMarksData[studentId] || {};
-      const subjectsMap = studentData.subjects && typeof studentData.subjects === 'object'
-        ? studentData.subjects
-        : studentData;
+      const records = Object.keys(masterMarksData).map(studentId => {
+        const studentData = masterMarksData[studentId] || {};
+        const subjectsMap = studentData.subjects && typeof studentData.subjects === 'object'
+          ? studentData.subjects
+          : studentData;
 
-      const cleanSubjects = {};
-      Object.keys(subjectsMap).forEach(subId => {
-        const subData = subjectsMap[subId] || {};
+        const cleanSubjects = {};
+        Object.keys(subjectsMap).forEach(subId => {
+          const subData = subjectsMap[subId] || {};
 
-        let theory = parseFloat(subData.theory) || 0;
-        let practical = parseFloat(subData.practical) || 0;
-        let internal = parseFloat(subData.internal) || 0;
-        let obtained = parseFloat(subData.obtained) || 0;
+          let theory = parseFloat(subData.theory) || 0;
+          let practical = parseFloat(subData.practical) || 0;
+          let internal = parseFloat(subData.internal) || 0;
+          let obtained = parseFloat(subData.obtained) || 0;
 
-        // Unit test ke liye sirf theory
-        if (isUnitTest) {
-          theory = obtained || theory;
-          practical = 0;
-          internal = 0;
-        } else {
-          // Quarterly/Half-Yearly/Annual ke liye theory + practical
-          if (theory === 0 && practical === 0 && obtained > 0) {
-            theory = obtained;
+          // Unit test ke liye sirf theory
+          if (isUnitTest) {
+            theory = obtained || theory;
+            practical = 0;
+            internal = 0;
+          } else {
+            // Quarterly/Half-Yearly/Annual ke liye theory + practical
+            if (theory === 0 && practical === 0 && obtained > 0) {
+              theory = obtained;
+            }
           }
-        }
 
-        // ✅ THEORY aur PRACTICAL alag bhejo
-        cleanSubjects[subId] = {
-          theory: theory,
-          practical: practical,
-          internal: internal,
-          obtained: theory + practical + internal
+          // ✅ THEORY aur PRACTICAL alag bhejo
+          cleanSubjects[subId] = {
+            theory: theory,
+            practical: practical,
+            internal: internal,
+            obtained: theory + practical + internal
+          };
+        });
+
+        return {
+          student_id: parseInt(studentId),
+          subjects: cleanSubjects
         };
       });
 
-      return {
-        student_id: parseInt(studentId),
-        subjects: cleanSubjects
+      const payload = {
+        exam_type: examForm.exam_type,
+        class: examForm.class,
+        section: examForm.section,
+        subjects: selectedSubjects,
+        date: examForm.date,
+        theory_max: examForm.theory_max || 80,
+        internal_max: examForm.internal_max || 20
       };
+
+      console.log("📤 Sending payload:", payload);
+
+      const res = await axios.post(`${BASE_URL}/api/exams/save-master-marks`, payload);
+      if (res.data.success) {
+        setMessage({ type: 'success', text: '✅ Marks aur Results dono update ho gaye!' });
+      }
+    } catch (err) {
+      console.error("❌ Save error:", err);
+      setMessage({ type: 'error', text: err.response?.data?.error || 'Marks save karne mein error aayi' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ============================================
+  // ✅ EXCEL EXPORT FUNCTION (Master Sheet)
+  // ============================================
+  const handleExportMasterExcel = () => {
+    if (!masterStudents.length || !masterSubjects.length) {
+      setMessage({ type: 'error', text: 'Pehle exam select karke marks load karein!' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      return;
+    }
+
+    const isUnitTest = masterExamType.toLowerCase().includes('unit');
+    const isAnnual = masterExamType.toLowerCase().includes('annual');
+
+    // Sheet ke liye data array banao
+    const exportData = masterStudents.map(student => {
+      const studentRecord = masterMarksData[student.student_id] || {};
+      const subsMarksMap = studentRecord.subjects || studentRecord;
+      const attendanceVal = studentRecord.attendance || '';
+
+      // Row base object
+      const row = {
+        'Roll No': student.roll_no || '-',
+        'Student Name': student.name || '-',
+        'Father Name': student.father_name || 'N/A'
+      };
+
+      let rowTotal = 0;
+      const maxPossibleMarks = masterSubjects.length * 100;
+
+      // Har subject ke Theory/Practical/Total columns add karo
+      masterSubjects.forEach(sub => {
+        const subEntry = subsMarksMap[sub.id] || subsMarksMap[sub.name] || { theory: '', practical: '', total: 0 };
+
+        const th = subEntry.theory !== undefined && subEntry.theory !== ''
+          ? subEntry.theory
+          : (subEntry.obtained || '');
+        const pr = subEntry.practical !== undefined && subEntry.practical !== ''
+          ? subEntry.practical
+          : '';
+
+        const thNum = parseFloat(th) || 0;
+        const prNum = parseFloat(pr) || 0;
+        const subTot = isUnitTest ? thNum : (thNum + prNum);
+        rowTotal += subTot;
+
+        if (isUnitTest) {
+          row[`${sub.name} (Marks)`] = thNum;
+        } else {
+          row[`${sub.name} (Theory)`] = thNum;
+          row[`${sub.name} (Practical)`] = prNum;
+        }
+        row[`${sub.name} (Total)`] = subTot;
+      });
+
+      // Grand Total, %, Grade
+      const percentage = maxPossibleMarks > 0 ? (rowTotal / maxPossibleMarks) * 100 : 0;
+
+      let calculatedGrade = 'F';
+      for (let g of gradeSystem) {
+        if (percentage >= g.min && percentage <= g.max) {
+          calculatedGrade = g.grade;
+          break;
+        }
+      }
+
+      row['Grand Total'] = rowTotal;
+      row['Max Marks'] = maxPossibleMarks;
+      row['Percentage'] = `${percentage.toFixed(1)}%`;
+      row['Grade'] = calculatedGrade;
+
+      if (isAnnual) {
+        row['Present Days'] = attendanceVal || 0;
+      }
+
+      return row;
     });
 
-    const payload = {
-      exam_type: examForm.exam_type,
-      class: examForm.class,
-      section: examForm.section,
-      subjects: selectedSubjects,
-      date: examForm.date,
-      theory_max: examForm.theory_max || 80,
-      internal_max: examForm.internal_max || 20
-    };
+    // Worksheet banao
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
 
-    console.log("📤 Sending payload:", payload);
+    // Column widths
+    const colWidths = Object.keys(exportData[0] || {}).map(key => ({
+      wch: Math.max(key.length + 2, 12)
+    }));
+    worksheet['!cols'] = colWidths;
 
-    const res = await axios.post(`${BASE_URL}/api/exams/save-master-marks`, payload);
-    if (res.data.success) {
-      setMessage({ type: 'success', text: '✅ Marks aur Results dono update ho gaye!' });
-    }
-  } catch (err) {
-    console.error("❌ Save error:", err);
-    setMessage({ type: 'error', text: err.response?.data?.error || 'Marks save karne mein error aayi' });
-  } finally {
-    setSaving(false);
-  }
-};
+    // Workbook banao
+    const workbook = XLSX.utils.book_new();
+    const sheetName = masterExamType
+      ? masterExamType.slice(0, 25)
+      : 'Master Marks';
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+    // Filename
+    const examName = (masterExamType || 'Exam').replace(/\s+/g, '_');
+    const filename = `Master_Marks_${examName}_Class${masterClass}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    XLSX.writeFile(workbook, filename);
+
+    setMessage({ type: 'success', text: `✅ Excel download ho gayi: ${filename}` });
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+  };
 
   const handleMasterMarkChange = (studentId, subjectId, field, val) => {
     setMasterMarksData(prev => {
@@ -623,7 +728,6 @@ const ExamManagement = () => {
           onClick={() => setActiveTab('reports')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'reports' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
-          
           📊 Grade System
         </button>
       </div>
@@ -730,71 +834,72 @@ const ExamManagement = () => {
                   </button>
                 </div>
               </div>
+
               {/* ✅ NAYA: MARKS CONFIGURATION BOXES */}
-<div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-3">
-  <label className="block text-[10px] font-black text-indigo-900 uppercase">
-    📊 Marks Configuration (Sabhi subjects ke liye)
-  </label>
-  
-  <div className="grid grid-cols-3 gap-2">
-    {/* Theory Max */}
-    <div>
-      <label className="block text-[9px] font-black text-blue-700 uppercase mb-1">Theory Max</label>
-      <input
-        type="number"
-        min="0"
-        max="200"
-        value={examForm.theory_max}
-        onChange={(e) => {
-          const theory = parseInt(e.target.value) || 0;
-          const internal = parseInt(examForm.internal_max) || 0;
-          setExamForm({
-            ...examForm,
-            theory_max: theory,
-            total_max: theory + internal
-          });
-        }}
-        className="w-full p-2 border-2 border-blue-300 rounded-xl text-sm font-black text-center bg-white"
-      />
-    </div>
+              <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-3">
+                <label className="block text-[10px] font-black text-indigo-900 uppercase">
+                  📊 Marks Configuration (Sabhi subjects ke liye)
+                </label>
 
-    {/* Internal/Practical Max */}
-    <div>
-      <label className="block text-[9px] font-black text-green-700 uppercase mb-1">Internal/Prac</label>
-      <input
-        type="number"
-        min="0"
-        max="100"
-        value={examForm.internal_max}
-        onChange={(e) => {
-          const theory = parseInt(examForm.theory_max) || 0;
-          const internal = parseInt(e.target.value) || 0;
-          setExamForm({
-            ...examForm,
-            internal_max: internal,
-            total_max: theory + internal
-          });
-        }}
-        className="w-full p-2 border-2 border-green-300 rounded-xl text-sm font-black text-center bg-white"
-      />
-    </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Theory Max */}
+                  <div>
+                    <label className="block text-[9px] font-black text-blue-700 uppercase mb-1">Theory Max</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="200"
+                      value={examForm.theory_max}
+                      onChange={(e) => {
+                        const theory = parseInt(e.target.value) || 0;
+                        const internal = parseInt(examForm.internal_max) || 0;
+                        setExamForm({
+                          ...examForm,
+                          theory_max: theory,
+                          total_max: theory + internal
+                        });
+                      }}
+                      className="w-full p-2 border-2 border-blue-300 rounded-xl text-sm font-black text-center bg-white"
+                    />
+                  </div>
 
-    {/* Total Max (Auto) */}
-    <div>
-      <label className="block text-[9px] font-black text-purple-700 uppercase mb-1">Total Max</label>
-      <input
-        type="number"
-        value={examForm.total_max}
-        readOnly
-        className="w-full p-2 border-2 border-purple-400 rounded-xl text-sm font-black text-center bg-purple-100 text-purple-800 cursor-not-allowed"
-      />
-    </div>
-  </div>
+                  {/* Internal/Practical Max */}
+                  <div>
+                    <label className="block text-[9px] font-black text-green-700 uppercase mb-1">Internal/Prac</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={examForm.internal_max}
+                      onChange={(e) => {
+                        const theory = parseInt(examForm.theory_max) || 0;
+                        const internal = parseInt(e.target.value) || 0;
+                        setExamForm({
+                          ...examForm,
+                          internal_max: internal,
+                          total_max: theory + internal
+                        });
+                      }}
+                      className="w-full p-2 border-2 border-green-300 rounded-xl text-sm font-black text-center bg-white"
+                    />
+                  </div>
 
-  <p className="text-[9px] text-indigo-700 font-semibold leading-tight">
-    💡 <b>Preset:</b> 80 + 20 = 100 | 75 + 25 = 100 | 70 + 30 = 100 | 60 + 20 = 80 | 20 + 0 = 20
-  </p>
-</div>
+                  {/* Total Max (Auto) */}
+                  <div>
+                    <label className="block text-[9px] font-black text-purple-700 uppercase mb-1">Total Max</label>
+                    <input
+                      type="number"
+                      value={examForm.total_max}
+                      readOnly
+                      className="w-full p-2 border-2 border-purple-400 rounded-xl text-sm font-black text-center bg-purple-100 text-purple-800 cursor-not-allowed"
+                    />
+                  </div>
+                </div>
+
+                <p className="text-[9px] text-indigo-700 font-semibold leading-tight">
+                  💡 <b>Preset:</b> 80 + 20 = 100 | 75 + 25 = 100 | 70 + 30 = 100 | 60 + 20 = 80 | 20 + 0 = 20
+                </p>
+              </div>
 
               <div>
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Date</label>
@@ -1085,11 +1190,17 @@ const ExamManagement = () => {
                 );
               })()}
 
-              <div className="mt-4 flex justify-end">
+              <div className="mt-4 flex justify-end gap-3">
+                <button
+                  onClick={handleExportMasterExcel}
+                  className="px-5 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 cursor-pointer"
+                >
+                  <FileSpreadsheet className="w-4 h-4" /> 📥 Download Excel
+                </button>
                 <button
                   onClick={handleSaveMasterMarks}
                   disabled={saving}
-                  className="px-6 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 transition flex items-center gap-2 cursor-pointer"
                 >
                   {saving ? 'Saving...' : '💾 Save Master Sheet Marks'}
                 </button>
