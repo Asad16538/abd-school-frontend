@@ -728,6 +728,71 @@ const ExamManagement = () => {
                   </button>
                 </div>
               </div>
+              {/* ✅ NAYA: MARKS CONFIGURATION BOXES */}
+<div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-3">
+  <label className="block text-[10px] font-black text-indigo-900 uppercase">
+    📊 Marks Configuration (Sabhi subjects ke liye)
+  </label>
+  
+  <div className="grid grid-cols-3 gap-2">
+    {/* Theory Max */}
+    <div>
+      <label className="block text-[9px] font-black text-blue-700 uppercase mb-1">Theory Max</label>
+      <input
+        type="number"
+        min="0"
+        max="200"
+        value={examForm.theory_max}
+        onChange={(e) => {
+          const theory = parseInt(e.target.value) || 0;
+          const internal = parseInt(examForm.internal_max) || 0;
+          setExamForm({
+            ...examForm,
+            theory_max: theory,
+            total_max: theory + internal
+          });
+        }}
+        className="w-full p-2 border-2 border-blue-300 rounded-xl text-sm font-black text-center bg-white"
+      />
+    </div>
+
+    {/* Internal/Practical Max */}
+    <div>
+      <label className="block text-[9px] font-black text-green-700 uppercase mb-1">Internal/Prac</label>
+      <input
+        type="number"
+        min="0"
+        max="100"
+        value={examForm.internal_max}
+        onChange={(e) => {
+          const theory = parseInt(examForm.theory_max) || 0;
+          const internal = parseInt(e.target.value) || 0;
+          setExamForm({
+            ...examForm,
+            internal_max: internal,
+            total_max: theory + internal
+          });
+        }}
+        className="w-full p-2 border-2 border-green-300 rounded-xl text-sm font-black text-center bg-white"
+      />
+    </div>
+
+    {/* Total Max (Auto) */}
+    <div>
+      <label className="block text-[9px] font-black text-purple-700 uppercase mb-1">Total Max</label>
+      <input
+        type="number"
+        value={examForm.total_max}
+        readOnly
+        className="w-full p-2 border-2 border-purple-400 rounded-xl text-sm font-black text-center bg-purple-100 text-purple-800 cursor-not-allowed"
+      />
+    </div>
+  </div>
+
+  <p className="text-[9px] text-indigo-700 font-semibold leading-tight">
+    💡 <b>Preset:</b> 80 + 20 = 100 | 75 + 25 = 100 | 70 + 30 = 100 | 60 + 20 = 80 | 20 + 0 = 20
+  </p>
+</div>
 
               <div>
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-1">Date</label>
