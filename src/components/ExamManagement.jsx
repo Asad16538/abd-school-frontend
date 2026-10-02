@@ -34,7 +34,7 @@ const ExamManagement = () => {
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [newSubject, setNewSubject] = useState('');
 
-  // ✅ NAYA: Class-wise subjects state (backend se aayenge)
+  // ✅ Class-wise subjects state (backend se aayenge)
   const [classSubjects, setClassSubjects] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
@@ -62,8 +62,6 @@ const ExamManagement = () => {
   const classesList = ['Nursery', 'LKG', 'UKG', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
   const sectionsList = ['A', 'B', 'C'];
   const examTypes = ['Unit Test - 1', 'Quarterly Examination', 'Unit Test - 2', 'Half Yearly Examination', 'Unit Test - 3', 'Annual Examination'];
-
-  // ❌ PURANA allSubjectsList HATA DIYA - ab backend se aayega
 
   // Exam Setup Form
   const [examForm, setExamForm] = useState({
@@ -133,7 +131,7 @@ const ExamManagement = () => {
     }
   };
 
-  // ✅ NAYA: Class select hone par backend se subjects fetch karo
+  // ✅ Class select hone par backend se subjects fetch karo
   const fetchSubjectsForClass = async (className) => {
     if (!className) {
       setClassSubjects([]);
@@ -150,16 +148,16 @@ const ExamManagement = () => {
         const subjectNames = subjects.map(s => s.subject_name);
         setSelectedSubjects(subjectNames);
         setExamForm(prev => ({ ...prev, subjects: subjectNames }));
-        
+
         if (subjects.length === 0) {
-          setMessage({ 
-            type: 'error', 
-            text: `Class ${className} ke liye koi subject nahi mila. Neeche se manually subject add karein.` 
+          setMessage({
+            type: 'error',
+            text: `Class ${className} ke liye koi subject nahi mila. Neeche se manually subject add karein.`
           });
         } else {
-          setMessage({ 
-            type: 'success', 
-            text: `Class ${className} ke ${subjects.length} subjects load ho gaye` 
+          setMessage({
+            type: 'success',
+            text: `Class ${className} ke ${subjects.length} subjects load ho gaye`
           });
           setTimeout(() => setMessage({ type: '', text: '' }), 2500);
         }
@@ -197,16 +195,16 @@ const ExamManagement = () => {
           initialMarks[st.student_id] = st.marks || {};
         });
         setMasterMarksData(initialMarks);
-        
+
         if ((res.data.subjects || []).length === 0) {
-          setMessage({ 
-            type: 'error', 
-            text: res.data.message || `Class ${masterClass} ke liye koi subject nahi mila` 
+          setMessage({
+            type: 'error',
+            text: res.data.message || `Class ${masterClass} ke liye koi subject nahi mila`
           });
         } else {
-          setMessage({ 
-            type: 'success', 
-            text: `Loaded ${res.data.subjects.length} subjects, ${res.data.students.length} students` 
+          setMessage({
+            type: 'success',
+            text: `Loaded ${res.data.subjects.length} subjects, ${res.data.students.length} students`
           });
           setTimeout(() => setMessage({ type: '', text: '' }), 2500);
         }
@@ -258,7 +256,6 @@ const ExamManagement = () => {
 
       const records = Object.keys(masterMarksData).map(studentId => {
         const studentData = masterMarksData[studentId] || {};
-        // Skip attendance key
         const cleanSubjects = {};
 
         Object.keys(studentData).forEach(subId => {
@@ -343,7 +340,6 @@ const ExamManagement = () => {
       };
 
       let rowTotal = 0;
-      // ✅ Actual max marks from subject config
       const maxPossibleMarks = masterSubjects.reduce((sum, sub) => {
         return sum + (sub.total_max || sub.max_marks || 100);
       }, 0);
@@ -409,7 +405,7 @@ const ExamManagement = () => {
   };
 
   // ==============================
-  // STUDENT MARKS ENTRY (Legacy table-based)
+  // STUDENT MARKS ENTRY (Legacy)
   // ==============================
   const fetchStudentsForExam = async (examId) => {
     setLoading(true);
@@ -445,17 +441,38 @@ const ExamManagement = () => {
   };
 
   const fetchResultsForExam = async (examId) => {
-    if (!examId) return;
+    if (!examId) {
+      console.log("❌ No examId provided");
+      setResults([]);
+      return;
+    }
     setLoading(true);
     try {
-      console.log("Fetching results for examId:", examId);
+      console.log("🔍 Fetching results for examId:", examId);
       const res = await axios.get(`${BASE_URL}/api/exams/results-list/${encodeURIComponent(examId)}`);
+
+      console.log("📥 Results API response:", res.data);
+
       if (res.data.success) {
-        setResults(res.data.results || []);
+        const resultsData = res.data.results || [];
+        console.log(`✅ Got ${resultsData.length} results`);
+        setResults(resultsData);
         setSelectedExam(res.data);
+
+        if (resultsData.length === 0) {
+          setMessage({
+            type: 'error',
+            text: 'Is exam ke liye koi marks entry nahi mili. Pehle marks save karein.'
+          });
+          setTimeout(() => setMessage({ type: '', text: '' }), 4000);
+        }
+      } else {
+        console.log("❌ API returned success=false:", res.data.error);
+        setResults([]);
+        setMessage({ type: 'error', text: res.data.error || 'Results load nahi hue' });
       }
     } catch (err) {
-      console.error("Results fetch error:", err.response?.data || err.message);
+      console.error("❌ Results fetch error:", err.response?.data || err.message);
       setResults([]);
       setMessage({ type: 'error', text: err.response?.data?.error || 'Results load nahi hue' });
     } finally {
@@ -479,19 +496,17 @@ const ExamManagement = () => {
     }
 
     try {
-      // Backend mein class_subjects mein add karo
       await axios.post(`${BASE_URL}/api/subjects/add-to-class`, {
         class_name: examForm.class,
         subject_name: subName,
         max_marks: 100
       });
-      
+
       const updated = [...selectedSubjects, subName];
       setSelectedSubjects(updated);
       setExamForm(prev => ({ ...prev, subjects: updated }));
       setNewSubject('');
-      
-      // Refresh class subjects from backend
+
       fetchSubjectsForClass(examForm.class);
       setMessage({ type: 'success', text: `'${subName}' Class ${examForm.class} mein add ho gaya` });
       setTimeout(() => setMessage({ type: '', text: '' }), 2000);
@@ -509,7 +524,6 @@ const ExamManagement = () => {
     });
   };
 
-  // ✅ FIXED: theory_max aur internal_max bhi bhej rahe hain
   const handleCreateExam = async (e) => {
     e.preventDefault();
 
@@ -616,6 +630,7 @@ const ExamManagement = () => {
       if (res.data.success) {
         setMessage({ type: 'success', text: '✅ Result generated successfully!' });
         setActiveTab('results');
+        setSelectedResultExam(examId);
         fetchResultsForExam(examId);
       }
     } catch (err) {
@@ -769,7 +784,6 @@ const ExamManagement = () => {
                     onChange={(e) => {
                       const className = e.target.value;
                       setExamForm({ ...examForm, class: className });
-                      // ✅ FIXED: Backend se subjects fetch karo
                       fetchSubjectsForClass(className);
                     }}
                     className="w-full p-2 border border-gray-200 rounded-xl text-sm font-bold bg-white"
@@ -843,7 +857,6 @@ const ExamManagement = () => {
                 </label>
 
                 <div className="grid grid-cols-3 gap-2">
-                  {/* Theory Max */}
                   <div>
                     <label className="block text-[9px] font-black text-blue-700 uppercase mb-1">Theory Max</label>
                     <input
@@ -864,7 +877,6 @@ const ExamManagement = () => {
                     />
                   </div>
 
-                  {/* Internal/Practical Max */}
                   <div>
                     <label className="block text-[9px] font-black text-green-700 uppercase mb-1">Internal/Prac</label>
                     <input
@@ -885,7 +897,6 @@ const ExamManagement = () => {
                     />
                   </div>
 
-                  {/* Total Max (Auto) */}
                   <div>
                     <label className="block text-[9px] font-black text-purple-700 uppercase mb-1">Total Max</label>
                     <input
@@ -943,7 +954,9 @@ const ExamManagement = () => {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {exams.length === 0 ? (
-                    <tr><td colSpan="5" className="p-6 text-center text-gray-400">No exams created yet</td></tr>
+                    <tr>
+                      <td colSpan="5" className="p-6 text-center text-gray-400">No exams created yet</td>
+                    </tr>
                   ) : (
                     exams.map((exam) => (
                       <tr key={exam.exam_id || exam.id} className="hover:bg-gray-50">
@@ -962,7 +975,11 @@ const ExamManagement = () => {
                         <td className="p-3">
                           <div className="flex items-center justify-center gap-1">
                             <button
-                              onClick={() => { setActiveTab('marks'); setMasterClass(exam.class); setMasterExamType(exam.exam_name); }}
+                              onClick={() => {
+                                setActiveTab('marks');
+                                setMasterClass(exam.class);
+                                setMasterExamType(exam.exam_name);
+                              }}
                               className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
                               title="Enter Marks"
                             >
@@ -1081,7 +1098,6 @@ const ExamManagement = () => {
                           const studentRecord = masterMarksData[student.student_id] || {};
                           const attendanceVal = studentRecord.attendance || '';
 
-                          // ✅ Actual max from subject config
                           const maxPossibleMarks = masterSubjects.reduce((sum, sub) => {
                             return sum + (isUnitTest ? (sub.total_max || sub.max_marks || 100) : ((sub.theory_max || 80) + (sub.internal_max || 20)));
                           }, 0);
@@ -1222,17 +1238,18 @@ const ExamManagement = () => {
               <select
                 value={selectedResultExam}
                 onChange={(e) => {
+                  console.log("📌 Exam selected:", e.target.value);
                   setSelectedResultExam(e.target.value);
                   fetchResultsForExam(e.target.value);
                 }}
                 className="p-2 border border-gray-200 rounded-xl text-xs font-bold bg-gray-50 min-w-[200px]"
               >
                 <option value="">-- Select Exam --</option>
-                {exams.map(e => {
-                  const examValue = e.exam_id || e.id;
+                {exams.map((e, idx) => {
+                  const examValue = e.exam_id || e.id || `exam_${idx}`;
                   return (
                     <option key={examValue} value={examValue}>
-                      {e.exam_name} - Class {e.class}
+                      {e.exam_name} - Class {e.class} {e.section ? `(${e.section})` : ''}
                     </option>
                   );
                 })}
