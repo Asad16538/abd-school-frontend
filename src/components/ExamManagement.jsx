@@ -669,25 +669,11 @@ const ExamManagement = () => {
   // ==============================
   return (
     <div className="p-4 max-w-7xl mx-auto">
-      {/* Header */}
+            {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 rounded-2xl text-white shadow-md mb-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-black flex items-center gap-2">📝 Exam Management</h2>
-            <p className="text-xs opacity-80">Create exams, enter marks, generate results | Current Board: <span className="font-bold">{board}</span></p>
-          </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={board}
-              onChange={(e) => handleBoardChange(e.target.value)}
-              className="bg-white/20 text-white text-xs font-bold px-3 py-2 rounded-lg border border-white/30"
-            >
-              <option value="CBSE" className="text-gray-800">🏫 CBSE</option>
-              <option value="MP Board" className="text-gray-800">📘 MP Board</option>
-              <option value="UP Board" className="text-gray-800">📗 UP Board</option>
-              <option value="Custom" className="text-gray-800">⚙️ Custom</option>
-            </select>
-          </div>
+        <div className="flex flex-col items-center justify-center text-center">
+          <h2 className="text-xl font-black flex items-center gap-2">📝 Exam Management</h2>
+          <p className="text-xs opacity-80 mt-1">Create exams, enter marks, generate results |  <span className="font-bold">{board}</span></p>
         </div>
       </div>
 
