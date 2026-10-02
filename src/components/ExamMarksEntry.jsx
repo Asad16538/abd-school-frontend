@@ -41,6 +41,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     }
   };
 
+  // ✅ FIXED: Actual theory_max / internal_max use kar raha hai
   const loadStudentsAndSubjects = useCallback(async (examId, className) => {
     if (!examId || !className) return;
 
@@ -56,9 +57,9 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
         setStudents(studentsList);
 
         const subjectsList = examData?.subjects || [];
-        const subjectConfig = examData?.subject_config || {};  // ✅ Config lo
+        const subjectConfig = examData?.subject_config || {};
 
-        // ✅ FIX: Har subject ka actual theory_max / internal_max use karo
+        // ✅ Actual theory_max / internal_max use karo
         setSubjects(subjectsList.map(s => {
           const config = subjectConfig[s] || {};
           return {
@@ -120,19 +121,24 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
   const handleMarkChange = (studentId, subjectName, field, value) => {
     setMarksData(prev => {
       const updated = { ...prev };
-      const student = updated[studentId];
+      const student = { ...updated[studentId] };
+      student.subject_marks = { ...student.subject_marks };
 
       if (!student.subject_marks[subjectName]) {
         student.subject_marks[subjectName] = { theory: '', practical: '', total: 0 };
       }
 
-      student.subject_marks[subjectName][field] = value;
+      const subjectData = { ...student.subject_marks[subjectName] };
+      subjectData[field] = value;
 
       const isUnitTest = selectedExam?.exam_name?.toLowerCase().includes('unit');
-      const theory = parseFloat(student.subject_marks[subjectName].theory) || 0;
-      const practical = parseFloat(student.subject_marks[subjectName].practical) || 0;
+      const theory = parseFloat(subjectData.theory) || 0;
+      const practical = parseFloat(subjectData.practical) || 0;
 
-      student.subject_marks[subjectName].total = isUnitTest ? theory : (theory + practical);
+      subjectData.total = isUnitTest ? theory : (theory + practical);
+
+      student.subject_marks[subjectName] = subjectData;
+      updated[studentId] = student;
 
       return updated;
     });
@@ -145,26 +151,24 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     }));
   };
 
+  // ✅ FIXED: Actual subject max use kar raha hai
   const calculateStudentTotals = (studentId) => {
     const student = marksData[studentId];
     if (!student) return { total: 0, percentage: 0, grade: '-' };
 
     let totalMarks = 0;
-    let maxMarks = 0;   // ✅ Actual max calculate karo
+    let maxMarks = 0;
 
     subjects.forEach(sub => {
       const marks = student.subject_marks[sub.subject_name];
       if (marks) {
         totalMarks += marks.total || 0;
       }
-      // ✅ Har subject ka actual max add karo
+      // ✅ Actual max use karo
       maxMarks += (sub.max_marks || 100);
     });
 
     const percentage = maxMarks > 0 ? (totalMarks / maxMarks) * 100 : 0;
-
-    // ... baaki grade calculation same
-};
 
     let grade = '-';
     if (percentage >= 91) grade = 'A1';
@@ -176,7 +180,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     else if (percentage >= 33) grade = 'D';
     else grade = 'E';
 
-    return { total: totalMarks, percentage, grade };
+    return { total: totalMarks, maxMarks, percentage, grade };
   };
 
   const handleSaveMarks = async () => {
@@ -236,9 +240,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     }
   };
 
-  // ==============================
-  // ✅ EXCEL EXPORT FUNCTION (NAYA)
-  // ==============================
+  // ✅ EXCEL EXPORT FUNCTION
   const handleExportExcel = () => {
     if (!students.length || !subjects.length) {
       setMessage({ type: 'error', text: 'Pehle exam select karke marks load karein!' });
@@ -249,19 +251,16 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     const isUnitTest = selectedExam?.exam_name?.toLowerCase().includes('unit');
     const isAnnual = selectedExam?.exam_name?.toLowerCase().includes('annual');
 
-    // ✅ Sheet ke liye data array banao
     const exportData = students.map(student => {
       const studentMarks = marksData[student.id] || {};
-      const { total, percentage, grade } = calculateStudentTotals(student.id);
+      const { total, maxMarks, percentage, grade } = calculateStudentTotals(student.id);
 
-      // Row base object - Roll, Name, Father
       const row = {
         'Roll No': student.roll_no || '-',
         'Student Name': student.name || '-',
         'Father Name': student.father_name || 'N/A'
       };
 
-      // Har subject ke Theory/Practical/Total columns add karo
       subjects.forEach(sub => {
         const marks = studentMarks.subject_marks?.[sub.subject_name] || { theory: '', practical: '', total: 0 };
 
@@ -274,13 +273,11 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
         row[`${sub.subject_name} (Total)`] = marks.total || 0;
       });
 
-      // Grand Total, %, Grade
       row['Grand Total'] = total;
-      row['Max Marks'] = subjects.length * 100;
+      row['Max Marks'] = maxMarks;
       row['Percentage'] = `${percentage.toFixed(1)}%`;
       row['Grade'] = grade;
 
-      // Annual attendance column
       if (isAnnual) {
         row['Present Days'] = studentMarks.attendance || 0;
       }
@@ -288,16 +285,13 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
       return row;
     });
 
-    // ✅ Worksheet banao
     const worksheet = XLSX.utils.json_to_sheet(exportData);
 
-    // ✅ Column widths auto set karo
     const colWidths = Object.keys(exportData[0] || {}).map(key => ({
       wch: Math.max(key.length + 2, 12)
     }));
     worksheet['!cols'] = colWidths;
 
-    // ✅ Workbook banao
     const workbook = XLSX.utils.book_new();
     const sheetName = selectedExam?.exam_name
       ? `${selectedExam.exam_name.slice(0, 25)}`
@@ -305,13 +299,11 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
 
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
-    // ✅ Filename banao
     const className = selectedExam?.class || 'Class';
     const section = selectedExam?.section || 'A';
     const examName = (selectedExam?.exam_name || 'Exam').replace(/\s+/g, '_');
     const filename = `Marks_${examName}_Class${className}_${section}_${new Date().toISOString().split('T')[0]}.xlsx`;
 
-    // ✅ Download
     XLSX.writeFile(workbook, filename);
 
     setMessage({ type: 'success', text: `✅ Excel download ho gayi: ${filename}` });
@@ -358,11 +350,11 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                   <div className="font-bold text-xs mb-1">{sub.subject_name}</div>
                   <div className="flex gap-1 text-[8px] text-gray-500 justify-center">
                     {isUnitTest ? (
-                      <span className="w-[70px] text-blue-600 font-bold">Marks</span>
+                      <span className="w-[70px] text-blue-600 font-bold">/{sub.theory_max || 100}</span>
                     ) : (
                       <>
-                        <span className="w-[70px] text-blue-600">Theory</span>
-                        <span className="w-[70px] text-green-600">Practical</span>
+                        <span className="w-[70px] text-blue-600">Th/{sub.theory_max || 80}</span>
+                        <span className="w-[70px] text-green-600">Pr/{sub.internal_max || 20}</span>
                       </>
                     )}
                     <span className="w-[60px] font-bold text-purple-700">Total</span>
@@ -381,7 +373,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
               const studentMarks = marksData[student.id];
               if (!studentMarks) return null;
 
-              const { total, percentage, grade } = calculateStudentTotals(student.id);
+              const { total, maxMarks, percentage, grade } = calculateStudentTotals(student.id);
 
               return (
                 <tr key={student.id} className="border-b hover:bg-gray-50">
@@ -391,52 +383,53 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                   </td>
 
                   {subjects.map(sub => {
-    const marks = studentMarks.subject_marks[sub.subject_name] || { theory: '', practical: '', total: 0 };
-    const theoryMax = sub.theory_max || 80;   // ✅ Actual max
-    const practicalMax = sub.internal_max || 20;  // ✅ Actual max
+                    const marks = studentMarks.subject_marks[sub.subject_name] || { theory: '', practical: '', total: 0 };
+                    const theoryMax = sub.theory_max || 80;
+                    const practicalMax = sub.internal_max || 20;
 
-    return (
-      <td key={sub.subject_name} className="p-1 text-center">
-        <div className="flex gap-1 justify-center items-center">
-          {isUnitTest ? (
-            <input
-              type="number"
-              className="w-[70px] border border-blue-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500"
-              placeholder={`/${theoryMax}`}
-              value={marks.theory}
-              onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'theory', e.target.value)}
-              min="0"
-              max={theoryMax}   // ✅ Actual max
-            />
-          ) : (
-            <>
-              <input
-                type="number"
-                className="w-[70px] border border-blue-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500"
-                placeholder={`Th/${theoryMax}`}
-                value={marks.theory}
-                onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'theory', e.target.value)}
-                min="0"
-                max={theoryMax}   // ✅ Theory max
-              />
-              <input
-                type="number"
-                className="w-[70px] border border-green-300 rounded px-1 py-1 text-center text-xs focus:border-green-500"
-                placeholder={`Pr/${practicalMax}`}
-                value={marks.practical}
-                onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'practical', e.target.value)}
-                min="0"
-                max={practicalMax}   // ✅ Practical max
-              />
-            </>
-          )}
-          <span className="w-[60px] text-center font-bold text-purple-700 text-sm bg-purple-50 rounded py-1">
-            {marks.total || 0}
-          </span>
-        </div>
-      </td>
-    );
-})}
+                    return (
+                      <td key={sub.subject_name} className="p-1 text-center">
+                        <div className="flex gap-1 justify-center items-center">
+                          {isUnitTest ? (
+                            <input
+                              type="number"
+                              className="w-[70px] border border-blue-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500"
+                              placeholder={`/${theoryMax}`}
+                              value={marks.theory}
+                              onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'theory', e.target.value)}
+                              min="0"
+                              max={theoryMax}
+                            />
+                          ) : (
+                            <>
+                              <input
+                                type="number"
+                                className="w-[70px] border border-blue-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500"
+                                placeholder={`Th/${theoryMax}`}
+                                value={marks.theory}
+                                onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'theory', e.target.value)}
+                                min="0"
+                                max={theoryMax}
+                              />
+                              <input
+                                type="number"
+                                className="w-[70px] border border-green-300 rounded px-1 py-1 text-center text-xs focus:border-green-500"
+                                placeholder={`Pr/${practicalMax}`}
+                                value={marks.practical}
+                                onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'practical', e.target.value)}
+                                min="0"
+                                max={practicalMax}
+                              />
+                            </>
+                          )}
+
+                          <span className="w-[60px] text-center font-bold text-purple-700 text-sm bg-purple-50 rounded py-1">
+                            {marks.total || 0}
+                          </span>
+                        </div>
+                      </td>
+                    );
+                  })}
 
                   <td className="p-2 text-center font-bold text-blue-600 text-sm">{total}</td>
                   <td className="p-2 text-center font-bold text-xs">{percentage.toFixed(1)}%</td>
@@ -468,7 +461,6 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
             {students.length} students • {subjects.length} subjects {isAnnual && "• Annual Attendance Enabled"}
           </span>
 
-          {/* ✅ 2 BUTTONS: EXCEL EXPORT + SAVE MARKS */}
           <div className="flex flex-wrap gap-2">
             <button
               onClick={handleExportExcel}
