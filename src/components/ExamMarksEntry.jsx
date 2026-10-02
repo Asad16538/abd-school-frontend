@@ -150,16 +150,21 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     if (!student) return { total: 0, percentage: 0, grade: '-' };
 
     let totalMarks = 0;
-    const maxMarks = subjects.length * 100;
+    let maxMarks = 0;   // ✅ Actual max calculate karo
 
     subjects.forEach(sub => {
       const marks = student.subject_marks[sub.subject_name];
       if (marks) {
         totalMarks += marks.total || 0;
       }
+      // ✅ Har subject ka actual max add karo
+      maxMarks += (sub.max_marks || 100);
     });
 
     const percentage = maxMarks > 0 ? (totalMarks / maxMarks) * 100 : 0;
+
+    // ... baaki grade calculation same
+};
 
     let grade = '-';
     if (percentage >= 91) grade = 'A1';
@@ -386,51 +391,52 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                   </td>
 
                   {subjects.map(sub => {
-                    const marks = studentMarks.subject_marks[sub.subject_name] || { theory: '', practical: '', total: 0 };
+    const marks = studentMarks.subject_marks[sub.subject_name] || { theory: '', practical: '', total: 0 };
+    const theoryMax = sub.theory_max || 80;   // ✅ Actual max
+    const practicalMax = sub.internal_max || 20;  // ✅ Actual max
 
-                    return (
-                      <td key={sub.subject_name} className="p-1 text-center">
-                        <div className="flex gap-1 justify-center items-center">
-                          {isUnitTest ? (
-                            <input
-                              type="number"
-                              className="w-[70px] border border-blue-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500"
-                              placeholder="Marks"
-                              value={marks.theory}
-                              onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'theory', e.target.value)}
-                              min="0"
-                              max="100"
-                            />
-                          ) : (
-                            <>
-                              <input
-                                type="number"
-                                className="w-[70px] border border-blue-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500"
-                                placeholder="Th"
-                                value={marks.theory}
-                                onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'theory', e.target.value)}
-                                min="0"
-                                max="100"
-                              />
-                              <input
-                                type="number"
-                                className="w-[70px] border border-green-300 rounded px-1 py-1 text-center text-xs focus:border-green-500"
-                                placeholder="Pr"
-                                value={marks.practical}
-                                onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'practical', e.target.value)}
-                                min="0"
-                                max="100"
-                              />
-                            </>
-                          )}
-
-                          <span className="w-[60px] text-center font-bold text-purple-700 text-sm bg-purple-50 rounded py-1">
-                            {marks.total || 0}
-                          </span>
-                        </div>
-                      </td>
-                    );
-                  })}
+    return (
+      <td key={sub.subject_name} className="p-1 text-center">
+        <div className="flex gap-1 justify-center items-center">
+          {isUnitTest ? (
+            <input
+              type="number"
+              className="w-[70px] border border-blue-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500"
+              placeholder={`/${theoryMax}`}
+              value={marks.theory}
+              onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'theory', e.target.value)}
+              min="0"
+              max={theoryMax}   // ✅ Actual max
+            />
+          ) : (
+            <>
+              <input
+                type="number"
+                className="w-[70px] border border-blue-300 rounded px-1 py-1 text-center text-xs focus:border-blue-500"
+                placeholder={`Th/${theoryMax}`}
+                value={marks.theory}
+                onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'theory', e.target.value)}
+                min="0"
+                max={theoryMax}   // ✅ Theory max
+              />
+              <input
+                type="number"
+                className="w-[70px] border border-green-300 rounded px-1 py-1 text-center text-xs focus:border-green-500"
+                placeholder={`Pr/${practicalMax}`}
+                value={marks.practical}
+                onChange={(e) => handleMarkChange(student.id, sub.subject_name, 'practical', e.target.value)}
+                min="0"
+                max={practicalMax}   // ✅ Practical max
+              />
+            </>
+          )}
+          <span className="w-[60px] text-center font-bold text-purple-700 text-sm bg-purple-50 rounded py-1">
+            {marks.total || 0}
+          </span>
+        </div>
+      </td>
+    );
+})}
 
                   <td className="p-2 text-center font-bold text-blue-600 text-sm">{total}</td>
                   <td className="p-2 text-center font-bold text-xs">{percentage.toFixed(1)}%</td>
