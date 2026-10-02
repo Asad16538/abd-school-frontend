@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Save, BookOpen, Users, CheckCircle, XCircle, Loader2, AlertCircle } from 'lucide-react';
+import { Save, BookOpen, Users, CheckCircle, XCircle, Loader2, AlertCircle, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const BASE_URL = 'https://erp-api.aapschool.in';
 
@@ -17,7 +18,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
-  
+
   // ==============================
   // FETCH FUNCTIONS
   // ==============================
@@ -31,7 +32,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     try {
       const res = await axios.get(`${BASE_URL}/api/staff/exams/${staffData.id}`);
       setExams(res.data.exams || []);
-      
+
       const subRes = await axios.get(`${BASE_URL}/api/staff/assigned-subjects/${staffData.id}`);
       setSubjects(subRes.data.assignments || []);
     } catch (err) {
@@ -42,35 +43,36 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
 
   const loadStudentsAndSubjects = useCallback(async (examId, className) => {
     if (!examId || !className) return;
-    
+
     setLoading(true);
     setMessage({ type: '', text: '' });
-    
+
     try {
       const res = await axios.get(`${BASE_URL}/api/exams/${examId}/students-multi`);
-      
+
       if (res.data.success) {
         const examData = res.data.exam;
         const studentsList = res.data.students || [];
         setStudents(studentsList);
-        
+
         const subjectsList = examData?.subjects || [];
-        setSubjects(subjectsList.map(s => ({ 
-          subject_name: s, 
+        setSubjects(subjectsList.map(s => ({
+          subject_name: s,
           max_marks: 100,
-          id: s 
+          id: s
         })));
-        
+
         const initialMarks = {};
         studentsList.forEach(student => {
           initialMarks[student.id] = {
             student_id: student.id,
             roll_no: student.roll_no || '-',
             name: student.name,
+            father_name: student.father_name || student.fatherName || 'N/A',
             attendance: student.attendance || '',
             subject_marks: {}
           };
-          
+
           subjectsList.forEach(sub => {
             const existing = student.marks?.[sub] || {};
             initialMarks[student.id].subject_marks[sub] = {
@@ -80,9 +82,9 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
             };
           });
         });
-        
+
         setMarksData(initialMarks);
-        
+
         const exam = exams.find(e => e.id === parseInt(examId) || e.exam_id === examId);
         setSelectedExam(exam || null);
         setSelectedClass(className);
@@ -111,20 +113,19 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     setMarksData(prev => {
       const updated = { ...prev };
       const student = updated[studentId];
-      
+
       if (!student.subject_marks[subjectName]) {
         student.subject_marks[subjectName] = { theory: '', practical: '', total: 0 };
       }
-      
+
       student.subject_marks[subjectName][field] = value;
-      
+
       const isUnitTest = selectedExam?.exam_name?.toLowerCase().includes('unit');
       const theory = parseFloat(student.subject_marks[subjectName].theory) || 0;
       const practical = parseFloat(student.subject_marks[subjectName].practical) || 0;
-      
-      // Unit test mein sirf theory (single field) hi total hoga
+
       student.subject_marks[subjectName].total = isUnitTest ? theory : (theory + practical);
-      
+
       return updated;
     });
   };
@@ -139,19 +140,19 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
   const calculateStudentTotals = (studentId) => {
     const student = marksData[studentId];
     if (!student) return { total: 0, percentage: 0, grade: '-' };
-    
+
     let totalMarks = 0;
     const maxMarks = subjects.length * 100;
-    
+
     subjects.forEach(sub => {
       const marks = student.subject_marks[sub.subject_name];
       if (marks) {
         totalMarks += marks.total || 0;
       }
     });
-    
+
     const percentage = maxMarks > 0 ? (totalMarks / maxMarks) * 100 : 0;
-    
+
     let grade = '-';
     if (percentage >= 91) grade = 'A1';
     else if (percentage >= 81) grade = 'A2';
@@ -161,7 +162,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
     else if (percentage >= 41) grade = 'C2';
     else if (percentage >= 33) grade = 'D';
     else grade = 'E';
-    
+
     return { total: totalMarks, percentage, grade };
   };
 
@@ -170,30 +171,30 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
       setMessage({ type: 'error', text: 'Please select an exam first!' });
       return;
     }
-    
+
     setSaving(true);
     setMessage({ type: '', text: '' });
-    
+
     try {
       const examId = selectedExam.exam_id || selectedExam.id;
       const isUnitTest = selectedExam?.exam_name?.toLowerCase().includes('unit');
-      
+
       const studentsData = Object.keys(marksData).map(studentId => {
         const student = marksData[studentId];
         const marks = {};
-        
+
         subjects.forEach(sub => {
           const marksInfo = student.subject_marks[sub.subject_name] || { theory: 0, practical: 0, total: 0 };
           const th = parseFloat(marksInfo.theory) || 0;
           const pr = parseFloat(marksInfo.practical) || 0;
-          
+
           marks[sub.subject_name] = {
             theory: th,
             practical: isUnitTest ? 0 : pr,
             total: isUnitTest ? th : (th + pr)
           };
         });
-        
+
         return {
           student_id: parseInt(studentId),
           attendance: student.attendance || 0,
@@ -205,21 +206,103 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
         exam_id: examId,
         students: studentsData
       };
-      
+
       const res = await axios.post(`${BASE_URL}/api/exams/save-multi-marks`, payload);
-      
+
       if (res.data.success) {
         setMessage({ type: 'success', text: '✅ All marks & attendance saved successfully!' });
         if (onMarksSaved) onMarksSaved();
         setTimeout(() => setMessage({ type: '', text: '' }), 3000);
       }
-      
+
     } catch (err) {
       console.error("Save error:", err);
       setMessage({ type: 'error', text: err.response?.data?.error || 'Failed to save marks' });
     } finally {
       setSaving(false);
     }
+  };
+
+  // ==============================
+  // ✅ EXCEL EXPORT FUNCTION (NAYA)
+  // ==============================
+  const handleExportExcel = () => {
+    if (!students.length || !subjects.length) {
+      setMessage({ type: 'error', text: 'Pehle exam select karke marks load karein!' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+      return;
+    }
+
+    const isUnitTest = selectedExam?.exam_name?.toLowerCase().includes('unit');
+    const isAnnual = selectedExam?.exam_name?.toLowerCase().includes('annual');
+
+    // ✅ Sheet ke liye data array banao
+    const exportData = students.map(student => {
+      const studentMarks = marksData[student.id] || {};
+      const { total, percentage, grade } = calculateStudentTotals(student.id);
+
+      // Row base object - Roll, Name, Father
+      const row = {
+        'Roll No': student.roll_no || '-',
+        'Student Name': student.name || '-',
+        'Father Name': student.father_name || 'N/A'
+      };
+
+      // Har subject ke Theory/Practical/Total columns add karo
+      subjects.forEach(sub => {
+        const marks = studentMarks.subject_marks?.[sub.subject_name] || { theory: '', practical: '', total: 0 };
+
+        if (isUnitTest) {
+          row[`${sub.subject_name} (Marks)`] = parseFloat(marks.theory) || 0;
+        } else {
+          row[`${sub.subject_name} (Theory)`] = parseFloat(marks.theory) || 0;
+          row[`${sub.subject_name} (Practical)`] = parseFloat(marks.practical) || 0;
+        }
+        row[`${sub.subject_name} (Total)`] = marks.total || 0;
+      });
+
+      // Grand Total, %, Grade
+      row['Grand Total'] = total;
+      row['Max Marks'] = subjects.length * 100;
+      row['Percentage'] = `${percentage.toFixed(1)}%`;
+      row['Grade'] = grade;
+
+      // Annual attendance column
+      if (isAnnual) {
+        row['Present Days'] = studentMarks.attendance || 0;
+      }
+
+      return row;
+    });
+
+    // ✅ Worksheet banao
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+
+    // ✅ Column widths auto set karo
+    const colWidths = Object.keys(exportData[0] || {}).map(key => ({
+      wch: Math.max(key.length + 2, 12)
+    }));
+    worksheet['!cols'] = colWidths;
+
+    // ✅ Workbook banao
+    const workbook = XLSX.utils.book_new();
+    const sheetName = selectedExam?.exam_name
+      ? `${selectedExam.exam_name.slice(0, 25)}`
+      : 'Marks Entry';
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+    // ✅ Filename banao
+    const className = selectedExam?.class || 'Class';
+    const section = selectedExam?.section || 'A';
+    const examName = (selectedExam?.exam_name || 'Exam').replace(/\s+/g, '_');
+    const filename = `Marks_${examName}_Class${className}_${section}_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+    // ✅ Download
+    XLSX.writeFile(workbook, filename);
+
+    setMessage({ type: 'success', text: `✅ Excel download ho gayi: ${filename}` });
+    setTimeout(() => setMessage({ type: '', text: '' }), 3000);
   };
 
   const renderMessage = () => {
@@ -243,11 +326,10 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
         </div>
       );
     }
-    
+
     if (!students.length) return <div className="text-center py-12 text-gray-500"><Users className="w-12 h-12 mx-auto text-gray-300" /><p className="mt-4">No students found</p></div>;
     if (!subjects.length) return <div className="text-center py-12 text-gray-500"><BookOpen className="w-12 h-12 mx-auto text-gray-300" /><p className="mt-4">No subjects found</p></div>;
-    
-    // 🎯 SMART CONDITIONS
+
     const isUnitTest = selectedExam?.exam_name?.toLowerCase().includes('unit');
     const isAnnual = selectedExam?.exam_name?.toLowerCase().includes('annual');
 
@@ -257,7 +339,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
           <thead className="bg-gray-100 text-[10px] uppercase sticky top-0 z-10">
             <tr>
               <th className="p-3 text-left min-w-[100px] sticky left-0 bg-gray-100 z-20">Roll - Name</th>
-              
+
               {subjects.map(sub => (
                 <th key={sub.subject_name} className="p-2 text-center min-w-[200px]">
                   <div className="font-bold text-xs mb-1">{sub.subject_name}</div>
@@ -274,7 +356,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                   </div>
                 </th>
               ))}
-              
+
               <th className="p-2 text-center min-w-[60px]">Grand Total</th>
               <th className="p-2 text-center min-w-[55px]">%</th>
               <th className="p-2 text-center min-w-[50px]">Grade</th>
@@ -285,19 +367,19 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
             {students.map(student => {
               const studentMarks = marksData[student.id];
               if (!studentMarks) return null;
-              
+
               const { total, percentage, grade } = calculateStudentTotals(student.id);
-              
+
               return (
                 <tr key={student.id} className="border-b hover:bg-gray-50">
                   <td className="p-2 text-left font-bold text-xs sticky left-0 bg-white z-10">
                     <div>{student.roll_no}</div>
                     <div className="font-normal text-gray-500">{student.name}</div>
                   </td>
-                  
+
                   {subjects.map(sub => {
                     const marks = studentMarks.subject_marks[sub.subject_name] || { theory: '', practical: '', total: 0 };
-                    
+
                     return (
                       <td key={sub.subject_name} className="p-1 text-center">
                         <div className="flex gap-1 justify-center items-center">
@@ -333,7 +415,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                               />
                             </>
                           )}
-                          
+
                           <span className="w-[60px] text-center font-bold text-purple-700 text-sm bg-purple-50 rounded py-1">
                             {marks.total || 0}
                           </span>
@@ -341,14 +423,13 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
                       </td>
                     );
                   })}
-                  
+
                   <td className="p-2 text-center font-bold text-blue-600 text-sm">{total}</td>
                   <td className="p-2 text-center font-bold text-xs">{percentage.toFixed(1)}%</td>
                   <td className={`p-2 text-center font-bold text-xs ${grade === 'E' ? 'text-red-600' : 'text-green-600'}`}>
                     {grade}
                   </td>
-                  
-                  {/* 🎯 Annual Exam Extra Attendance Field */}
+
                   {isAnnual && (
                     <td className="p-2 text-center">
                       <input
@@ -367,19 +448,32 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
             })}
           </tbody>
         </table>
-        
-        <div className="p-4 bg-gray-50 border-t flex justify-between items-center">
+
+        <div className="p-4 bg-gray-50 border-t flex flex-wrap gap-3 justify-between items-center">
           <span className="text-sm text-gray-500">
             {students.length} students • {subjects.length} subjects {isAnnual && "• Annual Attendance Enabled"}
           </span>
-          <button
-            onClick={handleSaveMarks}
-            disabled={saving}
-            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 disabled:opacity-50 transition-colors cursor-pointer"
-          >
-            {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            Save All Marks
-          </button>
+
+          {/* ✅ 2 BUTTONS: EXCEL EXPORT + SAVE MARKS */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleExportExcel}
+              className="flex items-center gap-2 px-5 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors cursor-pointer"
+              title="Download Excel"
+            >
+              <FileSpreadsheet className="w-5 h-5" />
+              Excel Download
+            </button>
+
+            <button
+              onClick={handleSaveMarks}
+              disabled={saving}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              Save All Marks
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -393,7 +487,7 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
           <h2 className="text-xl font-bold">✏️ Assigned Class Marks Entry</h2>
         </div>
       </div>
-      
+
       <div className="flex flex-col sm:flex-row gap-3">
         <select
           className="flex-1 p-3 border border-gray-300 rounded-xl font-medium bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
@@ -408,10 +502,10 @@ const ExamMarksEntry = ({ staffData, onMarksSaved }) => {
           ))}
         </select>
       </div>
-      
+
       {renderMessage()}
       {selectedExam && <div className="mt-4">{renderMarksTable()}</div>}
-      
+
       {!selectedExam && !loading && (
         <div className="text-center py-16 text-gray-400">
           <BookOpen className="w-16 h-16 mx-auto text-gray-300" />
