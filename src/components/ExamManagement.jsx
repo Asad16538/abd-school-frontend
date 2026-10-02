@@ -496,17 +496,25 @@ const ExamManagement = () => {
         class: examForm.class,
         section: examForm.section,
         subjects: selectedSubjects,
-        date: examForm.date
+        date: examForm.date,
+        // ✅ FIX: Theory aur Internal max bhejo
+        theory_max: parseInt(examForm.theory_max) || 80,
+        internal_max: parseInt(examForm.internal_max) || 20
       };
+
+      console.log("📤 Creating exam with payload:", payload);
 
       const res = await axios.post(`${BASE_URL}/api/exams/create-multi`, payload);
 
       if (res.data.success) {
-        setMessage({ type: 'success', text: `✅ Exam created with ${res.data.subjects?.length || 0} subjects!` });
+        setMessage({ type: 'success', text: `✅ Exam created! Theory: ${payload.theory_max}, Internal: ${payload.internal_max}` });
         setExamForm({
           exam_type: 'Unit Test - 1',
           class: '',
           section: 'A',
+          theory_max: 80,
+          internal_max: 20,
+          total_max: 100,
           subjects: [],
           date: new Date().toISOString().split('T')[0]
         });
