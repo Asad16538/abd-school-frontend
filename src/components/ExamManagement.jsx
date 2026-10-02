@@ -135,6 +135,20 @@ const ExamManagement = () => {
     }
   };
 
+  const fetchGradeSystem = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/api/grade-system`);
+      if (res.data) {
+        setGradeSystem(res.data.grades || gradeSystem);
+      }
+    } catch (err) {
+      console.log("Grade system fetch error");
+    }
+  };
+
+  // ==============================
+  // CLASS-WISE MASTER SHEET
+  // ==============================
   const fetchMasterExamSheet = async () => {
     if (!masterClass || !masterExamType) {
       setMessage({ type: 'error', text: 'Kripya Class aur Exam Type dono select karein!' });
@@ -161,92 +175,110 @@ const ExamManagement = () => {
     }
   };
 
-  const handleSaveMasterMarks = async () => {
-  if (!masterClass || !masterExamType) {
-    setMessage({ type: 'error', text: 'Kripya Class aur Exam Type select karein!' });
-    return;
-  }
-  setSaving(true);
-  setMessage({ type: '', text: '' });
+  const handleMasterMarkChange = (studentId, subjectId, field, val) => {
+    setMasterMarksData(prev => {
+      const studentObj = prev[studentId] || {};
+      const subData = studentObj[subjectId] || { theory: '', practical: '', internal: '', obtained: 0 };
 
-  try {
-    const isUnitTest = masterExamType.toLowerCase().includes('unit');
+      const updatedSub = { ...subData, [field]: val };
 
-    // ✅ Records build karo - student_id aur subjects ke sath
-    const records = Object.keys(masterMarksData).map(studentId => {
-      const studentData = masterMarksData[studentId] || {};
-      const subjectsMap = studentData.subjects && typeof studentData.subjects === 'object'
-        ? studentData.subjects
-        : studentData;
-
-      const cleanSubjects = {};
-      Object.keys(subjectsMap).forEach(subId => {
-        // Skip attendance field (agar hai toh)
-        if (subId === 'attendance') return;
-
-        const subData = subjectsMap[subId] || {};
-
-        let theory = parseFloat(subData.theory) || 0;
-        let practical = parseFloat(subData.practical) || 0;
-        let internal = parseFloat(subData.internal) || 0;
-        let obtained = parseFloat(subData.obtained) || 0;
-
-        // Unit test ke liye sirf theory
-        if (isUnitTest) {
-          theory = obtained || theory;
-          practical = 0;
-          internal = 0;
-        } else {
-          if (theory === 0 && practical === 0 && obtained > 0) {
-            theory = obtained;
-          }
+      return {
+        ...prev,
+        [studentId]: {
+          ...studentObj,
+          [subjectId]: updatedSub
         }
+      };
+    });
+  };
 
-        cleanSubjects[subId] = {
-          theory: theory,
-          practical: practical,
-          internal: internal,
-          obtained: theory + practical + internal
+  const handleMasterAttendanceChange = (studentId, val) => {
+    setMasterMarksData(prev => ({
+      ...prev,
+      [studentId]: {
+        ...(prev[studentId] || {}),
+        attendance: val
+      }
+    }));
+  };
+
+  const handleSaveMasterMarks = async () => {
+    if (!masterClass || !masterExamType) {
+      setMessage({ type: 'error', text: 'Kripya Class aur Exam Type select karein!' });
+      return;
+    }
+    setSaving(true);
+    setMessage({ type: '', text: '' });
+
+    try {
+      const isUnitTest = masterExamType.toLowerCase().includes('unit');
+
+      const records = Object.keys(masterMarksData).map(studentId => {
+        const studentData = masterMarksData[studentId] || {};
+        // Skip attendance key
+        const cleanSubjects = {};
+
+        Object.keys(studentData).forEach(subId => {
+          if (subId === 'attendance') return;
+
+          const subData = studentData[subId] || {};
+
+          let theory = parseFloat(subData.theory) || 0;
+          let practical = parseFloat(subData.practical) || 0;
+          let internal = parseFloat(subData.internal) || 0;
+          let obtained = parseFloat(subData.obtained) || 0;
+
+          if (isUnitTest) {
+            theory = obtained || theory;
+            practical = 0;
+            internal = 0;
+          } else {
+            if (theory === 0 && practical === 0 && obtained > 0) {
+              theory = obtained;
+            }
+          }
+
+          cleanSubjects[subId] = {
+            theory: theory,
+            practical: practical,
+            internal: internal,
+            obtained: theory + practical + internal
+          };
+        });
+
+        return {
+          student_id: parseInt(studentId),
+          subjects: cleanSubjects
         };
       });
 
-      return {
-        student_id: parseInt(studentId),
-        subjects: cleanSubjects
+      const payload = {
+        class_name: masterClass,
+        exam_type: masterExamType,
+        records: records
       };
-    });
 
-    // ✅ FIXED PAYLOAD - Backend ke hisaab se
-    const payload = {
-      class_name: masterClass,          // ✅ "class_name" - backend yeh dhundta hai
-      exam_type: masterExamType,        // ✅ "exam_type"
-      records: records                  // ✅ "records" - backend yeh dhundta hai
-    };
+      console.log("📤 Sending payload:", payload);
 
-    console.log("📤 Sending payload:", JSON.stringify(payload, null, 2));
+      const res = await axios.post(`${BASE_URL}/api/exams/save-master-marks`, payload);
 
-    const res = await axios.post(`${BASE_URL}/api/exams/save-master-marks`, payload);
-
-    if (res.data.success) {
-      setMessage({ type: 'success', text: '✅ ' + (res.data.message || 'Marks aur Results dono update ho gaye!') });
-      setTimeout(() => setMessage({ type: '', text: '' }), 4000);
-    } else {
-      setMessage({ type: 'error', text: res.data.error || 'Marks save nahi hue' });
+      if (res.data.success) {
+        setMessage({ type: 'success', text: '✅ ' + (res.data.message || 'Marks aur Results dono update ho gaye!') });
+        setTimeout(() => setMessage({ type: '', text: '' }), 4000);
+      } else {
+        setMessage({ type: 'error', text: res.data.error || 'Marks save nahi hue' });
+      }
+    } catch (err) {
+      console.error("❌ Save error:", err.response?.data || err);
+      setMessage({
+        type: 'error',
+        text: err.response?.data?.error || err.response?.data?.message || 'Marks save karne mein error aayi'
+      });
+    } finally {
+      setSaving(false);
     }
-  } catch (err) {
-    console.error("❌ Save error:", err.response?.data || err);
-    setMessage({
-      type: 'error',
-      text: err.response?.data?.error || err.response?.data?.message || 'Marks save karne mein error aayi'
-    });
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
-  // ============================================
-  // ✅ EXCEL EXPORT FUNCTION (Master Sheet)
-  // ============================================
   const handleExportMasterExcel = () => {
     if (!masterStudents.length || !masterSubjects.length) {
       setMessage({ type: 'error', text: 'Pehle exam select karke marks load karein!' });
@@ -257,13 +289,10 @@ const ExamManagement = () => {
     const isUnitTest = masterExamType.toLowerCase().includes('unit');
     const isAnnual = masterExamType.toLowerCase().includes('annual');
 
-    // Sheet ke liye data array banao
     const exportData = masterStudents.map(student => {
       const studentRecord = masterMarksData[student.student_id] || {};
-      const subsMarksMap = studentRecord.subjects || studentRecord;
       const attendanceVal = studentRecord.attendance || '';
 
-      // Row base object
       const row = {
         'Roll No': student.roll_no || '-',
         'Student Name': student.name || '-',
@@ -273,16 +302,10 @@ const ExamManagement = () => {
       let rowTotal = 0;
       const maxPossibleMarks = masterSubjects.length * 100;
 
-      // Har subject ke Theory/Practical/Total columns add karo
       masterSubjects.forEach(sub => {
-        const subEntry = subsMarksMap[sub.id] || subsMarksMap[sub.name] || { theory: '', practical: '', total: 0 };
-
-        const th = subEntry.theory !== undefined && subEntry.theory !== ''
-          ? subEntry.theory
-          : (subEntry.obtained || '');
-        const pr = subEntry.practical !== undefined && subEntry.practical !== ''
-          ? subEntry.practical
-          : '';
+        const subEntry = studentRecord[sub.id] || { theory: '', practical: '', obtained: 0 };
+        const th = subEntry.theory !== undefined && subEntry.theory !== '' ? subEntry.theory : (subEntry.obtained || '');
+        const pr = subEntry.practical !== undefined && subEntry.practical !== '' ? subEntry.practical : '';
 
         const thNum = parseFloat(th) || 0;
         const prNum = parseFloat(pr) || 0;
@@ -298,7 +321,6 @@ const ExamManagement = () => {
         row[`${sub.name} (Total)`] = subTot;
       });
 
-      // Grand Total, %, Grade
       const percentage = maxPossibleMarks > 0 ? (rowTotal / maxPossibleMarks) * 100 : 0;
 
       let calculatedGrade = 'F';
@@ -321,24 +343,16 @@ const ExamManagement = () => {
       return row;
     });
 
-    // Worksheet banao
     const worksheet = XLSX.utils.json_to_sheet(exportData);
-
-    // Column widths
     const colWidths = Object.keys(exportData[0] || {}).map(key => ({
       wch: Math.max(key.length + 2, 12)
     }));
     worksheet['!cols'] = colWidths;
 
-    // Workbook banao
     const workbook = XLSX.utils.book_new();
-    const sheetName = masterExamType
-      ? masterExamType.slice(0, 25)
-      : 'Master Marks';
-
+    const sheetName = masterExamType ? masterExamType.slice(0, 25) : 'Master Marks';
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
 
-    // Filename
     const examName = (masterExamType || 'Exam').replace(/\s+/g, '_');
     const filename = `Master_Marks_${examName}_Class${masterClass}_${new Date().toISOString().split('T')[0]}.xlsx`;
 
@@ -348,52 +362,9 @@ const ExamManagement = () => {
     setTimeout(() => setMessage({ type: '', text: '' }), 3000);
   };
 
-  const handleMasterMarkChange = (studentId, subjectId, field, val) => {
-    setMasterMarksData(prev => {
-      const studentObj = prev[studentId] || {};
-      const subjectsMap = studentObj.subjects || {};
-      const subData = subjectsMap[subjectId] || { theory: '', practical: '', total: 0 };
-
-      const updatedSub = { ...subData, [field]: val };
-
-      return {
-        ...prev,
-        [studentId]: {
-          ...studentObj,
-          subjects: {
-            ...subjectsMap,
-            [subjectId]: updatedSub
-          }
-        }
-      };
-    });
-  };
-
-  // ✅ NEW: Attendance Change Handler (Ye missing tha!)
-  const handleMasterAttendanceChange = (studentId, val) => {
-    setMasterMarksData(prev => {
-      const studentObj = prev[studentId] || {};
-      return {
-        ...prev,
-        [studentId]: {
-          ...studentObj,
-          attendance: val
-        }
-      };
-    });
-  };
-
-  const fetchGradeSystem = async () => {
-    try {
-      const res = await axios.get(`${BASE_URL}/api/grade-system`);
-      if (res.data) {
-        setGradeSystem(res.data.grades || gradeSystem);
-      }
-    } catch (err) {
-      console.log("Grade system fetch error");
-    }
-  };
-
+  // ==============================
+  // STUDENT MARKS ENTRY (Table based - legacy)
+  // ==============================
   const fetchStudentsForExam = async (examId) => {
     setLoading(true);
     try {
@@ -476,6 +447,7 @@ const ExamManagement = () => {
     });
   };
 
+  // ✅ FIXED: theory_max aur internal_max bhi bhej rahe hain
   const handleCreateExam = async (e) => {
     e.preventDefault();
 
@@ -497,7 +469,6 @@ const ExamManagement = () => {
         section: examForm.section,
         subjects: selectedSubjects,
         date: examForm.date,
-        // ✅ FIX: Theory aur Internal max bhejo
         theory_max: parseInt(examForm.theory_max) || 80,
         internal_max: parseInt(examForm.internal_max) || 20
       };
@@ -507,7 +478,10 @@ const ExamManagement = () => {
       const res = await axios.post(`${BASE_URL}/api/exams/create-multi`, payload);
 
       if (res.data.success) {
-        setMessage({ type: 'success', text: `✅ Exam created! Theory: ${payload.theory_max}, Internal: ${payload.internal_max}` });
+        setMessage({
+          type: 'success',
+          text: `✅ Exam created! Theory: ${payload.theory_max}, Internal: ${payload.internal_max}, Total: ${payload.theory_max + payload.internal_max}`
+        });
         setExamForm({
           exam_type: 'Unit Test - 1',
           class: '',
@@ -515,6 +489,8 @@ const ExamManagement = () => {
           theory_max: 80,
           internal_max: 20,
           total_max: 100,
+          max_marks: 100,
+          passing_marks: 33,
           subjects: [],
           date: new Date().toISOString().split('T')[0]
         });
@@ -541,7 +517,7 @@ const ExamManagement = () => {
           marks[subject] = {
             theory: parseFloat(mark.theory) || 0,
             practical: parseFloat(mark.practical) || 0,
-            total: parseFloat(mark.theory) || 0 + parseFloat(mark.practical) || 0
+            total: (parseFloat(mark.theory) || 0) + (parseFloat(mark.practical) || 0)
           };
         });
 
@@ -632,27 +608,6 @@ const ExamManagement = () => {
     });
   };
 
-  const downloadExcel = () => {
-    if (results.length === 0) {
-      setMessage({ type: 'error', text: 'Export karne ke liye koi result nahi hai!' });
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-      return;
-    }
-
-    let csvContent = "data:text/csv;charset=utf-8,Roll No,Student Name,Total Marks,Percentage,Grade\n";
-    results.forEach(r => {
-      csvContent += `${r.roll_no || ''},"${r.name}",${r.obtained_marks},${r.percentage}%,${r.grade}\n`;
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `exam_result_${selectedResultExam}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   const downloadPDF = () => {
     window.print();
   };
@@ -667,25 +622,12 @@ const ExamManagement = () => {
     return percentage >= 40 ? 'D' : 'F';
   };
 
-  const getStudentTotalMarks = (studentId) => {
-    const studentMarks = marksData[studentId] || {};
-    let total = 0;
-    selectedSubjects.forEach(subject => {
-      total += studentMarks[subject]?.total || 0;
-    });
-    return total;
-  };
-
-  const getMaxMarks = () => {
-    return selectedSubjects.length * 100;
-  };
-
   // ==============================
   // RENDER
   // ==============================
   return (
     <div className="p-4 max-w-7xl mx-auto">
-                  {/* Header */}
+      {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 rounded-2xl text-white shadow-md mb-6">
         <div className="flex flex-col items-center justify-center text-center">
           <h2 className="text-xl font-black flex items-center gap-2">📝 Exam Management</h2>
@@ -837,7 +779,7 @@ const ExamManagement = () => {
                 </div>
               </div>
 
-              {/* ✅ NAYA: MARKS CONFIGURATION BOXES */}
+              {/* MARKS CONFIGURATION BOXES */}
               <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-3">
                 <label className="block text-[10px] font-black text-indigo-900 uppercase">
                   📊 Marks Configuration (Sabhi subjects ke liye)
@@ -1077,7 +1019,6 @@ const ExamManagement = () => {
                         {masterStudents.map((student) => {
                           let rowTotal = 0;
                           const studentRecord = masterMarksData[student.student_id] || {};
-                          const subsMarksMap = studentRecord.subjects || studentRecord;
                           const attendanceVal = studentRecord.attendance || '';
 
                           const maxPossibleMarks = masterSubjects.length * 100;
@@ -1091,7 +1032,7 @@ const ExamManagement = () => {
                               </td>
 
                               {masterSubjects.map(sub => {
-                                const subEntry = subsMarksMap[sub.id] || subsMarksMap[sub.name] || { theory: '', practical: '', total: 0 };
+                                const subEntry = studentRecord[sub.id] || { theory: '', practical: '', obtained: 0 };
                                 const th = subEntry.theory !== undefined && subEntry.theory !== '' ? subEntry.theory : (subEntry.obtained || '');
                                 const pr = subEntry.practical !== undefined && subEntry.practical !== '' ? subEntry.practical : '';
 
@@ -1144,17 +1085,14 @@ const ExamManagement = () => {
                                 );
                               })}
 
-                              {/* Grand Total */}
                               <td className="p-3 border text-center font-black text-indigo-700 text-sm">
                                 {rowTotal}
                               </td>
 
-                              {/* Percentage */}
                               <td className="p-3 border text-center font-bold text-green-700 text-xs">
                                 {maxPossibleMarks > 0 ? ((rowTotal / maxPossibleMarks) * 100).toFixed(1) : 0}%
                               </td>
 
-                              {/* Grade */}
                               <td className="p-3 border text-center font-black text-purple-700 text-xs">
                                 <span className="px-2 py-0.5 bg-purple-100 rounded">
                                   {(() => {
@@ -1171,7 +1109,6 @@ const ExamManagement = () => {
                                 </span>
                               </td>
 
-                              {/* Annual Attendance */}
                               {isAnnual && (
                                 <td className="p-3 border text-center">
                                   <input
@@ -1229,7 +1166,6 @@ const ExamManagement = () => {
               >
                 <option value="">-- Select Exam --</option>
                 {exams.map(e => {
-                  // ✅ Prefer exam_id (string), fallback to id (integer)
                   const examValue = e.exam_id || e.id;
                   return (
                     <option key={examValue} value={examValue}>
