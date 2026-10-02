@@ -162,79 +162,87 @@ const ExamManagement = () => {
   };
 
   const handleSaveMasterMarks = async () => {
-    if (!masterClass || !masterExamType) {
-      setMessage({ type: 'error', text: 'Kripya Class aur Exam Type select karein!' });
-      return;
-    }
-    setSaving(true);
-    try {
-      const isUnitTest = masterExamType.toLowerCase().includes('unit');
+  if (!masterClass || !masterExamType) {
+    setMessage({ type: 'error', text: 'Kripya Class aur Exam Type select karein!' });
+    return;
+  }
+  setSaving(true);
+  setMessage({ type: '', text: '' });
 
-      const records = Object.keys(masterMarksData).map(studentId => {
-        const studentData = masterMarksData[studentId] || {};
-        const subjectsMap = studentData.subjects && typeof studentData.subjects === 'object'
-          ? studentData.subjects
-          : studentData;
+  try {
+    const isUnitTest = masterExamType.toLowerCase().includes('unit');
 
-        const cleanSubjects = {};
-        Object.keys(subjectsMap).forEach(subId => {
-          const subData = subjectsMap[subId] || {};
+    // ✅ Records build karo - student_id aur subjects ke sath
+    const records = Object.keys(masterMarksData).map(studentId => {
+      const studentData = masterMarksData[studentId] || {};
+      const subjectsMap = studentData.subjects && typeof studentData.subjects === 'object'
+        ? studentData.subjects
+        : studentData;
 
-          let theory = parseFloat(subData.theory) || 0;
-          let practical = parseFloat(subData.practical) || 0;
-          let internal = parseFloat(subData.internal) || 0;
-          let obtained = parseFloat(subData.obtained) || 0;
+      const cleanSubjects = {};
+      Object.keys(subjectsMap).forEach(subId => {
+        // Skip attendance field (agar hai toh)
+        if (subId === 'attendance') return;
 
-          // Unit test ke liye sirf theory
-          if (isUnitTest) {
-            theory = obtained || theory;
-            practical = 0;
-            internal = 0;
-          } else {
-            // Quarterly/Half-Yearly/Annual ke liye theory + practical
-            if (theory === 0 && practical === 0 && obtained > 0) {
-              theory = obtained;
-            }
+        const subData = subjectsMap[subId] || {};
+
+        let theory = parseFloat(subData.theory) || 0;
+        let practical = parseFloat(subData.practical) || 0;
+        let internal = parseFloat(subData.internal) || 0;
+        let obtained = parseFloat(subData.obtained) || 0;
+
+        // Unit test ke liye sirf theory
+        if (isUnitTest) {
+          theory = obtained || theory;
+          practical = 0;
+          internal = 0;
+        } else {
+          if (theory === 0 && practical === 0 && obtained > 0) {
+            theory = obtained;
           }
+        }
 
-          // ✅ THEORY aur PRACTICAL alag bhejo
-          cleanSubjects[subId] = {
-            theory: theory,
-            practical: practical,
-            internal: internal,
-            obtained: theory + practical + internal
-          };
-        });
-
-        return {
-          student_id: parseInt(studentId),
-          subjects: cleanSubjects
+        cleanSubjects[subId] = {
+          theory: theory,
+          practical: practical,
+          internal: internal,
+          obtained: theory + practical + internal
         };
       });
 
-      const payload = {
-        exam_type: examForm.exam_type,
-        class: examForm.class,
-        section: examForm.section,
-        subjects: selectedSubjects,
-        date: examForm.date,
-        theory_max: examForm.theory_max || 80,
-        internal_max: examForm.internal_max || 20
+      return {
+        student_id: parseInt(studentId),
+        subjects: cleanSubjects
       };
+    });
 
-      console.log("📤 Sending payload:", payload);
+    // ✅ FIXED PAYLOAD - Backend ke hisaab se
+    const payload = {
+      class_name: masterClass,          // ✅ "class_name" - backend yeh dhundta hai
+      exam_type: masterExamType,        // ✅ "exam_type"
+      records: records                  // ✅ "records" - backend yeh dhundta hai
+    };
 
-      const res = await axios.post(`${BASE_URL}/api/exams/save-master-marks`, payload);
-      if (res.data.success) {
-        setMessage({ type: 'success', text: '✅ Marks aur Results dono update ho gaye!' });
-      }
-    } catch (err) {
-      console.error("❌ Save error:", err);
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Marks save karne mein error aayi' });
-    } finally {
-      setSaving(false);
+    console.log("📤 Sending payload:", JSON.stringify(payload, null, 2));
+
+    const res = await axios.post(`${BASE_URL}/api/exams/save-master-marks`, payload);
+
+    if (res.data.success) {
+      setMessage({ type: 'success', text: '✅ ' + (res.data.message || 'Marks aur Results dono update ho gaye!') });
+      setTimeout(() => setMessage({ type: '', text: '' }), 4000);
+    } else {
+      setMessage({ type: 'error', text: res.data.error || 'Marks save nahi hue' });
     }
-  };
+  } catch (err) {
+    console.error("❌ Save error:", err.response?.data || err);
+    setMessage({
+      type: 'error',
+      text: err.response?.data?.error || err.response?.data?.message || 'Marks save karne mein error aayi'
+    });
+  } finally {
+    setSaving(false);
+  }
+};
 
   // ============================================
   // ✅ EXCEL EXPORT FUNCTION (Master Sheet)
