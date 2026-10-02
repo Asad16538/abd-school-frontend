@@ -82,6 +82,9 @@ const ExamManagement = () => {
     exam_type: 'Unit Test - 1',
     class: '',
     section: 'A',
+    theory_max: 80,
+    internal_max: 20,
+    total_max: 100,
     max_marks: 100,
     passing_marks: 33,
     subjects: [],
@@ -209,9 +212,13 @@ const ExamManagement = () => {
     });
 
     const payload = {
-      class_name: masterClass,
-      exam_type: masterExamType,
-      records: records
+      exam_type: examForm.exam_type,
+      class: examForm.class,
+      section: examForm.section,
+      subjects: selectedSubjects,
+      date: examForm.date,
+      theory_max: examForm.theory_max || 80,
+      internal_max: examForm.internal_max || 20
     };
 
     console.log("📤 Sending payload:", payload);
