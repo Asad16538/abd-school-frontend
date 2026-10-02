@@ -158,66 +158,75 @@ const ExamManagement = () => {
   };
 
   const handleSaveMasterMarks = async () => {
-    if (!masterClass || !masterExamType) {
-      setMessage({ type: 'error', text: 'Kripya Class aur Exam Type select karein!' });
-      return;
-    }
-    setSaving(true);
-    try {
-      // ✅ FIX: Har student ke subjects ko extract karo aur flatten karo
-      const records = Object.keys(masterMarksData).map(studentId => {
-        const studentData = masterMarksData[studentId] || {};
+  if (!masterClass || !masterExamType) {
+    setMessage({ type: 'error', text: 'Kripya Class aur Exam Type select karein!' });
+    return;
+  }
+  setSaving(true);
+  try {
+    const isUnitTest = masterExamType.toLowerCase().includes('unit');
 
-        // Agar studentData mein 'subjects' key hai toh usko use karo
-        // Warna studentData khud hi subjects map hai
-        const subjectsMap = studentData.subjects && typeof studentData.subjects === 'object'
-          ? studentData.subjects
-          : studentData;
+    const records = Object.keys(masterMarksData).map(studentId => {
+      const studentData = masterMarksData[studentId] || {};
+      const subjectsMap = studentData.subjects && typeof studentData.subjects === 'object'
+        ? studentData.subjects
+        : studentData;
 
-        // ✅ Har subject ke liye sirf 'obtained' value bhejo (ya theory+practical)
-        const cleanSubjects = {};
-        Object.keys(subjectsMap).forEach(subId => {
-          const subData = subjectsMap[subId] || {};
+      const cleanSubjects = {};
+      Object.keys(subjectsMap).forEach(subId => {
+        const subData = subjectsMap[subId] || {};
 
-          // Agar subData mein 'obtained' hai toh woh use karo
-          // Warna theory + practical add karo
-          let obtained = 0;
-          if (subData.obtained !== undefined && subData.obtained !== '') {
-            obtained = parseFloat(subData.obtained) || 0;
-          } else {
-            const theory = parseFloat(subData.theory) || 0;
-            const practical = parseFloat(subData.practical) || 0;
-            obtained = theory + practical;
+        let theory = parseFloat(subData.theory) || 0;
+        let practical = parseFloat(subData.practical) || 0;
+        let internal = parseFloat(subData.internal) || 0;
+        let obtained = parseFloat(subData.obtained) || 0;
+
+        // Unit test ke liye sirf theory
+        if (isUnitTest) {
+          theory = obtained || theory;
+          practical = 0;
+          internal = 0;
+        } else {
+          // Quarterly/Half-Yearly/Annual ke liye theory + practical
+          if (theory === 0 && practical === 0 && obtained > 0) {
+            theory = obtained;
           }
+        }
 
-          cleanSubjects[subId] = { obtained: obtained };
-        });
-
-        return {
-          student_id: parseInt(studentId),
-          subjects: cleanSubjects  // ✅ Ab sahi structure bhejenge
+        // ✅ THEORY aur PRACTICAL alag bhejo
+        cleanSubjects[subId] = {
+          theory: theory,
+          practical: practical,
+          internal: internal,
+          obtained: theory + practical + internal
         };
       });
 
-      const payload = {
-        class_name: masterClass,
-        exam_type: masterExamType,
-        records: records
+      return {
+        student_id: parseInt(studentId),
+        subjects: cleanSubjects
       };
+    });
 
-      console.log("📤 Sending payload:", payload);  // 🐛 DEBUG
+    const payload = {
+      class_name: masterClass,
+      exam_type: masterExamType,
+      records: records
+    };
 
-      const res = await axios.post(`${BASE_URL}/api/exams/save-master-marks`, payload);
-      if (res.data.success) {
-        setMessage({ type: 'success', text: '✅ Saare subjects ke marks successfully save ho gaye!' });
-      }
-    } catch (err) {
-      console.error("❌ Save error:", err);
-      setMessage({ type: 'error', text: err.response?.data?.error || 'Marks save karne mein error aayi' });
-    } finally {
-      setSaving(false);
+    console.log("📤 Sending payload:", payload);
+
+    const res = await axios.post(`${BASE_URL}/api/exams/save-master-marks`, payload);
+    if (res.data.success) {
+      setMessage({ type: 'success', text: '✅ Marks aur Results dono update ho gaye!' });
     }
-  };
+  } catch (err) {
+    console.error("❌ Save error:", err);
+    setMessage({ type: 'error', text: err.response?.data?.error || 'Marks save karne mein error aayi' });
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleMasterMarkChange = (studentId, subjectId, field, val) => {
     setMasterMarksData(prev => {
