@@ -669,11 +669,11 @@ const ExamManagement = () => {
   // ==============================
   return (
     <div className="p-4 max-w-7xl mx-auto">
-            {/* Header */}
+                  {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-5 rounded-2xl text-white shadow-md mb-6">
         <div className="flex flex-col items-center justify-center text-center">
           <h2 className="text-xl font-black flex items-center gap-2">📝 Exam Management</h2>
-          <p className="text-xs opacity-80 mt-1">Create exams, enter marks, generate results |  
+          <p className="text-xs opacity-80 mt-1">Create exams, enter marks, generate results</p>
         </div>
       </div>
 
