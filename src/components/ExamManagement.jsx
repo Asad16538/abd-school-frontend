@@ -623,12 +623,7 @@ const ExamManagement = () => {
           onClick={() => setActiveTab('reports')}
           className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'reports' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
         >
-          📄 Report Cards
-        </button>
-        <button
-          onClick={() => setActiveTab('grades')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition ${activeTab === 'grades' ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-100'}`}
-        >
+          
           📊 Grade System
         </button>
       </div>
